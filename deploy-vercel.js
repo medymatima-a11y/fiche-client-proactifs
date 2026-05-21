@@ -31,9 +31,9 @@ function uploadFichier(content, sha1) {
       path: '/v2/files',
       method: 'POST',
       headers: {
-        'Authorization':  `Bearer ${TOKEN}`,
-        'Content-Type':   'application/octet-stream',
-        'Content-Length': buf.length,
+        'Authorization':   `Bearer ${TOKEN}`,
+        'Content-Type':    'application/octet-stream',
+        'Content-Length':  buf.length,
         'x-vercel-digest': sha1,
         'x-vercel-team-id': ORG_ID,
       }
@@ -55,10 +55,17 @@ function creerDeploiement(projectId, nom, sha1, taille) {
       name:   nom,
       files:  [{ file: 'index.html', sha: sha1, size: taille }],
       target: 'production',
+      projectSettings: {
+        framework:       null,
+        buildCommand:    null,
+        devCommand:      null,
+        installCommand:  null,
+        outputDirectory: null,
+      },
     });
     const options = {
       hostname: 'api.vercel.com',
-      path:     `/v13/deployments?forceNew=1&projectId=${projectId}&teamId=${ORG_ID}`,
+      path:     `/v13/deployments?forceNew=1&skipAutoDetectionConfirmation=1&projectId=${projectId}&teamId=${ORG_ID}`,
       method:   'POST',
       headers: {
         'Authorization':  `Bearer ${TOKEN}`,
@@ -85,14 +92,12 @@ async function deployerProjet(projet) {
   console.log(`🚀 ${projet.nom}`);
   console.log('='.repeat(50));
 
-  // 1. Lecture du fichier
   const content = fs.readFileSync(projet.fichier, 'utf8');
   const sha1    = crypto.createHash('sha1').update(content).digest('hex');
   const taille  = Buffer.byteLength(content);
   console.log(`📦 Fichier : ${path.basename(projet.fichier)} (${Math.round(taille/1024)} Ko)`);
   console.log(`   SHA1   : ${sha1}`);
 
-  // 2. Upload
   console.log('⬆️  Upload...');
   const upload = await uploadFichier(content, sha1);
   if (![200, 201, 409].includes(upload.status)) {
@@ -101,7 +106,6 @@ async function deployerProjet(projet) {
   }
   console.log(`   Statut : ${upload.status} ✅`);
 
-  // 3. Déploiement
   console.log('🔨 Création du déploiement...');
   const dep = await creerDeploiement(
     projet.projectId,
@@ -122,7 +126,7 @@ async function deployerProjet(projet) {
 
 async function main() {
   if (!TOKEN) {
-    console.error('❌ VERCEL_TOKEN non défini. Définissez la variable d\'environnement.');
+    console.error('❌ VERCEL_TOKEN non défini.');
     process.exit(1);
   }
 
