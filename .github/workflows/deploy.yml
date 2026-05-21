@@ -6,6 +6,8 @@ on:
     paths:
       - 'deploy/index.html'
       - 'deploy-crm/index.html'
+      - 'deploy-vercel.js'
+  workflow_dispatch:
 
 jobs:
   deploy:
