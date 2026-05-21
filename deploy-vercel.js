@@ -1,8 +1,8 @@
 // ── Déploiement Vercel via API REST ─────────────────────────
 // Lance avec : node deploy-vercel.js
-const https  = require('https');
-const fs     = require('fs');
-const path   = require('path');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
 const TOKEN  = process.env.VERCEL_TOKEN;
@@ -10,16 +10,16 @@ const ORG_ID = 'team_9NQXn7SAi0IfcpP9AjqsVBKI';
 
 const PROJETS = [
   {
-    nom:        'Fiche client',
-    projectId:  'prj_xkIVTDHM8AALoIQJ52pBe50KP3kK',
-    fichier:    path.join(__dirname, 'deploy', 'index.html'),
-    dashboard:  'https://vercel.com/medymatima-a11ys-projects/deploy',
+    nom:       'Fiche client',
+    projectId: 'prj_xkIVTDHM8AALoIQJ52pBe50KP3kK',
+    fichier:   path.join(__dirname, 'deploy', 'index.html'),
+    dashboard: 'https://vercel.com/medymatima-a11ys-projects/deploy',
   },
   {
-    nom:        'CRM',
-    projectId:  'prj_aBPBvxhcfdrMdH5BYr9M8qx8tW1B',
-    fichier:    path.join(__dirname, 'deploy-crm', 'index.html'),
-    dashboard:  'https://vercel.com/medymatima-a11ys-projects/deploy-crm',
+    nom:       'CRM',
+    projectId: 'prj_aBPBvxhcfdrMdH5BYr9M8qx8tW1B',
+    fichier:   path.join(__dirname, 'deploy-crm', 'index.html'),
+    dashboard: 'https://vercel.com/medymatima-a11ys-projects/deploy-crm',
   },
 ];
 
@@ -31,10 +31,11 @@ function uploadFichier(content, sha1) {
       path: '/v2/files',
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${TOKEN}`,
-        'Content-Type': 'application/octet-stream',
+        'Authorization':  `Bearer ${TOKEN}`,
+        'Content-Type':   'application/octet-stream',
         'Content-Length': buf.length,
         'x-vercel-digest': sha1,
+        'x-vercel-team-id': ORG_ID,
       }
     };
     const req = https.request(options, res => {
@@ -51,17 +52,17 @@ function uploadFichier(content, sha1) {
 function creerDeploiement(projectId, nom, sha1, taille) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify({
-      name: nom,
-      files: [{ file: 'index.html', sha: sha1, size: taille }],
+      name:   nom,
+      files:  [{ file: 'index.html', sha: sha1, size: taille }],
       target: 'production',
     });
     const options = {
       hostname: 'api.vercel.com',
-      path: `/v13/deployments?forceNew=1&projectId=${projectId}`,
-      method: 'POST',
+      path:     `/v13/deployments?forceNew=1&projectId=${projectId}&teamId=${ORG_ID}`,
+      method:   'POST',
       headers: {
-        'Authorization': `Bearer ${TOKEN}`,
-        'Content-Type': 'application/json',
+        'Authorization':  `Bearer ${TOKEN}`,
+        'Content-Type':   'application/json',
         'Content-Length': Buffer.byteLength(payload),
       }
     };
@@ -89,7 +90,7 @@ async function deployerProjet(projet) {
   const sha1    = crypto.createHash('sha1').update(content).digest('hex');
   const taille  = Buffer.byteLength(content);
   console.log(`📦 Fichier : ${path.basename(projet.fichier)} (${Math.round(taille/1024)} Ko)`);
-  console.log(`   SHA1    : ${sha1}`);
+  console.log(`   SHA1   : ${sha1}`);
 
   // 2. Upload
   console.log('⬆️  Upload...');
@@ -102,10 +103,49 @@ async function deployerProjet(projet) {
 
   // 3. Déploiement
   console.log('🔨 Création du déploiement...');
-  const dep = await creerDeploiement(projet.projectId, projet.nom.toLowerCase().replace(/ /g,'-'), sha1, taille);
+  const dep = await creerDeploiement(
+    projet.projectId,
+    projet.nom.toLowerCase().replace(/ /g, '-'),
+    sha1,
+    taille
+  );
   if (![200, 201].includes(dep.status)) {
     console.error(`❌ Erreur déploiement (${dep.status}):`, JSON.stringify(dep.body, null, 2));
     return false;
   }
 
-  c
+  const url = dep.body.url ? `https://${dep.body.url}` : projet.dashboard;
+  console.log(`✅ Déployé ! URL : ${url}`);
+  console.log(`   Dashboard : ${projet.dashboard}`);
+  return true;
+}
+
+async function main() {
+  if (!TOKEN) {
+    console.error('❌ VERCEL_TOKEN non défini. Définissez la variable d\'environnement.');
+    process.exit(1);
+  }
+
+  console.log('🚀 Déploiement CRM Proactifs Conseils');
+  console.log(`   ${new Date().toLocaleString('fr-FR')}\n`);
+
+  let success = 0;
+  for (const projet of PROJETS) {
+    const ok = await deployerProjet(projet);
+    if (ok) success++;
+  }
+
+  console.log(`\n${'='.repeat(50)}`);
+  if (success === PROJETS.length) {
+    console.log(`✅ Tous les déploiements réussis (${success}/${PROJETS.length})`);
+    process.exit(0);
+  } else {
+    console.error(`❌ ${PROJETS.length - success} déploiement(s) échoué(s) sur ${PROJETS.length}`);
+    process.exit(1);
+  }
+}
+
+main().catch(err => {
+  console.error('❌ Erreur fatale :', err);
+  process.exit(1);
+});
