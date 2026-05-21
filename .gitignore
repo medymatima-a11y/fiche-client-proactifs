@@ -1,0 +1,7 @@
+deploy-log.txt
+Info.txt
+*.tmp
+*.tmp.*
+fiche-client.html.tmp*
+.DS_Store
+Thumbs.db

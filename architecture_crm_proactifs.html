@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Architecture CRM — Proactifs Conseils Patrimoine</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #2c3e50; background: #f4f6f9; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 800; color: #1a2e4a; margin-bottom: 6px; }
+  .subtitle { color: #7a8a9a; font-size: 13px; margin-bottom: 8px; }
+  .meta { display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap; }
+  .meta-chip { background: #1a2e4a; color: #fff; border-radius: 20px; padding: 4px 14px; font-size: 11px; font-weight: 700; }
+  .meta-chip.gold { background: #c9a84c; }
+  .meta-chip.green { background: #27ae60; }
+
+  /* GRID PRINCIPAL */
+  .arch-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .arch-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+  .arch-grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 16px; margin-bottom: 28px; }
+
+  /* CARDS */
+  .card { background: #fff; border-radius: 12px; border: 1px solid #dde3ed; padding: 20px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: #dde3ed; }
+  .card.navy::before { background: #1a2e4a; }
+  .card.gold::before { background: #c9a84c; }
+  .card.green::before { background: #27ae60; }
+  .card.blue::before { background: #2980b9; }
+  .card.orange::before { background: #e67e22; }
+  .card.red::before { background: #e74c3c; }
+  .card.purple::before { background: #8e44ad; }
+  .card.teal::before { background: #16a085; }
+
+  .card-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #7a8a9a; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .card-title .icon { font-size: 14px; }
+  .card h3 { font-size: 15px; font-weight: 700; color: #1a2e4a; margin-bottom: 12px; }
+
+  .field-list { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .field-list li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #2c3e50; }
+  .field-list li::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #dde3ed; flex-shrink: 0; }
+  .field-list li.done::before { background: #27ae60; }
+  .field-list li.partial::before { background: #c9a84c; }
+  .field-list li.todo::before { background: #e74c3c; }
+  .field-list li .tag { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; background: #e6f9ee; color: #1d8348; margin-left: auto; }
+  .field-list li .tag.warn { background: #fdf8ee; color: #7d6608; }
+  .field-list li .tag.todo { background: #fdecea; color: #c0392b; }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: repeat(6,1fr); gap: 12px; margin-bottom: 28px; }
+  .stat { background: #fff; border-radius: 10px; border: 1px solid #dde3ed; padding: 14px 16px; text-align: center; }
+  .stat .val { font-size: 24px; font-weight: 800; color: #1a2e4a; }
+  .stat .lbl { font-size: 10px; color: #7a8a9a; font-weight: 600; text-transform: uppercase; letter-spacing: .6px; margin-top: 2px; }
+
+  /* SECTION TITLE */
+  .section-title { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #7a8a9a; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #dde3ed; }
+
+  /* TECH STACK */
+  .tech-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
+  .tech-item { background: #fff; border: 1px solid #dde3ed; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .tech-item .tech-icon { font-size: 20px; }
+  .tech-item .tech-name { font-weight: 700; font-size: 12px; color: #1a2e4a; }
+  .tech-item .tech-role { font-size: 10px; color: #7a8a9a; }
+
+  /* FLUX */
+  .flux { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid #dde3ed; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; }
+  .flux .step { background: #1a2e4a; color: #fff; border-radius: 6px; padding: 4px 10px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .flux .step.gold { background: #c9a84c; }
+  .flux .step.green { background: #27ae60; }
+  .flux .step.blue { background: #2980b9; }
+  .flux .arrow { color: #7a8a9a; font-size: 16px; }
+  .flux .desc { font-size: 11px; color: #7a8a9a; margin-left: auto; }
+
+  /* LEGEND */
+  .legend { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #7a8a9a; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  /* TODO */
+  .todo-card { background: #fdecea; border: 1px solid #f5c6cb; border-radius: 10px; padding: 16px 20px; }
+  .todo-card h4 { color: #c0392b; font-size: 12px; font-weight: 700; margin-bottom: 10px; }
+  .todo-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #2c3e50; padding: 4px 0; border-bottom: 1px solid #f9d0d0; }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-item .prio { font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 10px; }
+  .prio.critique { background: #e74c3c; color: #fff; }
+  .prio.important { background: #e67e22; color: #fff; }
+  .prio.utile { background: #27ae60; color: #fff; }
+
+  footer { text-align: center; color: #7a8a9a; font-size: 11px; margin-top: 32px; padding-top: 16px; border-top: 1px solid #dde3ed; }
+</style>
+</head>
+<body>
+
+<h1>Architecture CRM — Proactifs Conseils Patrimoine</h1>
+<p class="subtitle">CRM patrimonial sur mesure · une seule source de vérité · 363 clients actifs</p>
+<div class="meta">
+  <span class="meta-chip">Version 2.0 · Mai 2026</span>
+  <span class="meta-chip gold">Supabase + Vercel + Brevo</span>
+  <span class="meta-chip green">✅ En production</span>
+</div>
+
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat"><div class="val">363</div><div class="lbl">Clients</div></div>
+  <div class="stat"><div class="val">56</div><div class="lbl">TMI renseigné</div></div>
+  <div class="stat"><div class="val">38</div><div class="lbl">Missions</div></div>
+  <div class="stat"><div class="val">76</div><div class="lbl">Docs conformité</div></div>
+  <div class="stat"><div class="val">3,06M€</div><div class="lbl">Épargne trackée</div></div>
+  <div class="stat"><div class="val">816</div><div class="lbl">Contacts Brevo</div></div>
+</div>
+
+<!-- TABLES SUPABASE -->
+<div class="section-title">📋 Tables Supabase — Base de données</div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#27ae60"></div>Champ renseigné</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c9a84c"></div>Partiellement renseigné</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e74c3c"></div>À renseigner</div>
+</div>
+
+<div class="arch-grid">
+
+  <!-- CLIENTS -->
+  <div class="card navy" style="grid-column: span 1">
+    <div class="card-title"><span class="icon">👥</span>Table CLIENTS</div>
+    <h3>Clients & Prospects</h3>
+    <ul class="field-list">
+      <li class="done">Nom, Prénom, Email, Téléphone <span class="tag">363</span></li>
+      <li class="done">Statut (dynamique & configurable)</li>
+      <li class="done">Type dossier (Patrimonial/Courtage)</li>
+      <li class="partial">Situation familiale, Régime <span class="tag warn">40</span></li>
+      <li class="partial">Profession, Entreprise <span class="tag warn">28</span></li>
+      <li class="partial">Date & lieu de naissance <span class="tag warn">~60</span></li>
+      <li class="done">Adresse, Code postal, Ville</li>
+      <li class="partial">Salaire C1/C2, Impôt <span class="tag warn">53</span></li>
+      <li class="partial">TMI, RFR (avis d'impôt) <span class="tag warn">56</span></li>
+      <li class="done">Immobilier (JSON) <span class="tag">20 clients</span></li>
+      <li class="done">Crédits (JSON) <span class="tag">21 clients</span></li>
+      <li class="done">Épargne (JSON) <span class="tag">20 clients</span></li>
+      <li class="todo">Dernier contact <span class="tag todo">à faire</span></li>
+      <li class="todo">Lien Drive / URL Cowork <span class="tag todo">à faire</span></li>
+    </ul>
+  </div>
+
+  <!-- MISSIONS + CONFORMITÉ -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div class="card gold">
+      <div class="card-title"><span class="icon">💼</span>Table MISSIONS</div>
+      <h3>Missions</h3>
+      <ul class="field-list">
+        <li class="done">Type (Bilan patrimonial…) <span class="tag">38</span></li>
+        <li class="done">Statut (Devis→Signé→Payé)</li>
+        <li class="todo">Honoraires HT <span class="tag todo">vide</span></li>
+        <li class="todo">Dates signature / livraison <span class="tag todo">vide</span></li>
+        <li class="done">Notes</li>
+      </ul>
+    </div>
+    <div class="card red">
+      <div class="card-title"><span class="icon">🛡️</span>Table CONFORMITÉ</div>
+      <h3>Documents MIF2</h3>
+      <ul class="field-list">
+        <li class="done">DER, Convention de mission <span class="tag">76</span></li>
+        <li class="done">KYC, MIF II, RGPD, Lettre mission</li>
+        <li class="done">Statut (Remis/Signé/À renouveler)</li>
+        <li class="done">Version, Notes</li>
+        <li class="todo">Dates remise + expiration <span class="tag todo">à remplir</span></li>
+        <li class="todo">Liens Drive <span class="tag todo">à remplir</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- AUTRES TABLES -->
+  <div style="display:flex;flex-direction:column;gap:20px">
+    <div class="card green">
+      <div class="card-title"><span class="icon">⏰</span>Table ÉCHÉANCES</div>
+      <h3>Suivi & Relances</h3>
+      <ul class="field-list">
+        <li class="done">Type (MIF2, Bilan, Relance…)</li>
+        <li class="done">Date prévue / réalisée</li>
+        <li class="done">Statut (À faire/Fait/Reporté)</li>
+        <li class="done">Widget dashboard 30j</li>
+        <li class="todo">Rappels email J-15/J-7 <span class="tag todo">à faire</span></li>
+      </ul>
+    </div>
+    <div class="card blue">
+      <div class="card-title"><span class="icon">💬</span>Table INTERACTIONS</div>
+      <h3>Historique contacts</h3>
+      <ul class="field-list">
+        <li class="done">Date, Type (Appel/Email/RDV)</li>
+        <li class="done">Résumé, Notes</li>
+        <li class="done">Décisions actées</li>
+      </ul>
+    </div>
+    <div class="card purple">
+      <div class="card-title"><span class="icon">📦</span>Table PRODUITS CLIENT</div>
+      <h3>Investissements</h3>
+      <ul class="field-list">
+        <li class="done">Catégorie (configurable)</li>
+        <li class="done">SCPI, PER, AV, Pinel, PEA…</li>
+        <li class="done">Prestataire, Montant, Date</li>
+        <li class="done">Statut (Actif/En cours/Clos)</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODULES ADDITIONNELS -->
+<div class="section-title">🗃️ Tables additionnelles</div>
+<div class="arch-grid-4">
+  <div class="card teal">
+    <div class="card-title"><span class="icon">🎯</span>PROJETS (Pipeline)</div>
+    <ul class="field-list">
+      <li class="done">Statut R1→R2→R3→Signé</li>
+      <li class="done">Vue Kanban interactive</li>
+      <li class="done">Recherche temps réel</li>
+    </ul>
+  </div>
+  <div class="card orange">
+    <div class="card-title"><span class="icon">📑</span>DOCUMENTS</div>
+    <ul class="field-list">
+      <li class="done">Upload & stockage Supabase</li>
+      <li class="done">Lien par client</li>
+    </ul>
+  </div>
+  <div class="card navy">
+    <div class="card-title"><span class="icon">📧</span>CLIENT EMAILS</div>
+    <ul class="field-list">
+      <li class="done">Envoi depuis le CRM</li>
+      <li class="done">Historique par client</li>
+    </ul>
+  </div>
+  <div class="card gold">
+    <div class="card-title"><span class="icon">📋</span>BILANS</div>
+    <ul class="field-list">
+      <li class="done">Bilan patrimonial PDF</li>
+      <li class="done">Profil investisseur</li>
+      <li class="done">Préconisations</li>
+    </ul>
+  </div>
+</div>
+
+<!-- TECH STACK -->
+<div class="section-title">🛠️ Stack technique</div>
+<div class="tech-grid">
+  <div class="tech-item">
+    <div class="tech-icon">🗄️</div>
+    <div><div class="tech-name">Supabase</div><div class="tech-role">Base de données PostgreSQL + Auth + RLS</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-icon">▲</div>
+    <div><div class="tech-name">Vercel</div><div class="tech-role">Hébergement frontend (HTML/JS/CSS)</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-icon">📨</div>
+    <div><div class="tech-name">Brevo</div><div class="tech-role">Emailing + listes contacts + campagnes</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-icon">⚡</div>
+    <div><div class="tech-name">Supabase Edge Functions</div><div class="tech-role">Sync CRM → Brevo (clé API sécurisée)</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-icon">📦</div>
+    <div><div class="tech-name">Dropbox</div><div class="tech-role">Stockage dossiers clients · extraction PDF/Excel</div></div>
+  </div>
+  <div class="tech-item">
+    <div class="tech-icon">🤖</div>
+    <div><div class="tech-name">Claude Code</div><div class="tech-role">Développement, extraction données, administration</div></div>
+  </div>
+</div>
+
+<!-- FLUX DONNÉES -->
+<div class="section-title">🔄 Flux de données</div>
+<div class="arch-grid-2">
+  <div>
+    <div class="flux">
+      <div class="step">Nouveau prospect</div>
+      <div class="arrow">→</div>
+      <div class="step blue">CRM (Supabase)</div>
+      <div class="arrow">→</div>
+      <div class="step" style="background:#2980b9">Edge Function</div>
+      <div class="arrow">→</div>
+      <div class="step green">Brevo liste CRM</div>
+      <div class="desc">Automatique</div>
+    </div>
+    <div class="flux">
+      <div class="step gold">Import CSV</div>
+      <div class="arrow">→</div>
+      <div class="step blue">Dédup. + validation</div>
+      <div class="arrow">→</div>
+      <div class="step">CRM + Brevo</div>
+      <div class="desc">Anti-doublon</div>
+    </div>
+    <div class="flux">
+      <div class="step" style="background:#8e44ad">Dropbox PDF/Excel</div>
+      <div class="arrow">→</div>
+      <div class="step blue">pdftotext / COM</div>
+      <div class="arrow">→</div>
+      <div class="step green">CRM enrichi</div>
+      <div class="desc">TMI, RFR, patrimoine</div>
+    </div>
+    <div class="flux">
+      <div class="step" style="background:#e67e22">Fiche client web</div>
+      <div class="arrow">→</div>
+      <div class="step blue">Supabase</div>
+      <div class="arrow">→</div>
+      <div class="step">CRM auto-rempli</div>
+      <div class="desc">proactifsconseils.fr</div>
+    </div>
+  </div>
+
+  <!-- CE QUI RESTE -->
+  <div class="todo-card">
+    <h4>🔴 Prochaines priorités</h4>
+    <div class="todo-item">
+      <span class="prio critique">Critique</span>
+      Rappels automatiques email J-15/J-7 (Brevo automation)
+    </div>
+    <div class="todo-item">
+      <span class="prio critique">Critique</span>
+      Dates expiration conformité (alertes MIF2 actives)
+    </div>
+    <div class="todo-item">
+      <span class="prio critique">Critique</span>
+      Honoraires missions (montants + dates signature)
+    </div>
+    <div class="todo-item">
+      <span class="prio important">Important</span>
+      Dernier contact (date suivi automatique)
+    </div>
+    <div class="todo-item">
+      <span class="prio important">Important</span>
+      TMI restants (287 clients sans TMI)
+    </div>
+    <div class="todo-item">
+      <span class="prio utile">Utile</span>
+      Lien Drive par dossier client
+    </div>
+    <div class="todo-item">
+      <span class="prio utile">Utile</span>
+      Fiche Cowork pour dossiers complexes
+    </div>
+  </div>
+</div>
+
+<!-- PARAMÈTRES CONFIGURABLES -->
+<div class="section-title">⚙️ Paramètres configurables (sans code)</div>
+<div class="arch-grid-4">
+  <div class="card navy">
+    <div class="card-title">Statuts clients</div>
+    <ul class="field-list">
+      <li class="done">Prospect, Client, Actif…</li>
+      <li class="done">Couleurs personnalisables</li>
+      <li class="done">Ajout/suppression dynamique</li>
+      <li class="done">Comptage stats configurable</li>
+    </ul>
+  </div>
+  <div class="card purple">
+    <div class="card-title">Produits & Solutions</div>
+    <ul class="field-list">
+      <li class="done">SCPI, PER, AV, Pinel…</li>
+      <li class="done">FIP/FCPI, PEA, LMNP…</li>
+      <li class="done">Ajout/suppression libre</li>
+      <li class="done">Partagé sur tous les clients</li>
+    </ul>
+  </div>
+  <div class="card gold">
+    <div class="card-title">Type de dossier</div>
+    <ul class="field-list">
+      <li class="done">🏛️ Patrimonial</li>
+      <li class="done">🏠 Courtage</li>
+      <li class="done">⚖️ Mixte</li>
+    </ul>
+  </div>
+  <div class="card green">
+    <div class="card-title">Intégrations actives</div>
+    <ul class="field-list">
+      <li class="done">Brevo — sync contacts</li>
+      <li class="done">Google Calendar (ICS)</li>
+      <li class="done">Google Contacts (vCard)</li>
+      <li class="done">Drive (liens documents)</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  CRM Proactifs Conseils Patrimoine · Architecture v2.0 · Mai 2026 · Développé avec Claude Code
+  <br>URL de production : <a href="https://deploy-crm-ebon.vercel.app" style="color:#2980b9">deploy-crm-ebon.vercel.app</a>
+</footer>
+
+</body>
+</html>
