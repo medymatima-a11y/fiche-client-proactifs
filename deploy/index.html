@@ -1744,4 +1744,16 @@ async function submitForm() {
     btn.textContent = IS_EDIT_MODE ? '✅ Fiche mise à jour' : '✅ Envoyé avec succès';
     btn.style.background = '#27ae60';
     document.querySelector('.footer-note').innerHTML = IS_EDIT_MODE
-      ? '<strong style="color:#27ae60">Fiche mise à jour dans
+      ? '<strong style="color:#27ae60">Fiche mise à jour dans le CRM.</strong> <a href="https://crm-proactifs.vercel.app" style="color:var(--navy);font-weight:700">← Retour au CRM</a>'
+      : '<strong style="color:#27ae60">Merci ! Votre dossier a bien été transmis à Proactifs Conseils Patrimoine.</strong><br>Vous serez contacté prochainement pour fixer un rendez-vous.';
+
+  } catch (err) {
+    console.error(err);
+    btn.disabled = false;
+    btn.textContent = 'Envoyer';
+    alert('Une erreur est survenue : ' + err.message);
+  }
+}
+</script>
+</body>
+</html>
