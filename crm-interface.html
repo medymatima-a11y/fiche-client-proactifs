@@ -289,6 +289,16 @@ table.crm-table{width:100%;border-collapse:collapse}
 .edit-modal-body{padding:24px;max-height:70vh;overflow-y:auto}
 .edit-section{margin-bottom:20px}
 .edit-section-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.pat-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:6px}
+.pat-table th{text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:4px 6px;border-bottom:2px solid var(--border)}
+.pat-table td{padding:3px 4px}
+.pat-table input,.pat-table select{width:100%;padding:5px 7px;border:1px solid var(--border);border-radius:4px;font-size:11px;outline:none;box-sizing:border-box}
+.pat-table input:focus,.pat-table select:focus{border-color:var(--gold)}
+.pat-table .amt{text-align:right;max-width:100px}
+.btn-add-row{background:none;border:1px dashed var(--border);border-radius:6px;color:var(--gold);font-size:11px;font-weight:600;padding:6px 14px;cursor:pointer;width:100%;margin-top:2px;transition:all .15s}
+.btn-add-row:hover{background:var(--light);border-color:var(--gold)}
+.btn-del-row{background:none;border:none;color:#ccc;cursor:pointer;font-size:14px;padding:2px 4px;border-radius:4px}
+.btn-del-row:hover{color:var(--red);background:#fef2f2}
 .edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .edit-grid.three{grid-template-columns:repeat(3,1fr)}
 .edit-field label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
@@ -3056,16 +3066,129 @@ function openEditModal() {
     const el = document.getElementById('e-' + k);
     if (el && c[k]) el.value = new Intl.NumberFormat('fr-FR').format(c[k]) + ' €';
   });
-  // Patrimoine JSONB édité en JSON brut (Phase 1 — UX dédiée à venir)
-  const epEl   = document.getElementById('e-epargne_json');
-  const immoEl = document.getElementById('e-immobilier_json');
-  const crEl   = document.getElementById('e-credits_json');
-  if (epEl)   epEl.value   = JSON.stringify(c.epargne    ?? {}, null, 2);
-  if (immoEl) immoEl.value = JSON.stringify(c.immobilier ?? [], null, 2);
-  if (crEl)   crEl.value   = JSON.stringify(c.credits    ?? [], null, 2);
+  // Patrimoine — remplir les tableaux dynamiques
+  populateEpargneTable(c.epargne ?? {});
+  populateImmoTable(c.immobilier ?? []);
+  populateCreditsTable(c.credits ?? []);
   document.getElementById('edit-c2-section').style.display = 'block';
   document.getElementById('edit-modal-overlay').classList.add('open');
 }
+// ── PATRIMOINE — Tableaux dynamiques ──────────────────────
+const EP_TYPES = ['Compte courant','Livret A','LDD','PEL','CEL','Assurance Vie','PEA','PEE','PER','PERCO','SCPI','Ass. Retraite','Autre'];
+
+function addEpRow(produit, mc1, mc2) {
+  const tb = document.getElementById('e-epargne-body');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><select class="ep-type">${EP_TYPES.map(t=>`<option${t===produit?' selected':''}>${t}</option>`).join('')}</select></td>`
+    + `<td><input type="text" class="amt ep-mc1" value="${mc1||''}" placeholder="0"></td>`
+    + `<td><input type="text" class="amt ep-mc2" value="${mc2||''}" placeholder="0"></td>`
+    + `<td><button type="button" class="btn-del-row" onclick="this.closest('tr').remove()">&times;</button></td>`;
+  tb.appendChild(tr);
+}
+
+function populateEpargneTable(ep) {
+  const tb = document.getElementById('e-epargne-body');
+  tb.innerHTML = '';
+  if (!ep || typeof ep !== 'object') return;
+  const entries = Object.entries(ep).filter(([k]) => k !== 'total');
+  if (!entries.length) { addEpRow(); return; }
+  for (const [k, v] of entries) {
+    const label = k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const matched = EP_TYPES.find(t => t.toLowerCase().replace(/\s+/g, '_') === k.toLowerCase()) || label;
+    if (typeof v === 'number') {
+      addEpRow(matched, v, '');
+    } else if (typeof v === 'object') {
+      addEpRow(matched, v.montant_c1 || '', v.montant_c2 || '');
+    }
+  }
+}
+
+function collectEpargneTable() {
+  const rows = document.querySelectorAll('#e-epargne-body tr');
+  const ep = {};
+  rows.forEach(tr => {
+    const type = tr.querySelector('.ep-type')?.value || '';
+    const mc1 = parseFloat(tr.querySelector('.ep-mc1')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    const mc2 = parseFloat(tr.querySelector('.ep-mc2')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    if (!type || (!mc1 && !mc2)) return;
+    const key = type.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+    ep[key] = mc1 + mc2;
+  });
+  return ep;
+}
+
+function addImmoRow(data) {
+  const d = data || {};
+  const types = ['Résidence principale','Résidence secondaire','Résidence locative','SCPI','Terrain','Parking','Autre'];
+  const tb = document.getElementById('e-immo-body');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><select class="im-type">${types.map(t=>`<option${t===d.type?' selected':''}>${t}</option>`).join('')}</select></td>`
+    + `<td><input type="text" class="im-adr" value="${d.adresse||''}" placeholder="Adresse"></td>`
+    + `<td><input type="text" class="amt im-val" value="${d.valeur||''}" placeholder="0"></td>`
+    + `<td><input type="text" class="amt im-achat" value="${d.achat||''}" placeholder="0"></td>`
+    + `<td><input type="text" class="amt im-loy" value="${d.loyers||''}" placeholder="0"></td>`
+    + `<td><button type="button" class="btn-del-row" onclick="this.closest('tr').remove()">&times;</button></td>`;
+  tb.appendChild(tr);
+}
+
+function populateImmoTable(arr) {
+  const tb = document.getElementById('e-immo-body');
+  tb.innerHTML = '';
+  if (!Array.isArray(arr) || !arr.length) return;
+  arr.forEach(d => addImmoRow(d));
+}
+
+function collectImmoTable() {
+  const rows = document.querySelectorAll('#e-immo-body tr');
+  const arr = [];
+  rows.forEach(tr => {
+    const type    = tr.querySelector('.im-type')?.value || '';
+    const adresse = tr.querySelector('.im-adr')?.value || '';
+    const valeur  = parseFloat(tr.querySelector('.im-val')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    const achat   = parseFloat(tr.querySelector('.im-achat')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    const loyers  = parseFloat(tr.querySelector('.im-loy')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    if (!type && !adresse && !valeur) return;
+    arr.push({ type, adresse, valeur, achat, loyers });
+  });
+  return arr;
+}
+
+function addCreditRow(data) {
+  const d = data || {};
+  const types = ['Résidence principale','Résidence locative','Crédit conso','Crédit auto','Prêt étudiant','Prêt professionnel','Autre'];
+  const tb = document.getElementById('e-credits-body');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><select class="cr-type">${types.map(t=>`<option${t===d.type?' selected':''}>${t}</option>`).join('')}</select></td>`
+    + `<td><input type="text" class="amt cr-crd" value="${d.capital_restant||d.restant||''}" placeholder="0"></td>`
+    + `<td><input type="text" class="amt cr-mens" value="${d.mensualite||''}" placeholder="0"></td>`
+    + `<td><input type="text" class="cr-taux" value="${d.taux||''}" placeholder="2,5%" style="max-width:70px"></td>`
+    + `<td><input type="text" class="cr-fin" value="${d.date_fin||''}" placeholder="2030" style="max-width:60px"></td>`
+    + `<td><button type="button" class="btn-del-row" onclick="this.closest('tr').remove()">&times;</button></td>`;
+  tb.appendChild(tr);
+}
+
+function populateCreditsTable(arr) {
+  const tb = document.getElementById('e-credits-body');
+  tb.innerHTML = '';
+  if (!Array.isArray(arr) || !arr.length) return;
+  arr.forEach(d => addCreditRow(d));
+}
+
+function collectCreditsTable() {
+  const rows = document.querySelectorAll('#e-credits-body tr');
+  const arr = [];
+  rows.forEach(tr => {
+    const type   = tr.querySelector('.cr-type')?.value || '';
+    const capital_restant = parseFloat(tr.querySelector('.cr-crd')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    const mensualite      = parseFloat(tr.querySelector('.cr-mens')?.value.replace(/[^\d.,]/g,'').replace(',','.')) || 0;
+    const taux     = tr.querySelector('.cr-taux')?.value || '';
+    const date_fin = tr.querySelector('.cr-fin')?.value || '';
+    if (!type && !capital_restant && !mensualite) return;
+    arr.push({ type, capital_restant, mensualite, taux, date_fin });
+  });
+  return arr;
+}
+
 function closeEditModal(e) {
   if (e.target === document.getElementById('edit-modal-overlay')) closeEditModalBtn();
 }
@@ -3102,23 +3225,10 @@ async function saveEditClient() {
   payload.rfr        = parseMnt(document.getElementById('e-rfr')?.value);
   payload.tmi        = parseInteger(document.getElementById('e-tmi')?.value);
 
-  // Patrimoine JSONB — parsing strict, on annule si JSON invalide
-  const jsonFields = {
-    epargne:    { id: 'e-epargne_json',    fallback: {} },
-    immobilier: { id: 'e-immobilier_json', fallback: [] },
-    credits:    { id: 'e-credits_json',    fallback: [] }
-  };
-  for (const [key, cfg] of Object.entries(jsonFields)) {
-    const el = document.getElementById(cfg.id);
-    if (!el) continue;
-    const raw = el.value.trim();
-    if (!raw) { payload[key] = cfg.fallback; continue; }
-    try { payload[key] = JSON.parse(raw); }
-    catch (e) {
-      alert(`JSON invalide dans le champ "${key}" : ${e.message}\nLa sauvegarde est annulée.`);
-      return;
-    }
-  }
+  // Patrimoine — collecte depuis les tableaux dynamiques
+  payload.epargne    = collectEpargneTable();
+  payload.immobilier = collectImmoTable();
+  payload.credits    = collectCreditsTable();
 
   await apiPatch('clients', currentClientId, payload);
 
@@ -4011,25 +4121,30 @@ init();
       </div>
 
       <div class="edit-section">
-        <div class="edit-section-title">Patrimoine (JSON brut)</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:#fdf8ee;border-left:3px solid var(--gold);border-radius:4px">
-          ⚠ Édition expert en JSON brut. Format épargne : <code>{"livret_a":{"montant_c1":5000,"date_c1":"2024-01-01"}}</code>.
-          Une UX dédiée (chips + tableaux) arrive en Phase 2. JSON invalide = sauvegarde annulée.
-        </div>
-        <div class="edit-grid">
-          <div class="edit-field full">
-            <label>Épargne <span style="font-size:10px;color:var(--muted);font-weight:400">(objet)</span></label>
-            <textarea id="e-epargne_json" rows="5" style="font-family:Consolas,monospace;font-size:11px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none" spellcheck="false"></textarea>
-          </div>
-          <div class="edit-field full">
-            <label>Immobilier <span style="font-size:10px;color:var(--muted);font-weight:400">(tableau)</span></label>
-            <textarea id="e-immobilier_json" rows="5" style="font-family:Consolas,monospace;font-size:11px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none" spellcheck="false"></textarea>
-          </div>
-          <div class="edit-field full">
-            <label>Crédits <span style="font-size:10px;color:var(--muted);font-weight:400">(tableau)</span></label>
-            <textarea id="e-credits_json" rows="5" style="font-family:Consolas,monospace;font-size:11px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none" spellcheck="false"></textarea>
-          </div>
-        </div>
+        <div class="edit-section-title">Épargne & Placements</div>
+        <table class="pat-table" id="e-epargne-table">
+          <thead><tr><th>Produit</th><th>Montant C1</th><th>Montant C2</th><th style="width:32px"></th></tr></thead>
+          <tbody id="e-epargne-body"></tbody>
+        </table>
+        <button type="button" class="btn-add-row" onclick="addEpRow()">+ Ajouter une ligne</button>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">Immobilier</div>
+        <table class="pat-table" id="e-immo-table">
+          <thead><tr><th>Type</th><th>Adresse</th><th>Valeur</th><th>Prix achat</th><th>Loyers/an</th><th style="width:32px"></th></tr></thead>
+          <tbody id="e-immo-body"></tbody>
+        </table>
+        <button type="button" class="btn-add-row" onclick="addImmoRow()">+ Ajouter un bien</button>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">Crédits</div>
+        <table class="pat-table" id="e-credits-table">
+          <thead><tr><th>Type</th><th>Capital restant</th><th>Mensualité</th><th>Taux</th><th>Date fin</th><th style="width:32px"></th></tr></thead>
+          <tbody id="e-credits-body"></tbody>
+        </table>
+        <button type="button" class="btn-add-row" onclick="addCreditRow()">+ Ajouter un crédit</button>
       </div>
 
     </div>
