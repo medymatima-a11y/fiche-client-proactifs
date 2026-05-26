@@ -933,9 +933,30 @@ const SUPABASE_URL = 'https://ullnkylrixdvormohryl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbG5reWxyaXhkdm9ybW9ocnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NjUzNDgsImV4cCI6MjA5NDE0MTM0OH0.Fu5xc-VVA49qp1-WHgve8ZYpOB-QrciHzVeZx0GXmKk';
 
 // ── MODE ÉDITION ────────────────────────────────────────────
-const _params       = new URLSearchParams(window.location.search);
-const EDIT_ID       = _params.get('clientId');
-const IS_EDIT_MODE  = !!EDIT_ID;
+// ⚠ Désactivé depuis l'audit RLS 2026-05-26 : reposait sur
+// signInAnonymously qui ouvrait toute la base aux anonymes.
+// L'édition se fait maintenant exclusivement dans le CRM.
+const _params      = new URLSearchParams(window.location.search);
+const _legacyEditId = _params.get('clientId');
+const IS_EDIT_MODE = false;
+if (_legacyEditId) {
+  // Affiche un message au lieu d'ouvrir le mode édition fantôme
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.innerHTML = `
+      <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2e4a,#253d5c);font-family:Segoe UI,Arial,sans-serif;padding:24px">
+        <div style="background:#fff;border-radius:14px;padding:40px 48px;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+          <div style="font-size:40px;margin-bottom:14px">🔒</div>
+          <h1 style="color:#1a2e4a;font-size:20px;font-weight:700;margin-bottom:12px">Édition désactivée sur ce lien</h1>
+          <p style="color:#7a8a9a;font-size:13px;line-height:1.6;margin-bottom:18px">
+            Le mode édition par lien personnalisé a été désactivé pour des raisons de sécurité.
+            L'édition des dossiers clients s'effectue maintenant dans le CRM interne.
+          </p>
+          <a href="https://crm-proactifs.vercel.app" style="display:inline-block;background:#c9a84c;color:#1a2e4a;text-decoration:none;padding:11px 26px;border-radius:8px;font-weight:700;font-size:13px">Ouvrir le CRM →</a>
+        </div>
+      </div>`;
+  });
+  throw new Error('Edit mode disabled — see CRM');
+}
 // ═══════════════════════════════════════════════════════════
 
 // Client Supabase (utilisé pour Storage)
@@ -950,137 +971,7 @@ const SB_HEADERS = {
   'Prefer':        'return=representation'
 };
 
-// ── MODE ÉDITION : chargement des données existantes ────────
-async function loadClientForEdit(clientId) {
-  // Connexion anonyme pour lire les données
-  const { data: auth } = await db.auth.signInAnonymously();
-  const token = auth?.session?.access_token || SUPABASE_KEY;
-  const r = await fetch(`${SUPABASE_URL}/rest/v1/clients?id=eq.${clientId}`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
-  });
-  if (!r.ok) return;
-  const [c] = await r.json();
-  if (!c) return;
-
-  // UI mode édition
-  document.getElementById('edit-mode-badge').style.display = 'block';
-  document.getElementById('page-title').textContent = `Modifier — ${c.prenom_c1||''} ${c.nom_c1||''}`.trim();
-  document.getElementById('btn-submit').textContent = '💾 Mettre à jour';
-  document.getElementById('btn-back-crm').style.display = 'inline-block';
-  document.querySelector('.info-strip').innerHTML =
-    `<strong>Mode édition</strong> — Vous modifiez la fiche de <strong>${c.prenom_c1||''} ${c.nom_c1||''}</strong>. Toutes les modifications seront sauvegardées dans le CRM.`;
-
-  // Situation (solo/couple)
-  if (c.nom_c2) setSituation('couple'); else setSituation('solo');
-
-  // Champs simples
-  const map = {
-    'c1-nom': c.nom_c1, 'c1-prenom': c.prenom_c1, 'c1-dob': c.date_naissance_c1,
-    'c1-lieu': c.lieu_naissance_c1, 'c1-tel': c.telephone_c1, 'c1-email': c.email_c1,
-    'c1-profession': c.profession_c1, 'c1-statut-pro': c.statut_pro_c1,
-    'c1-entreprise': c.entreprise_c1,
-    'c2-nom': c.nom_c2, 'c2-prenom': c.prenom_c2, 'c2-dob': c.date_naissance_c2,
-    'c2-lieu': c.lieu_naissance_c2, 'c2-tel': c.telephone_c2, 'c2-email': c.email_c2,
-    'c2-profession': c.profession_c2, 'c2-statut-pro': c.statut_pro_c2,
-    'c2-entreprise': c.entreprise_c2,
-    'adresse': c.adresse, 'code-postal': c.code_postal, 'ville': c.ville,
-    'c2-adresse': c.c2_adresse, 'c2-code-postal': c.c2_code_postal, 'c2-ville': c.c2_ville,
-    'statut-marital': c.statut_marital, 'regime': c.regime,
-    'enfants-noms': c.enfants_noms, 'enfants-dob': c.enfants_dob,
-    'banques': c.banques,
-  };
-  Object.entries(map).forEach(([id, val]) => {
-    if (!val) return;
-    const el = document.getElementById(id);
-    if (el) el.value = val;
-  });
-
-  // Revenus
-  const fmtM = v => v ? new Intl.NumberFormat('fr-FR').format(v) + ' €' : '';
-  if (c.salaire_c1) document.getElementById('sal-c1').value  = fmtM(c.salaire_c1);
-  if (c.salaire_c2) document.getElementById('sal-c2').value  = fmtM(c.salaire_c2);
-  if (c.impot_c1)   document.getElementById('impot-c1').value = fmtM(c.impot_c1);
-  if (c.impot_c2)   document.getElementById('impot-c2').value = fmtM(c.impot_c2);
-
-  // Enfants dynamiques
-  if (c.enfants_noms) {
-    const count = c.enfants_noms.split(',').length;
-    document.getElementById('nb-enfants').value = count;
-    updateEnfants();
-  }
-
-  // Épargne
-  if (c.epargne) {
-    Object.entries(c.epargne).forEach(([key, val]) => {
-      const chip = document.querySelector(`.ap-chip[data-account="${key}"]`);
-      const row  = document.querySelector(`tr[data-ep="${key}"]`);
-      if (!row) return;
-      const isGold = chip?.dataset?.gold;
-      row.classList.add('ep-visible');
-      if (chip) chip.classList.add(isGold ? 'checked-gold' : 'checked');
-      if (val.date_c1)    row.querySelector('[data-col="date_c1"]').value     = val.date_c1;
-      if (val.montant_c1) row.querySelector('[data-col="montant_c1"]').value  = fmtM(val.montant_c1);
-      if (val.date_c2)    row.querySelector('[data-col="date_c2"]')?.value && (row.querySelector('[data-col="date_c2"]').value = val.date_c2);
-      if (val.montant_c2) { const el = row.querySelector('[data-col="montant_c2"]'); if(el) el.value = fmtM(val.montant_c2); }
-    });
-    recalculateTotal();
-  }
-
-  // Immobilier
-  if (c.immobilier?.length) {
-    const immoMap = {'Résidence principale':'rp','Résidence secondaire':'rs','Résidence locative 1':'loc1','Locataire (Loyers)':'locataire'};
-    c.immobilier.forEach(item => {
-      const key = immoMap[item.type];
-      if (key) {
-        const chip = document.querySelector(`.ap-chip[data-immo="${key}"]`);
-        const row  = document.querySelector(`tr[data-immo="${key}"]`);
-        if (chip && row) {
-          chip.classList.add('checked'); row.classList.add('dyn-visible');
-          if (item.adresse) row.querySelector('[data-col="adresse"]').value = item.adresse;
-          if (item.valeur)  row.querySelector('[data-col="valeur"]').value  = fmtM(item.valeur);
-          if (item.achat)   row.querySelector('[data-col="achat"]').value   = fmtM(item.achat);
-          if (item.loyers)  { const el = row.querySelector('[data-col="loyers"]'); if(el) el.value = fmtM(item.loyers); }
-        }
-      } else {
-        addImmoRow();
-        const rows = document.querySelectorAll('.immo-extra-row');
-        const tr = rows[rows.length-1];
-        if (item.type)    tr.querySelector('[data-col="type"]').value   = item.type;
-        if (item.adresse) tr.querySelector('[data-col="adresse"]').value = item.adresse;
-        if (item.valeur)  tr.querySelector('[data-col="valeur"]').value  = fmtM(item.valeur);
-      }
-    });
-  }
-
-  // Crédits
-  if (c.credits?.length) {
-    const creditMap = {'Résidence principale':'rp','Résidence secondaire':'rs','Crédit auto':'auto'};
-    c.credits.forEach(cr => {
-      const key = creditMap[cr.type];
-      if (key) {
-        const chip = document.querySelector(`.ap-chip[data-credit="${key}"]`);
-        const row  = document.querySelector(`tr[data-credit="${key}"]`);
-        if (chip && row) {
-          chip.classList.add('checked'); row.classList.add('dyn-visible');
-          if (cr.capital)    row.querySelector('[data-col="capital"]').value    = fmtM(cr.capital);
-          if (cr.restant)    row.querySelector('[data-col="restant"]').value    = fmtM(cr.restant);
-          if (cr.mensualite) row.querySelector('[data-col="mensualite"]').value = fmtM(cr.mensualite);
-          if (cr.date_fin)   row.querySelector('[data-col="date_fin"]').value   = cr.date_fin;
-          if (cr.taux)       row.querySelector('[data-col="taux"]').value       = cr.taux;
-        }
-      }
-    });
-  }
-
-  // Textarea resize
-  document.querySelectorAll('textarea.auto-expand').forEach(ta => {
-    ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
-  });
-
-  // Stocker l'ID pour le submit
-  window._editClientId = clientId;
-  window._editToken    = token;
-}
+// (mode édition retiré — audit RLS 2026-05-26, voir CRM pour l'édition)
 
 // ── FORMAT MONTANTS ────────────────────────────────────────
 function formatMontant(input) {
@@ -1359,7 +1250,6 @@ const FIELD_IDS = [
 ];
 
 function saveDraft() {
-  if (IS_EDIT_MODE) return; // Ne pas écraser le brouillon en mode édition
   const data = {};
   data['_source'] = 'new_form'; // Marque le brouillon comme provenant d'une nouvelle fiche
   data['situation'] = currentSituation;
@@ -1542,17 +1432,8 @@ function clearDraft() {
 
 // Init + sauvegarde auto
 document.addEventListener('DOMContentLoaded', () => {
-  if (IS_EDIT_MODE) {
-    // Mode édition : charger les données existantes, pas le brouillon
-    // On efface aussi le brouillon pour ne pas polluer la prochaine nouvelle fiche
-    localStorage.removeItem(DRAFT_KEY);
-    document.getElementById('draft-banner').style.display = 'none';
-    initAccounts(); initImmo(); initCredit();
-    loadClientForEdit(EDIT_ID);
-  } else {
-    loadDraft();
-    if (!localStorage.getItem(DRAFT_KEY)) { initImmo(); initCredit(); }
-  }
+  loadDraft();
+  if (!localStorage.getItem(DRAFT_KEY)) { initImmo(); initCredit(); }
   // Formatage automatique des montants (blur = format, focus = raw)
   const body = document.querySelector('.body');
   body.addEventListener('blur', e => {
@@ -1673,25 +1554,15 @@ async function submitForm() {
   };
 
   try {
-    // 1. Auth
-    let token;
-    if (IS_EDIT_MODE && window._editToken) {
-      token = window._editToken;
-    } else {
-      const { data: anonAuth } = await db.auth.signInAnonymously();
-      token = anonAuth?.session?.access_token || SUPABASE_KEY;
-    }
-
-    // 2. INSERT (nouveau) ou PATCH (édition)
-    const isEdit = IS_EDIT_MODE && window._editClientId;
-    const url    = isEdit
-      ? `${SUPABASE_URL}/rest/v1/clients?id=eq.${window._editClientId}`
-      : `${SUPABASE_URL}/rest/v1/clients`;
+    // INSERT direct via la policy `insert_open` (to public) — pas d'auth requise.
+    // Pas de mode édition : voir audit RLS 2026-05-26, édition transférée au CRM.
+    const token = SUPABASE_KEY;
+    const url   = `${SUPABASE_URL}/rest/v1/clients`;
     const res = await fetch(url, {
-      method:  isEdit ? 'PATCH' : 'POST',
+      method:  'POST',
       headers: {
         'apikey':        SUPABASE_KEY,
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type':  'application/json',
         'Prefer':        'return=representation'
       },
@@ -1737,15 +1608,12 @@ async function submitForm() {
     }
 
     // 4. Confirmation
-    if (!IS_EDIT_MODE) {
-      localStorage.removeItem(DRAFT_KEY);
-      document.getElementById('draft-banner').classList.remove('visible');
-    }
-    btn.textContent = IS_EDIT_MODE ? '✅ Fiche mise à jour' : '✅ Envoyé avec succès';
+    localStorage.removeItem(DRAFT_KEY);
+    document.getElementById('draft-banner').classList.remove('visible');
+    btn.textContent = '✅ Envoyé avec succès';
     btn.style.background = '#27ae60';
-    document.querySelector('.footer-note').innerHTML = IS_EDIT_MODE
-      ? '<strong style="color:#27ae60">Fiche mise à jour dans le CRM.</strong> <a href="https://crm-proactifs.vercel.app" style="color:var(--navy);font-weight:700">← Retour au CRM</a>'
-      : '<strong style="color:#27ae60">Merci ! Votre dossier a bien été transmis à Proactifs Conseils Patrimoine.</strong><br>Vous serez contacté prochainement pour fixer un rendez-vous.';
+    document.querySelector('.footer-note').innerHTML =
+      '<strong style="color:#27ae60">Merci ! Votre dossier a bien été transmis à Proactifs Conseils Patrimoine.</strong><br>Vous serez contacté prochainement pour fixer un rendez-vous.';
 
   } catch (err) {
     console.error(err);

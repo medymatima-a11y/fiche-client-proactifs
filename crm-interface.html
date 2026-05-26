@@ -46,12 +46,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:var(--text);ba
 .nav-item .icon{font-size:14px;width:18px;text-align:center}
 .nav-badge{margin-left:auto;background:var(--red);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px}
 .sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.08)}
-.user-chip{display:flex;align-items:center;gap:10px}
+.user-chip{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .avatar{width:32px;height:32px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--navy);flex-shrink:0}
 .user-info .uname{color:#fff;font-size:11px;font-weight:600}
 .user-info .urole{color:rgba(255,255,255,.4);font-size:10px}
-.logout-btn{background:none;border:none;color:rgba(255,255,255,.4);font-size:10px;cursor:pointer;margin-top:4px;padding:0}
-.logout-btn:hover{color:#fff}
+.logout-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.85);font-size:11px;font-weight:600;cursor:pointer;padding:8px 12px;border-radius:6px;transition:all .15s}
+.logout-btn:hover{background:rgba(231,76,60,.15);border-color:rgba(231,76,60,.4);color:#fff}
 
 /* MAIN */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-y:auto}
@@ -331,6 +331,25 @@ table.crm-table{width:100%;border-collapse:collapse}
   padding:0; box-shadow:0 20px 60px rgba(0,0,0,.4);
 }
 
+/* BANDEAU FUSION DOUBLON */
+.merge-banner{display:flex;align-items:center;gap:14px;background:linear-gradient(90deg,#fdf8ee,#fef3e2);border:1px solid #c9a84c;border-left:4px solid #c9a84c;border-radius:10px;padding:14px 18px;margin:0 0 18px}
+.merge-banner .mb-icon{font-size:22px;flex-shrink:0}
+.merge-banner .mb-body{flex:1;font-size:12px;color:#1a2e4a;line-height:1.5}
+.merge-banner .mb-body strong{color:#7d6608}
+.merge-banner .mb-actions{display:flex;gap:8px;flex-shrink:0}
+.merge-banner .mb-btn{padding:7px 14px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all .15s}
+.merge-banner .mb-btn-merge{background:var(--gold);color:var(--navy);border-color:var(--gold)}
+.merge-banner .mb-btn-merge:hover{background:#b89538;border-color:#b89538}
+.merge-banner .mb-btn-dismiss{background:#fff;color:var(--muted);border-color:var(--border)}
+.merge-banner .mb-btn-dismiss:hover{background:var(--light);color:var(--text)}
+
+/* CARTE DOUBLONS DASHBOARD */
+.dup-card{background:#fdf8ee;border:1px solid #c9a84c;border-left:4px solid #c9a84c;border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s}
+.dup-card:hover{background:#fbf1d4}
+.dup-card .dup-count{background:var(--gold);color:var(--navy);width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.dup-card .dup-text{flex:1;font-size:12px;color:#1a2e4a;font-weight:600}
+.dup-card .dup-arrow{font-size:14px;color:var(--gold)}
+
 /* LOADING */
 .loading{text-align:center;padding:40px;color:var(--muted)}
 .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
@@ -431,7 +450,7 @@ table.crm-table{width:100%;border-collapse:collapse}
         <div class="avatar">M</div>
         <div class="user-info"><div class="uname" id="user-name">—</div><div class="urole">Gestionnaire patrimoine</div></div>
       </div>
-      <button class="logout-btn" onclick="logout()">Déconnexion</button>
+      <button class="logout-btn" onclick="logout()" title="Se déconnecter du CRM">↩ Déconnexion</button>
     </div>
   </div>
 
@@ -543,6 +562,9 @@ table.crm-table{width:100%;border-collapse:collapse}
           <div id="conformite-alert"><div style="color:var(--muted);font-size:12px">Chargement…</div></div>
         </div>
 
+        <!-- Doublons potentiels (fiches publiques à fusionner) -->
+        <div id="duplicates-alert"></div>
+
         <!-- Graphique évolution portefeuille -->
         <div class="info-card" style="margin-bottom:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
@@ -598,6 +620,7 @@ table.crm-table{width:100%;border-collapse:collapse}
       <!-- CLIENT DETAIL -->
       <div class="view" id="view-client">
         <div class="back-btn" onclick="showView('dashboard')">← Retour</div>
+        <div class="merge-banner" id="merge-banner" style="display:none"></div>
         <div class="client-header" id="client-header">
           <div class="avatar-lg" id="detail-avatar">?</div>
           <div class="client-meta">
@@ -967,6 +990,18 @@ const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let allClients = [], currentFilter = '', currentClientId = null, authToken = null;
+
+// Garde authToken synchronisé avec la session Supabase, y compris quand
+// le client rafraîchit automatiquement le JWT (toutes les ~55 min).
+// Sans ça, le token expiré reste figé en mémoire et toutes les requêtes
+// passent en rôle anon → policies CRM ne matchent plus → écran vide.
+db.auth.onAuthStateChange((event, session) => {
+  if (session?.access_token) {
+    authToken = session.access_token;
+  } else if (event === 'SIGNED_OUT') {
+    authToken = null;
+  }
+});
 
 // ── STATUTS CLIENT ──────────────────────────────────────────
 const DEFAULT_STATUTS = [
@@ -1467,6 +1502,7 @@ async function loadAll() {
   renderMissionsKPIs(missions);
   renderClientChart(clients);
   renderConformiteAlert();
+  renderDuplicatesAlert();
   document.getElementById('table-loading').style.display = 'none';
   document.getElementById('clients-table').style.display = 'table';
   document.getElementById('badge-count').textContent = clients.length;
@@ -1572,6 +1608,24 @@ async function renderConformiteAlert() {
       <div>${urgency}</div>
     </div>`;
   }).join('');
+}
+
+// ── DOUBLONS POTENTIELS ─────────────────────────────────────
+function renderDuplicatesAlert() {
+  const el = document.getElementById('duplicates-alert');
+  if (!el) return;
+  const dupes = allClients.filter(c => findDuplicateTarget(c) !== null);
+  if (!dupes.length) { el.innerHTML = ''; return; }
+  const first = dupes[0];
+  const label = dupes.length === 1
+    ? `1 nouvelle fiche reçue par le formulaire correspond peut-être à un client existant`
+    : `${dupes.length} nouvelles fiches reçues correspondent peut-être à des clients existants`;
+  el.innerHTML = `
+    <div class="dup-card" onclick="openClient('${first.id}')">
+      <div class="dup-count">${dupes.length}</div>
+      <div class="dup-text">${label} — cliquer pour traiter la première</div>
+      <div class="dup-arrow">→</div>
+    </div>`;
 }
 
 // ── GRAPHIQUE PORTEFEUILLE ──────────────────────────────────
@@ -1890,11 +1944,119 @@ function getSortedClients(list) {
 }
 
 // ── CLIENT DETAIL ───────────────────────────────────────────
+// ── DÉTECTION DOUBLONS (fiches publiques vs clients existants) ────
+function _norm(s) { return (s || '').toString().trim().toLowerCase(); }
+function findDuplicateTarget(source) {
+  // Ne propose une fusion que pour les fiches venues du formulaire public,
+  // pas déjà ignorées par l'utilisateur.
+  if (!source || source.source !== 'fiche' || source.merge_dismissed) return null;
+  const email = _norm(source.email_c1);
+  const fullname = _norm(source.prenom_c1) + '|' + _norm(source.nom_c1);
+  if (!email && fullname === '|') return null;
+  // Cherche un client antérieur (created_at plus ancien) avec match email OU prénom+nom
+  const candidates = allClients.filter(x =>
+    x.id !== source.id &&
+    new Date(x.created_at) < new Date(source.created_at) &&
+    ((email && _norm(x.email_c1) === email) ||
+     (fullname !== '|' && (_norm(x.prenom_c1) + '|' + _norm(x.nom_c1)) === fullname))
+  );
+  if (!candidates.length) return null;
+  // Le plus ancien d'abord (priorité à la fiche historique)
+  candidates.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+  return candidates[0];
+}
+
+function renderMergeBanner(source) {
+  const banner = document.getElementById('merge-banner');
+  if (!banner) return;
+  const target = findDuplicateTarget(source);
+  if (!target) { banner.style.display = 'none'; return; }
+  const targetName = [target.prenom_c1, target.nom_c1].filter(Boolean).join(' ') || target.email_c1 || 'client existant';
+  const targetDate = target.created_at ? new Date(target.created_at).toLocaleDateString('fr-FR') : '—';
+  banner.innerHTML = `
+    <div class="mb-icon">🔁</div>
+    <div class="mb-body">
+      Cette fiche reçue par le formulaire public ressemble à un client déjà au CRM : <strong>${targetName}</strong>
+      (créé le ${targetDate}). Veux-tu fusionner les infos de la nouvelle soumission dans la fiche existante ?
+    </div>
+    <div class="mb-actions">
+      <button class="mb-btn mb-btn-merge"   onclick="confirmMerge('${source.id}','${target.id}')">Fusionner</button>
+      <button class="mb-btn mb-btn-dismiss" onclick="dismissMerge('${source.id}')">Ignorer</button>
+    </div>`;
+  banner.style.display = 'flex';
+}
+
+async function confirmMerge(sourceId, targetId) {
+  const source = allClients.find(x => x.id === sourceId);
+  const target = allClients.find(x => x.id === targetId);
+  if (!source || !target) return;
+  const targetName = [target.prenom_c1, target.nom_c1].filter(Boolean).join(' ') || target.email_c1;
+  if (!confirm(`Fusionner cette nouvelle soumission dans la fiche de ${targetName} ?\n\n• Les champs renseignés ici écraseront ceux de l'ancien client.\n• Les champs vides ici resteront comme avant.\n• Épargne / Immobilier / Crédits seront remplacés par la nouvelle version.\n• Les documents seront repointés vers ${targetName}.\n• Cette nouvelle fiche sera ensuite supprimée.\n\nCette action est irréversible.`)) return;
+  await mergeClients(source, target);
+}
+
+async function mergeClients(source, target) {
+  // 1. Construire le payload : prendre les valeurs renseignées de source
+  const SCALAR_FIELDS = [
+    'nom_c1','prenom_c1','date_naissance_c1','lieu_naissance_c1','telephone_c1','email_c1',
+    'profession_c1','statut_pro_c1','entreprise_c1',
+    'nom_c2','prenom_c2','date_naissance_c2','lieu_naissance_c2','telephone_c2','email_c2',
+    'profession_c2','statut_pro_c2','entreprise_c2',
+    'adresse','code_postal','ville','c2_adresse','c2_code_postal','c2_ville',
+    'statut_marital','regime','date_union','enfants_noms','enfants_dob',
+    'salaire_c1','salaire_c2','impot_c1','impot_c2','tmi','rfr','banques','situation','type_dossier'
+  ];
+  const payload = {};
+  SCALAR_FIELDS.forEach(k => {
+    const v = source[k];
+    if (v !== null && v !== undefined && v !== '') payload[k] = v;
+  });
+  // JSONB patrimoine : la nouvelle photo gagne complètement
+  if (source.epargne    && Object.keys(source.epargne).length)    payload.epargne    = source.epargne;
+  if (source.immobilier && source.immobilier.length)              payload.immobilier = source.immobilier;
+  if (source.credits    && source.credits.length)                 payload.credits    = source.credits;
+  // Note de traçabilité dans le champ notes
+  const mergeNote = `[Fusion ${new Date().toLocaleDateString('fr-FR')}] Mise à jour reçue via le formulaire public.`;
+  payload.notes = target.notes ? target.notes + '\n' + mergeNote : mergeNote;
+
+  // 2. PATCH target
+  await apiPatch('clients', target.id, payload);
+
+  // 3. Reparenter les documents
+  const docs = await apiGet(`documents?client_id=eq.${source.id}&select=id`);
+  for (const d of docs) {
+    await apiPatch('documents', d.id, { client_id: target.id });
+  }
+
+  // 4. Supprimer la fiche source (le ON DELETE CASCADE nettoie les éventuels restes)
+  await apiDelete('clients', source.id);
+
+  // 5. Recharger le cache et ouvrir la fiche cible
+  await loadAll();
+  await openClient(target.id);
+
+  // 6. Notification visuelle
+  const n = document.createElement('div');
+  n.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#27ae60;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.3)';
+  n.textContent = `✅ Fiche fusionnée dans ${[target.prenom_c1, target.nom_c1].filter(Boolean).join(' ')}`;
+  document.body.appendChild(n);
+  setTimeout(() => n.remove(), 4000);
+}
+
+async function dismissMerge(sourceId) {
+  await apiPatch('clients', sourceId, { merge_dismissed: true });
+  const idx = allClients.findIndex(x => x.id === sourceId);
+  if (idx !== -1) allClients[idx].merge_dismissed = true;
+  document.getElementById('merge-banner').style.display = 'none';
+  renderDuplicatesAlert();
+}
+
 async function openClient(id) {
   const c = allClients.find(x => x.id === id);
   if (!c) return;
   currentClientId = id;
   showView('client'); showTab('synthese');
+  renderMergeBanner(c);
   const name = [c.prenom_c1,c.nom_c1].filter(Boolean).join(' ')||'—';
   const init = ((c.prenom_c1||'?')[0]+(c.nom_c1||'?')[0]).toUpperCase();
   document.getElementById('detail-avatar').style.background = avatarColor(id);
@@ -2573,8 +2735,12 @@ function card(title, rows) {
   return `<div class="info-card"><h3>${title}</h3>${h||'<div style="color:var(--muted);font-size:11px">—</div>'}</div>`;
 }
 // ── LIEN FICHE PERSONNALISÉ ─────────────────────────────────
+// Phase 1 (audit RLS 2026-05-26) : le mode édition publique a été désactivé
+// pour fermer la faille des anonymous sign-ins. Le lien envoyé au client
+// pointe vers une nouvelle fiche INSERT-only ; le pré-remplissage par
+// clientId reviendra en Phase 2 via une Edge Function de magic link signé.
 function copyFicheLink() {
-  const url  = `https://fiche-clients.proactifsconseils.fr?clientId=${currentClientId}`;
+  const url  = `https://fiche-clients.proactifsconseils.fr`;
   const btn  = document.getElementById('btn-copy-link');
   navigator.clipboard.writeText(url).then(() => {
     btn.textContent = '✅ Copié !';
@@ -2663,7 +2829,7 @@ function applyTemplate(tpl, prenom) {
     },
     docs: {
       subject: `Documents nécessaires à votre bilan`,
-      body: `Bonjour ${p},\n\nAfin de finaliser votre bilan patrimonial, merci de compléter votre fiche via ce lien personnalisé :\n\n🔗 https://fiche-clients.proactifsconseils.fr?clientId=${currentClientId}\n\nIl me manque également les documents suivants :\n\n• \n• \n• ${sig}`
+      body: `Bonjour ${p},\n\nAfin de finaliser votre bilan patrimonial, merci de compléter votre fiche via ce lien :\n\n🔗 https://fiche-clients.proactifsconseils.fr\n\nIl me manque également les documents suivants :\n\n• \n• \n• ${sig}`
     },
     libre: {
       subject: ``,
@@ -2796,18 +2962,14 @@ async function saveQuickProspect() {
   const btn = document.querySelector('#qp-overlay .btn-primary');
   btn.disabled = true; btn.textContent = 'Création…';
 
-  const { data: anonAuth } = await db.auth.signInAnonymously();
-  const token = anonAuth?.session?.access_token || SUPABASE_KEY;
-
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/clients`, {
-    method: 'POST',
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) { errEl.textContent = 'Erreur lors de la création.'; btn.disabled = false; btn.textContent = '💾 Créer le prospect'; return; }
-
-  const [newClient] = await res.json();
+  // Medy est déjà authentifié au CRM — on réutilise son authToken (cf. audit RLS 2026-05-26).
+  const created = await apiPost('clients', payload);
+  if (!created || !created[0]) {
+    errEl.textContent = 'Erreur lors de la création.';
+    btn.disabled = false; btn.textContent = '💾 Créer le prospect';
+    return;
+  }
+  const newClient = created[0];
 
   // Synchroniser vers Brevo (fire-and-forget)
   syncToBrevo(newClient);
@@ -2815,10 +2977,9 @@ async function saveQuickProspect() {
   // Créer une échéance si un RDV est planifié
   const rdvDate = document.getElementById('qp-rdv').value;
   if (rdvDate && newClient?.id) {
-    await fetch(`${SUPABASE_URL}/rest/v1/echeances`, {
-      method: 'POST',
-      headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ client_id: newClient.id, titre: 'R1 — Premier rendez-vous', type: 'Bilan annuel', date_echeance: rdvDate, statut: 'a_faire' })
+    await apiPost('echeances', {
+      client_id: newClient.id, titre: 'R1 — Premier rendez-vous',
+      type: 'Bilan annuel', date_echeance: rdvDate, statut: 'a_faire'
     });
   }
 
@@ -2843,34 +3004,36 @@ async function saveQuickProspect() {
   }
 }
 
-// ── ÉDITION CLIENT ──────────────────────────────────────────
+// ── ÉDITION CLIENT (modale in-CRM) ──────────────────────────
 function openEditModal() {
-  // Ouvre la fiche client pré-remplie en mode édition
-  window.open(`https://fiche-clients.proactifsconseils.fr?clientId=${currentClientId}`, '_blank');
-}
-function _openEditModal_unused() {
   const c = allClients.find(x => x.id === currentClientId);
   if (!c) return;
-  const fields = {
-    prenom_c1:'', nom_c1:'', date_naissance_c1:'', lieu_naissance_c1:'',
-    statut_marital:'', regime:'', enfants_noms:'', enfants_dob:'',
-    adresse:'', code_postal:'', ville:'', telephone_c1:'', email_c1:'',
-    profession_c1:'', statut_pro_c1:'', entreprise_c1:'',
-    salaire_c1:'', impot_c1:'', banques:'',
-    prenom_c2:'', nom_c2:'', date_naissance_c2:'', telephone_c2:'',
-    email_c2:'', profession_c2:'', salaire_c2:''
-  };
-  Object.keys(fields).forEach(key => {
+  const SIMPLE_FIELDS = [
+    'prenom_c1','nom_c1','date_naissance_c1','lieu_naissance_c1',
+    'statut_marital','regime','enfants_noms','enfants_dob',
+    'adresse','code_postal','ville',
+    'telephone_c1','email_c1','profession_c1','statut_pro_c1','entreprise_c1',
+    'salaire_c1','impot_c1','tmi','rfr','banques','type_dossier','situation',
+    'prenom_c2','nom_c2','date_naissance_c2','telephone_c2','email_c2',
+    'profession_c2','statut_pro_c2','entreprise_c2','salaire_c2','impot_c2',
+    'c2_adresse','c2_code_postal','c2_ville'
+  ];
+  SIMPLE_FIELDS.forEach(key => {
     const el = document.getElementById('e-' + key);
-    if (!el) return;
-    el.value = c[key] ?? '';
+    if (el) el.value = c[key] ?? '';
   });
-  // Montants formatés
-  ['salaire_c1','impot_c1','salaire_c2'].forEach(k => {
+  // Montants formatés en €
+  ['salaire_c1','impot_c1','salaire_c2','impot_c2','rfr'].forEach(k => {
     const el = document.getElementById('e-' + k);
     if (el && c[k]) el.value = new Intl.NumberFormat('fr-FR').format(c[k]) + ' €';
   });
-  // Masquer section conjoint si pas de conjoint
+  // Patrimoine JSONB édité en JSON brut (Phase 1 — UX dédiée à venir)
+  const epEl   = document.getElementById('e-epargne_json');
+  const immoEl = document.getElementById('e-immobilier_json');
+  const crEl   = document.getElementById('e-credits_json');
+  if (epEl)   epEl.value   = JSON.stringify(c.epargne    ?? {}, null, 2);
+  if (immoEl) immoEl.value = JSON.stringify(c.immobilier ?? [], null, 2);
+  if (crEl)   crEl.value   = JSON.stringify(c.credits    ?? [], null, 2);
   document.getElementById('edit-c2-section').style.display = 'block';
   document.getElementById('edit-modal-overlay').classList.add('open');
 }
@@ -2882,21 +3045,51 @@ function closeEditModalBtn() {
 }
 async function saveEditClient() {
   const parseMnt = v => parseFloat((v||'').replace(/[^\d,]/g,'').replace(',','.')) || null;
+  const parseInteger = v => { const n = parseInt((v||'').replace(/[^\d]/g,''),10); return Number.isFinite(n) ? n : null; };
   const payload = {};
-  ['prenom_c1','nom_c1','lieu_naissance_c1','statut_marital','regime','enfants_noms','enfants_dob',
-   'adresse','code_postal','ville','telephone_c1','email_c1',
-   'profession_c1','statut_pro_c1','entreprise_c1','banques',
-   'prenom_c2','nom_c2','telephone_c2','email_c2','profession_c2'].forEach(k => {
+
+  const TEXT_FIELDS = [
+    'prenom_c1','nom_c1','lieu_naissance_c1','statut_marital','regime',
+    'enfants_noms','enfants_dob','adresse','code_postal','ville',
+    'c2_adresse','c2_code_postal','c2_ville',
+    'telephone_c1','email_c1','profession_c1','statut_pro_c1','entreprise_c1','banques',
+    'prenom_c2','nom_c2','telephone_c2','email_c2','profession_c2','statut_pro_c2','entreprise_c2',
+    'type_dossier','situation','lieu_naissance_c2'
+  ];
+  TEXT_FIELDS.forEach(k => {
     const el = document.getElementById('e-' + k);
     if (el) payload[k] = el.value.trim() || null;
   });
-  ['date_naissance_c1','date_naissance_c2'].forEach(k => {
+
+  ['date_naissance_c1','date_naissance_c2','date_union'].forEach(k => {
     const el = document.getElementById('e-' + k);
     if (el) payload[k] = el.value || null;
   });
+
   payload.salaire_c1 = parseMnt(document.getElementById('e-salaire_c1')?.value);
   payload.impot_c1   = parseMnt(document.getElementById('e-impot_c1')?.value);
   payload.salaire_c2 = parseMnt(document.getElementById('e-salaire_c2')?.value);
+  payload.impot_c2   = parseMnt(document.getElementById('e-impot_c2')?.value);
+  payload.rfr        = parseMnt(document.getElementById('e-rfr')?.value);
+  payload.tmi        = parseInteger(document.getElementById('e-tmi')?.value);
+
+  // Patrimoine JSONB — parsing strict, on annule si JSON invalide
+  const jsonFields = {
+    epargne:    { id: 'e-epargne_json',    fallback: {} },
+    immobilier: { id: 'e-immobilier_json', fallback: [] },
+    credits:    { id: 'e-credits_json',    fallback: [] }
+  };
+  for (const [key, cfg] of Object.entries(jsonFields)) {
+    const el = document.getElementById(cfg.id);
+    if (!el) continue;
+    const raw = el.value.trim();
+    if (!raw) { payload[key] = cfg.fallback; continue; }
+    try { payload[key] = JSON.parse(raw); }
+    catch (e) {
+      alert(`JSON invalide dans le champ "${key}" : ${e.message}\nLa sauvegarde est annulée.`);
+      return;
+    }
+  }
 
   await apiPatch('clients', currentClientId, payload);
 
@@ -3723,11 +3916,35 @@ init();
       </div>
 
       <div class="edit-section">
-        <div class="edit-section-title">Revenus</div>
+        <div class="edit-section-title">Revenus & fiscalité</div>
         <div class="edit-grid">
           <div class="edit-field"><label>Salaire annuel net (vous)</label><input id="e-salaire_c1" type="text" placeholder="0 €" /></div>
-          <div class="edit-field"><label>Impôt sur le revenu</label><input id="e-impot_c1" type="text" placeholder="0 €" /></div>
-          <div class="edit-field full"><label>Banques</label><input id="e-banques" type="text" /></div>
+          <div class="edit-field"><label>Impôt sur le revenu (vous)</label><input id="e-impot_c1" type="text" placeholder="0 €" /></div>
+          <div class="edit-field"><label>Tranche Marginale d'Imposition</label>
+            <select id="e-tmi">
+              <option value="">—</option>
+              <option value="0">0 %</option><option value="11">11 %</option>
+              <option value="30">30 %</option><option value="41">41 %</option>
+              <option value="45">45 %</option>
+            </select>
+          </div>
+          <div class="edit-field"><label>Revenu Fiscal de Référence</label><input id="e-rfr" type="text" placeholder="0 €" /></div>
+          <div class="edit-field full"><label>Banques principales</label><input id="e-banques" type="text" placeholder="ex : BNP, Société Générale…" /></div>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">Dossier CRM</div>
+        <div class="edit-grid">
+          <div class="edit-field"><label>Type de dossier</label>
+            <select id="e-type_dossier">
+              <option value="">—</option>
+              <option value="patrimonial">Patrimonial</option>
+              <option value="courtage">Courtage</option>
+              <option value="mixte">Mixte</option>
+            </select>
+          </div>
+          <div class="edit-field"><label>Situation</label><input id="e-situation" type="text" placeholder="solo / couple / …" /></div>
         </div>
       </div>
 
@@ -3737,10 +3954,52 @@ init();
           <div class="edit-field"><label>Prénom</label><input id="e-prenom_c2" type="text" /></div>
           <div class="edit-field"><label>Nom</label><input id="e-nom_c2" type="text" /></div>
           <div class="edit-field"><label>Date de naissance</label><input id="e-date_naissance_c2" type="date" /></div>
+          <div class="edit-field"><label>Lieu de naissance</label><input id="e-lieu_naissance_c2" type="text" /></div>
           <div class="edit-field"><label>Téléphone</label><input id="e-telephone_c2" type="tel" /></div>
           <div class="edit-field"><label>Email</label><input id="e-email_c2" type="email" /></div>
           <div class="edit-field"><label>Profession</label><input id="e-profession_c2" type="text" /></div>
+          <div class="edit-field"><label>Statut professionnel</label>
+            <select id="e-statut_pro_c2">
+              <option value="">—</option>
+              <option>Salarié(e) secteur privé</option><option>Fonctionnaire / Secteur public</option>
+              <option>Chef d'entreprise / TNS</option><option>Profession libérale</option>
+              <option>Auto-entrepreneur</option><option>Retraité(e)</option>
+              <option>Sans emploi</option><option>Étudiant(e)</option><option>Autre</option>
+            </select>
+          </div>
+          <div class="edit-field full"><label>Entreprise</label><input id="e-entreprise_c2" type="text" /></div>
           <div class="edit-field"><label>Salaire annuel net</label><input id="e-salaire_c2" type="text" placeholder="0 €" /></div>
+          <div class="edit-field"><label>Impôt sur le revenu</label><input id="e-impot_c2" type="text" placeholder="0 €" /></div>
+        </div>
+        <div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--border)">
+          <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Adresse du conjoint si différente</div>
+          <div class="edit-grid">
+            <div class="edit-field full"><label>Adresse</label><input id="e-c2_adresse" type="text" /></div>
+            <div class="edit-field"><label>Code postal</label><input id="e-c2_code_postal" type="text" /></div>
+            <div class="edit-field"><label>Ville</label><input id="e-c2_ville" type="text" /></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="edit-section">
+        <div class="edit-section-title">Patrimoine (JSON brut)</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;padding:8px 12px;background:#fdf8ee;border-left:3px solid var(--gold);border-radius:4px">
+          ⚠ Édition expert en JSON brut. Format épargne : <code>{"livret_a":{"montant_c1":5000,"date_c1":"2024-01-01"}}</code>.
+          Une UX dédiée (chips + tableaux) arrive en Phase 2. JSON invalide = sauvegarde annulée.
+        </div>
+        <div class="edit-grid">
+          <div class="edit-field full">
+            <label>Épargne <span style="font-size:10px;color:var(--muted);font-weight:400">(objet)</span></label>
+            <textarea id="e-epargne_json" rows="5" style="font-family:Consolas,monospace;font-size:11px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none" spellcheck="false"></textarea>
+          </div>
+          <div class="edit-field full">
+            <label>Immobilier <span style="font-size:10px;color:var(--muted);font-weight:400">(tableau)</span></label>
+            <textarea id="e-immobilier_json" rows="5" style="font-family:Consolas,monospace;font-size:11px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none" spellcheck="false"></textarea>
+          </div>
+          <div class="edit-field full">
+            <label>Crédits <span style="font-size:10px;color:var(--muted);font-weight:400">(tableau)</span></label>
+            <textarea id="e-credits_json" rows="5" style="font-family:Consolas,monospace;font-size:11px;width:100%;border:1px solid var(--border);border-radius:6px;padding:8px 10px;outline:none" spellcheck="false"></textarea>
+          </div>
         </div>
       </div>
 
