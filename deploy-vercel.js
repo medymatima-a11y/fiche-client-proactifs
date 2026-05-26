@@ -17,9 +17,9 @@ const PROJETS = [
   },
   {
     nom:       'CRM',
-    projectId: 'prj_aBPBvxhcfdrMdH5BYr9M8qx8tW1B',
+    projectId: 'prj_7nlDUbWisfBx6b7XEBerIzFwuVzt',
     fichier:   path.join(__dirname, 'deploy-crm', 'index.html'),
-    dashboard: 'https://vercel.com/medymatima-a11ys-projects/deploy-crm',
+    dashboard: 'https://vercel.com/medymatima-a11ys-projects/crm',
   },
 ];
 
