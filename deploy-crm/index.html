@@ -844,8 +844,12 @@ table.crm-table{width:100%;border-collapse:collapse}
               ou téléchargez le modèle HTML vierge à lui envoyer.
             </p>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-              <button class="btn btn-primary btn-sm" onclick="document.getElementById('budget-file-input').click()">
-                📂 Charger le fichier .json client
+              <button class="btn btn-primary btn-sm" onclick="sendBudgetEmail()" id="btn-send-budget">
+                📧 Envoyer le tableau par email
+              </button>
+              <button class="btn btn-sm" onclick="document.getElementById('budget-file-input').click()"
+                style="background:#f4f6f9;border:1px solid var(--border);color:var(--navy)">
+                📂 Importer le .json reçu du client
               </button>
               <button class="btn btn-sm" onclick="downloadBudgetTemplate()"
                 style="background:#f4f6f9;border:1px solid var(--border);color:var(--navy)">
@@ -2538,6 +2542,33 @@ function downloadBudgetTemplate() {
   a.href = 'Tableau_Budgetaire_Client_Proactifs.html';
   a.download = 'Tableau_Budgetaire_Client_Proactifs.html';
   a.click();
+}
+
+async function sendBudgetEmail() {
+  const clients = await apiGet(`clients?id=eq.${currentClientId}`);
+  const c = clients?.[0];
+  if (!c?.email_c1) {
+    showToast('⚠️ Aucun email renseigné pour ce client', 'error'); return;
+  }
+  const btn = document.getElementById('btn-send-budget');
+  const orig = btn.textContent;
+  btn.textContent = '⏳ Envoi…'; btn.disabled = true;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/send-budget-form`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ client_id: currentClientId, email: c.email_c1, prenom: c.prenom_c1, nom: c.nom_c1 })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      showToast(`✅ Tableau budgétaire envoyé à ${c.email_c1}`);
+      btn.textContent = '✅ Envoyé !';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 4000);
+    } else { throw new Error(data.error || 'Erreur inconnue'); }
+  } catch(e) {
+    showToast(`❌ Erreur : ${e.message}`, 'error');
+    btn.textContent = orig; btn.disabled = false;
+  }
 }
 
 // ── DOCUMENTS ───────────────────────────────────────────────
