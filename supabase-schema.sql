@@ -455,7 +455,7 @@ begin
       || '<p>Bonjour Medy,</p><p>' || nb_sent || ' rappel(s) envoyé(s) ce matin :</p>'
       || '<div style="background:#f4f6f9;border-radius:6px;padding:14px;margin:16px 0;line-height:2">'
       || replace(summary, E'\n', '<br>') || '</div>'
-      || '<p><a href="https://crm-proactifs.vercel.app" style="color:#1a2e4a;font-weight:700">Ouvrir le CRM</a></p>'
+      || '<p><a href="https://crm.proactifsconseils.fr" style="color:#1a2e4a;font-weight:700">Ouvrir le CRM</a></p>'
       || '</div></div>';
     perform net.http_post(
       url     := 'https://api.brevo.com/v3/smtp/email',
