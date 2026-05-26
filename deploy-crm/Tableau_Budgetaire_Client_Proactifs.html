@@ -148,6 +148,15 @@ body.correction-mode .note-display.visible{display:none}
   .note-display{display:block!important;color:var(--teal);font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
 
+/* ── BOUTON ENVOI CONSEILLER ─────────────────────────────────── */
+.btn-send{background:var(--forest);color:#fff;border:none;border-radius:var(--r-md);padding:11px 24px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s;display:none;align-items:center;gap:8px}
+.btn-send:hover{background:var(--forest-mid)}
+.btn-send.visible{display:flex}
+.btn-send:disabled{opacity:.6;cursor:not-allowed}
+.send-confirm{display:none;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:var(--r-sm);padding:14px 18px;margin-bottom:16px;font-size:13px;color:#1b5e20;align-items:center;gap:10px}
+.send-confirm.show{display:flex}
+@media print{.btn-send,.send-confirm{display:none!important}}
+
 /* ── SAVE BAR ─────────────────────────────────────────────────── */
 .save-bar{display:flex;align-items:center;justify-content:space-between;background:var(--teal-pale);border:1px solid rgba(30,122,110,.2);border-radius:var(--r-sm);padding:10px 16px;margin-bottom:16px;gap:12px;flex-wrap:wrap}
 .save-status{font-size:12px;color:var(--teal);display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace}
@@ -207,10 +216,17 @@ body.correction-mode .note-display.visible{display:none}
 <!-- ═══════════════════════════════════════════ MAIN -->
 <div class="main">
 
+  <!-- Confirmation envoi (masquée par défaut) -->
+  <div class="send-confirm" id="send-confirm">
+    <span>✅</span>
+    <span><strong>Votre budget a bien été envoyé à votre conseiller.</strong> Medy Matima sera notifié et reviendra vers vous prochainement.</span>
+  </div>
+
   <div class="actions">
     <button class="btn-outline" onclick="resetAll()">↺ Réinitialiser</button>
     <button class="btn-correction" id="btn-correction" onclick="toggleCorrection()">✏️ Mode correction</button>
     <button class="btn-gold" onclick="window.print()">🖨 Imprimer / Exporter PDF</button>
+    <button class="btn-send" id="btn-send-conseiller" onclick="sendToConseiller()">📤 Envoyer à mon conseiller</button>
   </div>
   <div class="correction-banner" id="correction-banner">
     <span>✏️ MODE CORRECTION ACTIF</span>
@@ -725,6 +741,69 @@ body.correction-mode .note-display.visible{display:none}
     const ok = _restoreDataOrig(data);
     if(ok && data.notes) restoreNotes(data.notes);
     return ok;
+  };
+
+  // ── Envoi au conseiller (via URL params) ──────────────────────
+  const RECEIVE_FN = 'https://ullnkylrixdvormohryl.supabase.co/functions/v1/receive-budget-form';
+  const _urlParams = new URLSearchParams(window.location.search);
+  const _clientId  = _urlParams.get('client_id');
+  const _prenomUrl = _urlParams.get('prenom');
+  const _nomUrl    = _urlParams.get('nom');
+
+  // Afficher le bouton d'envoi seulement si client_id présent
+  if (_clientId) {
+    const btnSend = document.getElementById('btn-send-conseiller');
+    if (btnSend) btnSend.classList.add('visible');
+  }
+
+  window.sendToConseiller = async function() {
+    if (!_clientId) { alert('Lien invalide — veuillez utiliser le lien envoyé par votre conseiller.'); return; }
+    const btn = document.getElementById('btn-send-conseiller');
+    const confirm = document.getElementById('send-confirm');
+    const data = collectData();
+    const t = {
+      totalCharges: 0, totalRevenus: 0
+    };
+    // Recalculer les totaux depuis les inputs actuels
+    const CGRPS = ['assur','impot','loge','enf','ani','trans','cred','epar','lois','pens','autc'];
+    const RGRPS = ['ract','rret','rpat','rsoc','raut'];
+    const GSIZES = {assur:5,impot:4,loge:8,enf:3,ani:2,trans:3,cred:4,epar:1,lois:3,pens:1,autc:2,ract:10,rret:4,rpat:3,rsoc:2,raut:2};
+    let idx=0;
+    const sums={};
+    [...CGRPS,...RGRPS].forEach(g=>{
+      let s=0; for(let i=0;i<(GSIZES[g]||0);i++) s+=parseFloat(data.eurInputs[idx++]||0)||0;
+      sums[g]=s;
+    });
+    t.totalCharges = CGRPS.reduce((a,g)=>a+(sums[g]||0),0);
+    t.totalRevenus = RGRPS.reduce((a,g)=>a+(sums[g]||0),0);
+    const rav = t.totalRevenus - t.totalCharges;
+    const taux = t.totalRevenus > 0 ? t.totalCharges / t.totalRevenus : 0;
+
+    btn.textContent = '⏳ Envoi en cours…'; btn.disabled = true;
+    try {
+      const res = await fetch(RECEIVE_FN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          client_id:     _clientId,
+          donnees:       data,
+          total_charges: Math.round(t.totalCharges*100)/100,
+          total_revenus: Math.round(t.totalRevenus*100)/100,
+          reste_a_vivre: Math.round(rav*100)/100,
+          taux_effort:   Math.round(taux*10000)/10000
+        })
+      });
+      const json = await res.json();
+      if (json.ok) {
+        btn.textContent = '✅ Envoyé !';
+        if (confirm) confirm.classList.add('show');
+        confirm?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        saveToLS();
+      } else { throw new Error(json.error || 'Erreur'); }
+    } catch(e) {
+      alert('Erreur lors de l\'envoi : ' + e.message + '\nVous pouvez utiliser le bouton « Télécharger ma saisie » comme alternative.');
+      btn.textContent = '📤 Envoyer à mon conseiller'; btn.disabled = false;
+    }
   };
 
   // ── Init ──────────────────────────────────────────────────────
