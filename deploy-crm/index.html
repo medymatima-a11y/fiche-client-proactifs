@@ -664,6 +664,7 @@ table.crm-table{width:100%;border-collapse:collapse}
           <div class="tab" onclick="showTab('documents')">Documents</div>
           <div class="tab" onclick="showTab('missions')">💼 Missions</div>
           <div class="tab" onclick="showTab('emails')">📧 Emails</div>
+          <div class="tab" onclick="showTab('budget')">💰 Budget</div>
           <div class="tab" onclick="showTab('bilan')">📋 Bilan patrimonial</div>
           <div class="tab" onclick="showTab('investissements')">💼 Investissements</div>
           <div class="tab" onclick="showTab('conformite')">🛡️ Conformité</div>
@@ -832,6 +833,62 @@ table.crm-table{width:100%;border-collapse:collapse}
         <!-- Emails -->
         <div class="tab-pane" id="tab-emails">
           <div id="emails-list"><div class="loading"><div class="spinner"></div></div></div>
+        </div>
+
+        <!-- ══ BUDGET MENSUEL ══════════════════════════════════ -->
+        <div class="tab-pane" id="tab-budget">
+          <div class="add-form" style="margin-bottom:16px">
+            <h3>📥 Importer un budget client</h3>
+            <p style="font-size:12px;color:var(--muted);margin:8px 0 14px">
+              Importez le fichier <code>.json</code> téléchargé par le client depuis son tableau budgétaire,
+              ou téléchargez le modèle HTML vierge à lui envoyer.
+            </p>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="document.getElementById('budget-file-input').click()">
+                📂 Charger le fichier .json client
+              </button>
+              <button class="btn btn-sm" onclick="downloadBudgetTemplate()"
+                style="background:#f4f6f9;border:1px solid var(--border);color:var(--navy)">
+                📄 Télécharger le modèle HTML
+              </button>
+              <input type="file" id="budget-file-input" accept=".json" style="display:none" onchange="importBudgetJSON(event)">
+            </div>
+          </div>
+          <div id="budget-preview" style="display:none">
+            <div style="background:#f0faf8;border:1.5px solid #1E7A6E;border-radius:10px;padding:16px;margin-bottom:16px">
+              <div style="font-size:11px;font-weight:700;color:#1E7A6E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Aperçu — données importées</div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+                  <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Revenus / mois</div>
+                  <div style="font-size:16px;font-weight:700;color:#1E7A6E" id="prev-rev">—</div>
+                </div>
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+                  <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Charges / mois</div>
+                  <div style="font-size:16px;font-weight:700;color:#C4973A" id="prev-ch">—</div>
+                </div>
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+                  <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Reste à vivre</div>
+                  <div style="font-size:16px;font-weight:700" id="prev-rav">—</div>
+                </div>
+                <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
+                  <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Taux d'effort</div>
+                  <div style="font-size:16px;font-weight:700;color:#1E7A6E" id="prev-taux">—</div>
+                  <div style="height:4px;background:#e5e7eb;border-radius:2px;margin-top:6px;overflow:hidden">
+                    <div id="prev-taux-bar" style="height:100%;border-radius:2px;transition:width .4s;width:0%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="form-field" style="margin-bottom:10px">
+                <label>Notes conseiller (corrections, observations)</label>
+                <textarea id="bud-notes-input" rows="3" placeholder="ex : loyer sous-estimé, mutuelle non déclarée…"></textarea>
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveBudget()">💾 Enregistrer dans le CRM</button>
+                <button class="btn btn-sm" onclick="cancelBudgetImport()" style="background:#f4f6f9;border:1px solid var(--border);color:var(--muted)">Annuler</button>
+              </div>
+            </div>
+          </div>
+          <div id="budget-history"></div>
         </div>
 
         <!-- Bilan patrimonial -->
@@ -2330,6 +2387,159 @@ async function updateStatut() {
     `<span class="badge badge-${newStatut}">${newStatut.charAt(0).toUpperCase()+newStatut.slice(1)}</span>`;
 }
 
+// ── BUDGET MENSUEL ───────────────────────────────────────────
+let _pendingBudget = null;
+
+const BUDGET_CHARGE_GROUPS = ['assur','impot','loge','enf','ani','trans','cred','epar','lois','pens','autc'];
+const BUDGET_REVENU_GROUPS = ['ract','rret','rpat','rsoc','raut'];
+const BUDGET_GROUP_SIZES = {
+  assur:5, impot:4, loge:8, enf:3, ani:2, trans:3, cred:4, epar:1, lois:3, pens:1, autc:2,
+  ract:10, rret:4, rpat:3, rsoc:2, raut:2
+};
+
+function computeBudgetTotals(eurInputs) {
+  let idx = 0;
+  const grpSums = {};
+  const allGrps = [...BUDGET_CHARGE_GROUPS, ...BUDGET_REVENU_GROUPS];
+  allGrps.forEach(grp => {
+    const size = BUDGET_GROUP_SIZES[grp] || 0;
+    let s = 0;
+    for (let i = 0; i < size; i++) s += parseFloat(eurInputs[idx++] || 0) || 0;
+    grpSums[grp] = s;
+  });
+  const totalCharges = BUDGET_CHARGE_GROUPS.reduce((a, g) => a + (grpSums[g] || 0), 0);
+  const totalRevenus = BUDGET_REVENU_GROUPS.reduce((a, g) => a + (grpSums[g] || 0), 0);
+  return { totalCharges, totalRevenus, resteAVivre: totalRevenus - totalCharges,
+           tauxEffort: totalRevenus > 0 ? totalCharges / totalRevenus : 0 };
+}
+
+function fmtBudget(n) {
+  if (!n && n !== 0) return '—';
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n);
+}
+
+async function loadBudget() {
+  const el = document.getElementById('budget-history');
+  if (!el) return;
+  const rows = await apiGet(`budgets_mensuels?client_id=eq.${currentClientId}&order=created_at.desc`);
+  if (!rows || !rows.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:8px 0">Aucun budget enregistré. Importez le fichier .json du client pour commencer.</p>';
+    return;
+  }
+  const html = rows.map(b => {
+    const rav = b.reste_a_vivre || 0;
+    const ravColor = rav >= 0 ? '#1E7A6E' : '#e74c3c';
+    const ravStr = (rav >= 0 ? '+' : '') + fmtBudget(rav);
+    const tauxStr = b.taux_effort ? (b.taux_effort * 100).toFixed(1) + ' %' : '—';
+    const badgeBg = b.statut === 'valide' ? '#e8f5e9' : b.statut === 'archive' ? '#f5f5f5' : '#fff8e1';
+    const badgeCo = b.statut === 'valide' ? '#2e7d32' : b.statut === 'archive' ? '#9e9e9e' : '#f57f17';
+    return `<div style="padding:12px 14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--navy)">${b.date_saisie || '—'}</div>
+          ${b.notes_conseiller ? `<div style="font-size:11px;color:var(--muted);margin-top:2px;font-style:italic">📝 ${b.notes_conseiller}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;background:${badgeBg};color:${badgeCo}">${b.statut}</span>
+          <button class="btn btn-sm" onclick="validateBudget('${b.id}')"
+            style="font-size:10px;padding:3px 10px;background:#f4f6f9;border:1px solid var(--border);color:var(--navy)">✓ Valider</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px">
+        <div style="text-align:center;background:#f4f6f9;border-radius:6px;padding:8px">
+          <div style="color:var(--muted);margin-bottom:2px">Revenus</div>
+          <div style="font-weight:700;color:#1E7A6E">${fmtBudget(b.total_revenus)}</div>
+        </div>
+        <div style="text-align:center;background:#f4f6f9;border-radius:6px;padding:8px">
+          <div style="color:var(--muted);margin-bottom:2px">Charges</div>
+          <div style="font-weight:700;color:#C4973A">${fmtBudget(b.total_charges)}</div>
+        </div>
+        <div style="text-align:center;background:#f4f6f9;border-radius:6px;padding:8px">
+          <div style="color:var(--muted);margin-bottom:2px">Reste à vivre</div>
+          <div style="font-weight:700;color:${ravColor}">${ravStr}</div>
+        </div>
+        <div style="text-align:center;background:#f4f6f9;border-radius:6px;padding:8px">
+          <div style="color:var(--muted);margin-bottom:2px">Taux d'effort</div>
+          <div style="font-weight:700">${tauxStr}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">
+    Historique (${rows.length} version${rows.length > 1 ? 's' : ''})</div>${html}`;
+}
+
+function importBudgetJSON(evt) {
+  const file = evt.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.version || !Array.isArray(data.eurInputs)) {
+        alert('Fichier non reconnu. Vérifiez qu\'il s\'agit d\'un fichier de sauvegarde Proactifs Conseils.');
+        return;
+      }
+      _pendingBudget = data;
+      const t = computeBudgetTotals(data.eurInputs);
+      document.getElementById('prev-rev').textContent  = fmtBudget(t.totalRevenus);
+      document.getElementById('prev-ch').textContent   = fmtBudget(t.totalCharges);
+      const ravEl = document.getElementById('prev-rav');
+      ravEl.textContent = (t.resteAVivre >= 0 ? '+' : '') + fmtBudget(t.resteAVivre);
+      ravEl.style.color = t.resteAVivre >= 0 ? '#1E7A6E' : '#e74c3c';
+      document.getElementById('prev-taux').textContent = t.tauxEffort > 0 ? (t.tauxEffort * 100).toFixed(1) + ' %' : '—';
+      const bar = document.getElementById('prev-taux-bar');
+      const pct = Math.min(t.tauxEffort * 100, 100);
+      bar.style.width = pct + '%';
+      bar.style.background = pct >= 80 ? '#e74c3c' : pct >= 65 ? '#C4973A' : '#1E7A6E';
+      const notes = data.notes ? Object.values(data.notes).filter(Boolean).join(' | ') : '';
+      document.getElementById('bud-notes-input').value = notes;
+      document.getElementById('budget-preview').style.display = 'block';
+      document.getElementById('budget-preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch(err) { alert('Impossible de lire ce fichier.'); }
+    evt.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function cancelBudgetImport() {
+  _pendingBudget = null;
+  document.getElementById('budget-preview').style.display = 'none';
+}
+
+async function saveBudget() {
+  if (!_pendingBudget) return;
+  const t = computeBudgetTotals(_pendingBudget.eurInputs);
+  const notes = document.getElementById('bud-notes-input').value.trim();
+  await apiPost('budgets_mensuels', {
+    client_id:        currentClientId,
+    date_saisie:      _pendingBudget.date || new Date().toISOString().split('T')[0],
+    statut:           'brouillon',
+    donnees:          _pendingBudget,
+    total_charges:    Math.round(t.totalCharges * 100) / 100,
+    total_revenus:    Math.round(t.totalRevenus * 100) / 100,
+    reste_a_vivre:    Math.round(t.resteAVivre * 100) / 100,
+    taux_effort:      Math.round(t.tauxEffort * 10000) / 10000,
+    notes_conseiller: notes || null
+  });
+  showToast('✅ Budget enregistré dans le CRM');
+  cancelBudgetImport();
+  loadBudget();
+}
+
+async function validateBudget(id) {
+  await apiPatch('budgets_mensuels', id, { statut: 'valide' });
+  showToast('✅ Budget validé');
+  loadBudget();
+}
+
+function downloadBudgetTemplate() {
+  const a = document.createElement('a');
+  a.href = 'Tableau_Budgetaire_Client_Proactifs.html';
+  a.download = 'Tableau_Budgetaire_Client_Proactifs.html';
+  a.click();
+}
+
 // ── DOCUMENTS ───────────────────────────────────────────────
 async function loadDocuments() {
   const docs = await apiGet(`documents?client_id=eq.${currentClientId}&order=date_upload.desc`);
@@ -2734,6 +2944,7 @@ function showTab(name) {
   if (name==='documents')   loadDocuments();
   if (name==='missions')    loadMissions();
   if (name==='emails')      loadEmails();
+  if (name==='budget')      loadBudget();
   if (name==='bilan')       loadBilan();
   if (name==='investissements') loadProduits();
   if (name==='conformite')  loadConformite();
