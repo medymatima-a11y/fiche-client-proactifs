@@ -3045,8 +3045,10 @@ async function saveQuickProspect() {
 
 // ── ÉDITION CLIENT (modale in-CRM) ──────────────────────────
 function openEditModal() {
+  console.log('[EDIT] currentClientId =', currentClientId, '| allClients.length =', allClients.length);
   const c = allClients.find(x => x.id === currentClientId);
-  if (!c) return;
+  console.log('[EDIT] client trouvé =', !!c, '| prenom_c1 =', c?.prenom_c1, '| nom_c1 =', c?.nom_c1);
+  if (!c) { console.error('[EDIT] Client non trouvé, abandon.'); return; }
   const SIMPLE_FIELDS = [
     'prenom_c1','nom_c1','date_naissance_c1','lieu_naissance_c1',
     'statut_marital','regime','enfants_noms','enfants_dob',
@@ -3057,10 +3059,13 @@ function openEditModal() {
     'profession_c2','statut_pro_c2','entreprise_c2','salaire_c2','impot_c2',
     'c2_adresse','c2_code_postal','c2_ville'
   ];
+  let filled = 0;
   SIMPLE_FIELDS.forEach(key => {
     const el = document.getElementById('e-' + key);
-    if (el) el.value = c[key] ?? '';
+    if (el) { el.value = c[key] ?? ''; if (c[key]) filled++; }
+    else console.warn('[EDIT] élément introuvable: e-' + key);
   });
+  console.log('[EDIT] champs remplis:', filled, '/', SIMPLE_FIELDS.length);
   // Montants formatés en €
   ['salaire_c1','impot_c1','salaire_c2','impot_c2','rfr'].forEach(k => {
     const el = document.getElementById('e-' + k);
