@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tableau Budgétaire | Proactifs Conseils</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400;1,9..144,600&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ivory:      #FAFAF7;
+  --sand:       #F3F1EB;
+  --forest:     #132D1E;
+  --forest-mid: #1C3D28;
+  --ink:        #111827;
+  --ink-soft:   #374151;
+  --gold:       #C4973A;
+  --gold-light: #E8C97A;
+  --gold-pale:  #FBF4E3;
+  --teal:       #1E7A6E;
+  --teal-light: #2A9D8F;
+  --teal-pale:  #E6F4F2;
+  --slate:      #6B7280;
+  --border:     #E5E2DA;
+  --white:      #FFFFFF;
+  --r-sm: 10px; --r-md: 16px; --r-lg: 24px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--ivory);color:var(--ink);font-size:14px;line-height:1.5}
+
+/* ── HERO ─────────────────────────────────────────────────────── */
+.hero{background:linear-gradient(135deg,#0a1f14 0%,var(--forest) 100%);padding:44px 48px 40px;color:#fff}
+.hero-brand{font-family:'DM Mono',monospace;font-size:11px;color:var(--gold-light);text-transform:uppercase;letter-spacing:2px;margin-bottom:16px;opacity:.9}
+.hero h1{font-family:'Fraunces',serif;font-size:40px;font-weight:700;line-height:1.2;margin-bottom:6px}
+.hero h1 em{color:var(--gold-light);font-style:italic}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.65);margin-bottom:28px}
+.client-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);border-radius:var(--r-md);padding:18px 22px}
+.cf label{display:block;font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.55);margin-bottom:5px}
+.cf input{width:100%;background:transparent;border:none;border-bottom:1px solid rgba(255,255,255,.28);color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;padding:4px 0;outline:none;transition:border-color .2s}
+.cf input:focus{border-bottom-color:var(--gold-light)}
+.cf input::placeholder{color:rgba(255,255,255,.3)}
+
+/* ── MAIN ─────────────────────────────────────────────────────── */
+.main{max-width:900px;margin:0 auto;padding:36px 24px 80px}
+
+/* actions */
+.actions{display:flex;justify-content:flex-end;gap:10px;margin-bottom:24px}
+.btn-gold{background:var(--gold);color:var(--ink);border:none;border-radius:var(--r-md);padding:10px 22px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-gold:hover{background:var(--gold-light)}
+.btn-outline{background:transparent;color:var(--slate);border:1.5px solid var(--border);border-radius:var(--r-md);padding:9px 18px;font-family:'DM Sans',sans-serif;font-size:13px;cursor:pointer;transition:all .2s}
+.btn-outline:hover{border-color:var(--teal);color:var(--teal)}
+
+/* info */
+.info-bar{background:var(--teal-pale);border:1px solid rgba(30,122,110,.2);border-radius:var(--r-sm);padding:11px 16px;font-size:12px;color:var(--teal);margin-bottom:28px;display:flex;gap:8px;align-items:flex-start}
+.info-bar strong{color:var(--forest)}
+
+/* ── TABLE BLOCKS ─────────────────────────────────────────────── */
+.block{background:var(--white);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 1px 3px rgba(17,24,39,.06),0 1px 2px rgba(17,24,39,.04);margin-bottom:20px}
+
+/* section header */
+.sec-head{background:var(--forest);color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+.sec-head h2{font-family:'Fraunces',serif;font-size:17px;font-weight:600}
+.sec-badge{font-family:'DM Mono',monospace;font-size:12px;color:var(--gold-light);background:rgba(255,255,255,.1);padding:3px 12px;border-radius:20px}
+
+/* column headers */
+.col-heads{display:grid;grid-template-columns:1fr 140px 72px 140px;gap:8px;padding:9px 22px;background:var(--sand)}
+.ch{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--slate);text-align:right}
+.ch:first-child{text-align:left}
+
+/* category sub-header */
+.cat-head{background:var(--teal-pale);padding:8px 22px 8px 30px}
+.cat-head span{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:var(--teal);text-transform:uppercase;letter-spacing:.8px}
+.cat-head span::before{content:'▸  '}
+
+/* budget row */
+.row{display:grid;grid-template-columns:1fr 140px 72px 140px;gap:8px;align-items:center;padding:7px 22px;border-bottom:1px solid var(--border);transition:background .12s}
+.row:last-of-type{border-bottom:none}
+.row:hover{background:var(--ivory)}
+.row .lbl{font-size:13px;color:var(--ink-soft);padding-left:8px}
+.row input.eur{width:100%;background:var(--gold-pale);border:1.5px solid transparent;border-radius:var(--r-sm);padding:6px 9px;text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--teal);outline:none;transition:all .2s}
+.row input.eur:focus{border-color:var(--teal);background:var(--teal-pale)}
+.row input.eur::placeholder{color:rgba(107,114,128,.4)}
+.row .pct,.row .ann{text-align:right;font-family:'DM Mono',monospace;font-size:12px;color:var(--slate)}
+
+/* subtotal */
+.sub-row{display:grid;grid-template-columns:1fr 140px 72px 140px;gap:8px;padding:9px 22px;background:var(--teal);align-items:center}
+.sub-row .lbl{font-size:12px;font-weight:600;color:#fff;padding-left:8px}
+.sub-row .val{text-align:right;font-family:'DM Mono',monospace;font-size:12px;font-weight:600;color:#fff}
+
+/* section total */
+.tot-row{display:grid;grid-template-columns:1fr 140px 72px 140px;gap:8px;padding:13px 22px;background:var(--forest);align-items:center}
+.tot-row .lbl{font-family:'Fraunces',serif;font-size:14px;font-weight:600;color:#fff}
+.tot-row .val{text-align:right;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--gold-light)}
+
+/* ── SYNTHÈSE ─────────────────────────────────────────────────── */
+.synthese{background:var(--white);border-radius:var(--r-lg);overflow:hidden;box-shadow:0 4px 16px rgba(17,24,39,.08);margin-top:28px}
+.syn-head{background:var(--forest);padding:14px 22px}
+.syn-head h2{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:#fff}
+.syn-col-heads{display:grid;grid-template-columns:1fr 160px 160px;gap:8px;padding:9px 22px;background:var(--sand);border-bottom:1px solid var(--border)}
+.syn-ch{font-family:'DM Mono',monospace;font-size:10px;text-transform:uppercase;color:var(--slate);text-align:right}
+.syn-ch:first-child{text-align:left}
+.syn-row{display:grid;grid-template-columns:1fr 160px 160px;gap:8px;padding:13px 22px;border-bottom:1px solid var(--border);align-items:center}
+.syn-row:last-child{border-bottom:none}
+.syn-row.revenus{background:var(--teal-pale)}
+.syn-row.charges{background:var(--gold-pale)}
+.syn-row.reste{background:var(--forest);padding:16px 22px}
+.syn-row.taux{background:var(--sand)}
+.syn-lbl{font-size:14px;font-weight:600;color:var(--ink)}
+.syn-row.reste .syn-lbl{font-family:'Fraunces',serif;font-size:16px;color:#fff}
+.syn-val{text-align:right;font-family:'DM Mono',monospace;font-size:14px;font-weight:600;color:var(--ink)}
+.syn-row.reste .syn-val{font-size:15px;color:var(--gold-light)}
+.syn-row.taux .syn-lbl{font-size:13px;font-weight:400;color:var(--slate)}
+.syn-row.taux .syn-val{font-size:13px;font-weight:500;color:var(--teal)}
+
+/* taux bar */
+.taux-wrap{padding:4px 22px 14px;background:var(--sand)}
+.taux-track{height:5px;background:var(--border);border-radius:3px;overflow:hidden}
+.taux-fill{height:100%;background:var(--teal);border-radius:3px;transition:width .4s ease;width:0%}
+.taux-fill.warn{background:var(--gold)}
+.taux-fill.danger{background:#b91c1c}
+
+/* footer */
+.doc-footer{text-align:center;font-size:11px;color:var(--slate);margin-top:40px;padding-top:20px;border-top:1px solid var(--border)}
+
+/* ── MODE CORRECTION ─────────────────────────────────────────── */
+.btn-correction{background:transparent;color:var(--ink-soft);border:1.5px solid var(--border);border-radius:var(--r-sm);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px}
+.btn-correction:hover{border-color:var(--teal);color:var(--teal)}
+.btn-correction.active{background:var(--forest);color:#fff;border-color:var(--forest)}
+.btn-correction.active:hover{background:var(--forest-mid)}
+.note-btn{display:none;background:none;border:none;cursor:pointer;font-size:12px;padding:2px 6px;border-radius:6px;color:var(--slate);transition:all .2s;flex-shrink:0;line-height:1}
+.note-btn:hover{background:var(--teal-pale);color:var(--teal)}
+.note-btn.has-note{color:var(--teal)}
+body.correction-mode .note-btn{display:inline-flex;align-items:center}
+.row{flex-wrap:wrap}
+.row .lbl{display:flex;align-items:center;gap:6px}
+.note-wrap{display:none;width:100%;padding:4px 8px 8px 8px;margin-top:2px}
+.note-wrap.open{display:block}
+.note-input{width:100%;background:var(--ivory);border:1.5px solid var(--teal);border-radius:var(--r-sm);padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;resize:none;min-height:34px;transition:all .2s}
+.note-input:focus{background:var(--teal-pale)}
+.note-input::placeholder{color:var(--slate);opacity:.6;font-style:italic}
+.note-display{font-size:11px;color:var(--teal);font-style:italic;margin-top:2px;display:none}
+.note-display.visible{display:block}
+body.correction-mode .note-display.visible{display:none}
+.correction-banner{display:none;background:var(--forest);color:#fff;padding:8px 22px;font-size:12px;font-family:'DM Mono',monospace;align-items:center;gap:10px}
+.correction-banner.show{display:flex}
+.correction-banner span{opacity:.8}
+@media print{
+  .note-btn,.note-wrap,.correction-banner{display:none!important}
+  .note-display{display:block!important;color:var(--teal);font-style:italic;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+
+/* ── SAVE BAR ─────────────────────────────────────────────────── */
+.save-bar{display:flex;align-items:center;justify-content:space-between;background:var(--teal-pale);border:1px solid rgba(30,122,110,.2);border-radius:var(--r-sm);padding:10px 16px;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.save-status{font-size:12px;color:var(--teal);display:flex;align-items:center;gap:6px;font-family:'DM Mono',monospace}
+.save-status .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);display:inline-block;animation:pulse 2s infinite}
+.save-status.saved .dot{background:var(--teal);animation:none}
+.save-status.unsaved .dot{background:var(--gold);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.save-actions{display:flex;gap:8px;align-items:center}
+.btn-save{background:var(--teal);color:#fff;border:none;border-radius:var(--r-sm);padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-save:hover{background:var(--teal-light)}
+.btn-load{background:transparent;color:var(--teal);border:1.5px solid var(--teal);border-radius:var(--r-sm);padding:6px 14px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn-load:hover{background:var(--teal-pale)}
+.btn-clear-save{background:transparent;color:var(--slate);border:none;font-size:11px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;padding:0}
+.btn-clear-save:hover{color:var(--ink)}
+#file-import{display:none}
+@media print{.save-bar{display:none!important}}
+
+/* ── PRINT ─────────────────────────────────────────────────────── */
+@media print{
+  body{background:#fff;font-size:11px}
+  .hero{padding:20px 30px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .hero h1{font-size:26px}
+  .actions,.info-bar{display:none!important}
+  .main{padding:16px;max-width:100%}
+  .block,.synthese{box-shadow:none;break-inside:avoid;margin-bottom:12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .row{padding:4px 14px}
+  .row input.eur{background:none;border:none;padding:0}
+  .sec-head,.sub-row,.tot-row,.syn-head,.syn-row,.cat-head,.col-heads,.syn-col-heads,.taux-wrap{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{margin:1.2cm;size:A4 portrait}
+}
+
+/* ── RESPONSIVE ────────────────────────────────────────────────── */
+@media(max-width:640px){
+  .hero{padding:28px 20px 28px}
+  .hero h1{font-size:28px}
+  .client-grid{grid-template-columns:1fr}
+  .main{padding:20px 14px 60px}
+  .col-heads,.row,.sub-row,.tot-row{grid-template-columns:1fr 100px 56px 100px;gap:5px;padding:7px 12px}
+  .syn-col-heads,.syn-row{grid-template-columns:1fr 110px 110px;gap:5px;padding:10px 12px}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ HERO -->
+<div class="hero">
+  <div class="hero-brand">Proactifs Conseils · Gestion de Patrimoine · Colombes (92)</div>
+  <h1>Tableau <em>budgétaire</em></h1>
+  <p class="hero-sub">Renseignez vos charges et revenus mensuels nets — les totaux se calculent automatiquement.</p>
+  <div class="client-grid">
+    <div class="cf"><label>Nom — Prénom</label><input type="text" id="cli-nom" placeholder="ex : Martin Jean"></div>
+    <div class="cf"><label>Situation familiale</label><input type="text" id="cli-sit" placeholder="ex : Marié(e), 2 enfants"></div>
+    <div class="cf"><label>Date de saisie</label><input type="date" id="cli-date"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ MAIN -->
+<div class="main">
+
+  <div class="actions">
+    <button class="btn-outline" onclick="resetAll()">↺ Réinitialiser</button>
+    <button class="btn-correction" id="btn-correction" onclick="toggleCorrection()">✏️ Mode correction</button>
+    <button class="btn-gold" onclick="window.print()">🖨 Imprimer / Exporter PDF</button>
+  </div>
+  <div class="correction-banner" id="correction-banner">
+    <span>✏️ MODE CORRECTION ACTIF</span>
+    <span>Cliquez sur 💬 à droite d'une ligne pour ajouter ou modifier une note conseiller</span>
+  </div>
+
+  <!-- BARRE SAUVEGARDE -->
+  <div class="save-bar">
+    <div class="save-status saved" id="save-status">
+      <span class="dot"></span>
+      <span id="save-label">Aucune saisie en cours</span>
+    </div>
+    <div class="save-actions">
+      <button class="btn-load" onclick="document.getElementById('file-import').click()">📂 Reprendre une saisie…</button>
+      <button class="btn-save" onclick="exportJSON()">⬇ Télécharger ma saisie</button>
+      <input type="file" id="file-import" accept=".json" onchange="importJSON(event)">
+    </div>
+  </div>
+
+  <div class="info-bar">
+    <span>ⓘ</span>
+    <span>Saisissez les montants <strong>mensuels nets (€)</strong> dans les cases en jaune pâle. Annuels et pourcentages se calculent automatiquement. Utilisez <strong>Imprimer / Exporter PDF</strong> pour conserver une copie.</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ CHARGES -->
+  <div class="block">
+    <div class="sec-head">
+      <h2>Charges</h2>
+      <span class="sec-badge" id="badge-charges">—</span>
+    </div>
+
+    <!-- colonnes -->
+    <div class="col-heads">
+      <div class="ch">Poste budgétaire</div>
+      <div class="ch">Mensuel (€)</div>
+      <div class="ch">% charges</div>
+      <div class="ch">Annuel (€)</div>
+    </div>
+
+    <!-- ── Assurances -->
+    <div class="cat-head"><span>Assurances</span></div>
+    <div class="row"><div class="lbl">Assurance auto / moto</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="assur"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Assurance résidence principale</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="assur"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Assurance habitation / scolaire</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="assur"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Assurance santé (mutuelle)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="assur"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Assurance propriétaire non-occupant (PNO)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="assur"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-assur"><div class="lbl">Sous-total Assurances</div><div class="val" id="sub-assur-m">—</div><div></div><div class="val" id="sub-assur-a">—</div></div>
+
+    <!-- ── Impôts & Taxes -->
+    <div class="cat-head"><span>Impôts &amp; Taxes</span></div>
+    <div class="row"><div class="lbl">Impôt sur le revenu (mensualisation)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="impot"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Taxe d'habitation</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="impot"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Taxe(s) foncière(s)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="impot"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">IFI (Impôt sur la fortune immobilière)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="impot"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-impot"><div class="lbl">Sous-total Impôts &amp; Taxes</div><div class="val" id="sub-impot-m">—</div><div></div><div class="val" id="sub-impot-a">—</div></div>
+
+    <!-- ── Logement & vie courante -->
+    <div class="cat-head"><span>Logement &amp; Vie courante</span></div>
+    <div class="row"><div class="lbl">Loyer / charge de copropriété</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Énergie (fioul, bois, gaz, carburant)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Électricité</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Eau</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Dépenses alimentaires</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Dépenses vestimentaires</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Téléphonie + Internet + abonnements TV</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Prestataires (ménage, jardinage…)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="loge"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-loge"><div class="lbl">Sous-total Logement &amp; Vie courante</div><div class="val" id="sub-loge-m">—</div><div></div><div class="val" id="sub-loge-a">—</div></div>
+
+    <!-- ── Enfants -->
+    <div class="cat-head"><span>Enfants</span></div>
+    <div class="row"><div class="lbl">Frais scolaires (cantine, ramassage…)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="enf"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Frais de garde (garderie, crèche, nourrice…)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="enf"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Activités enfants</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="enf"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-enf"><div class="lbl">Sous-total Enfants</div><div class="val" id="sub-enf-m">—</div><div></div><div class="val" id="sub-enf-a">—</div></div>
+
+    <!-- ── Animaux -->
+    <div class="cat-head"><span>Animaux</span></div>
+    <div class="row"><div class="lbl">Nourriture</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ani"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Soins vétérinaires</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ani"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-ani"><div class="lbl">Sous-total Animaux</div><div class="val" id="sub-ani-m">—</div><div></div><div class="val" id="sub-ani-a">—</div></div>
+
+    <!-- ── Transport -->
+    <div class="cat-head"><span>Transport</span></div>
+    <div class="row"><div class="lbl">Parking (location ou abonnement)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="trans"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Entretien véhicule</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="trans"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Autoroutes / transports en commun</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="trans"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-trans"><div class="lbl">Sous-total Transport</div><div class="val" id="sub-trans-m">—</div><div></div><div class="val" id="sub-trans-a">—</div></div>
+
+    <!-- ── Crédits bancaires -->
+    <div class="cat-head"><span>Crédits bancaires</span></div>
+    <div class="row"><div class="lbl">Prêt résidence principale</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="cred"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Autres prêts immobiliers</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="cred"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Prêts divers (auto, travaux, conso…)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="cred"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Frais bancaires</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="cred"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-cred"><div class="lbl">Sous-total Crédits bancaires</div><div class="val" id="sub-cred-m">—</div><div></div><div class="val" id="sub-cred-a">—</div></div>
+
+    <!-- ── Épargne programmée -->
+    <div class="cat-head"><span>Épargne programmée</span></div>
+    <div class="row"><div class="lbl">Virements permanents épargne (hors investissements)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="epar"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-epar"><div class="lbl">Sous-total Épargne programmée</div><div class="val" id="sub-epar-m">—</div><div></div><div class="val" id="sub-epar-a">—</div></div>
+
+    <!-- ── Loisirs -->
+    <div class="cat-head"><span>Loisirs</span></div>
+    <div class="row"><div class="lbl">Sport / Musique</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="lois"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Cinéma / Restaurants / Sorties</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="lois"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Vacances (lissage mensuel)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="lois"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-lois"><div class="lbl">Sous-total Loisirs</div><div class="val" id="sub-lois-m">—</div><div></div><div class="val" id="sub-lois-a">—</div></div>
+
+    <!-- ── Pensions alimentaires versées -->
+    <div class="cat-head"><span>Pensions alimentaires versées</span></div>
+    <div class="row"><div class="lbl">Pensions alimentaires versées</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="pens"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-pens"><div class="lbl">Sous-total Pensions alimentaires versées</div><div class="val" id="sub-pens-m">—</div><div></div><div class="val" id="sub-pens-a">—</div></div>
+
+    <!-- ── Autres charges -->
+    <div class="cat-head"><span>Autres charges</span></div>
+    <div class="row"><div class="lbl">À préciser</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="autc"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">À préciser</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="autc"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-autc"><div class="lbl">Sous-total Autres charges</div><div class="val" id="sub-autc-m">—</div><div></div><div class="val" id="sub-autc-a">—</div></div>
+
+    <!-- TOTAL CHARGES -->
+    <div class="tot-row"><div class="lbl">Total Charges</div><div class="val" id="tot-charges-m">—</div><div></div><div class="val" id="tot-charges-a">—</div></div>
+  </div><!-- /block charges -->
+
+
+  <!-- ═══════════════════════════════════════════ REVENUS -->
+  <div class="block">
+    <div class="sec-head">
+      <h2>Revenus</h2>
+      <span class="sec-badge" id="badge-revenus">—</span>
+    </div>
+
+    <div class="col-heads">
+      <div class="ch">Poste budgétaire</div>
+      <div class="ch">Mensuel (€)</div>
+      <div class="ch">% revenus</div>
+      <div class="ch">Annuel (€)</div>
+    </div>
+
+    <!-- ── Revenus d'activité -->
+    <div class="cat-head"><span>Revenus d'activité</span></div>
+    <div class="row"><div class="lbl">Salaires net Monsieur (avant impôt)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Salaires net Madame (avant impôt)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">BIC / BNC Monsieur</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">BIC / BNC Madame</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Bénéfices agricoles Monsieur</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Bénéfices agricoles Madame</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Revenus gérants et associés Monsieur</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Revenus gérants et associés Madame</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Allocation chômage</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Prestations sociales (maternité, maladie…)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="ract"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-ract"><div class="lbl">Sous-total Revenus d'activité</div><div class="val" id="sub-ract-m">—</div><div></div><div class="val" id="sub-ract-a">—</div></div>
+
+    <!-- ── Pensions, retraites et rentes -->
+    <div class="cat-head"><span>Pensions, retraites et rentes</span></div>
+    <div class="row"><div class="lbl">Pension retraite / invalidité Monsieur</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rret"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Pension retraite / invalidité Madame</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rret"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Pensions alimentaires reçues</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rret"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Rentes viagères</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rret"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-rret"><div class="lbl">Sous-total Pensions &amp; Retraites</div><div class="val" id="sub-rret-m">—</div><div></div><div class="val" id="sub-rret-a">—</div></div>
+
+    <!-- ── Revenus du patrimoine -->
+    <div class="cat-head"><span>Revenus du patrimoine</span></div>
+    <div class="row"><div class="lbl">Revenus fonciers Monsieur (locatifs, SCI, SCPI)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rpat"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Revenus fonciers Madame (locatifs, SCI, SCPI)</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rpat"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">Dividendes / revenus de capitaux mobiliers</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rpat"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-rpat"><div class="lbl">Sous-total Revenus du patrimoine</div><div class="val" id="sub-rpat-m">—</div><div></div><div class="val" id="sub-rpat-a">—</div></div>
+
+    <!-- ── Prestations sociales -->
+    <div class="cat-head"><span>Prestations sociales</span></div>
+    <div class="row"><div class="lbl">CAF / Sécurité sociale Monsieur</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rsoc"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">CAF / Sécurité sociale Madame</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="rsoc"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-rsoc"><div class="lbl">Sous-total Prestations sociales</div><div class="val" id="sub-rsoc-m">—</div><div></div><div class="val" id="sub-rsoc-a">—</div></div>
+
+    <!-- ── Autres revenus -->
+    <div class="cat-head"><span>Autres revenus</span></div>
+    <div class="row"><div class="lbl">À préciser</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="raut"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="row"><div class="lbl">À préciser</div><input class="eur" type="number" min="0" step="1" placeholder="0" data-grp="raut"><div class="pct">—</div><div class="ann">—</div></div>
+    <div class="sub-row" id="sub-raut"><div class="lbl">Sous-total Autres revenus</div><div class="val" id="sub-raut-m">—</div><div></div><div class="val" id="sub-raut-a">—</div></div>
+
+    <!-- TOTAL REVENUS -->
+    <div class="tot-row"><div class="lbl">Total Revenus</div><div class="val" id="tot-revenus-m">—</div><div></div><div class="val" id="tot-revenus-a">—</div></div>
+  </div><!-- /block revenus -->
+
+
+  <!-- ═══════════════════════════════════════════ SYNTHÈSE -->
+  <div class="synthese">
+    <div class="syn-head"><h2>Synthèse</h2></div>
+    <div class="syn-col-heads">
+      <div class="syn-ch">Indicateur</div>
+      <div class="syn-ch">Mensuel (€)</div>
+      <div class="syn-ch">Annuel (€)</div>
+    </div>
+    <div class="syn-row revenus">
+      <div class="syn-lbl">Total Revenus mensuels</div>
+      <div class="syn-val" id="syn-rev-m">—</div>
+      <div class="syn-val" id="syn-rev-a">—</div>
+    </div>
+    <div class="syn-row charges">
+      <div class="syn-lbl">Total Charges mensuelles</div>
+      <div class="syn-val" id="syn-ch-m">—</div>
+      <div class="syn-val" id="syn-ch-a">—</div>
+    </div>
+    <div class="syn-row reste">
+      <div class="syn-lbl">Reste à vivre mensuel</div>
+      <div class="syn-val" id="syn-rav-m">—</div>
+      <div class="syn-val" id="syn-rav-a">—</div>
+    </div>
+    <div class="syn-row taux">
+      <div class="syn-lbl">Taux d'effort (charges / revenus)</div>
+      <div class="syn-val" id="syn-taux">—</div>
+      <div></div>
+    </div>
+    <div class="taux-wrap">
+      <div class="taux-track"><div class="taux-fill" id="taux-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="doc-footer">
+    Proactifs Conseils · Cabinet de Gestion de Patrimoine · 54 Rue du Bournard, 92700 Colombes · +33 1 84 78 28 30 · proactifsconseils.fr
+  </div>
+
+</div><!-- /main -->
+
+<script>
+(function(){
+
+  const CHARGE_GROUPS = ['assur','impot','loge','enf','ani','trans','cred','epar','lois','pens','autc'];
+  const REVENU_GROUPS = ['ract','rret','rpat','rsoc','raut'];
+  const LS_KEY = 'proactifs_budget_v1';
+  let saveTimer = null;
+
+  // ── Formatage ──────────────────────────────────────────────────
+  function fmt(n){
+    if(n===0||isNaN(n)) return '—';
+    return new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+  }
+  function fmtPct(n){ if(!n||isNaN(n)) return '—'; return (n*100).toFixed(1)+' %'; }
+  function sumGroup(grp){
+    let t=0;
+    document.querySelectorAll('input[data-grp="'+grp+'"]').forEach(el=>{ t+=parseFloat(el.value)||0; });
+    return t;
+  }
+  function setText(id,val){ const el=document.getElementById(id); if(el) el.textContent=val; }
+
+  // ── Calcul ─────────────────────────────────────────────────────
+  function calc(){
+    let totalCharges=0;
+    CHARGE_GROUPS.forEach(grp=>{
+      const s=sumGroup(grp);
+      totalCharges+=s;
+      setText('sub-'+grp+'-m', fmt(s));
+      setText('sub-'+grp+'-a', fmt(s*12));
+    });
+    let totalRevenus=0;
+    REVENU_GROUPS.forEach(grp=>{
+      const s=sumGroup(grp);
+      totalRevenus+=s;
+      setText('sub-'+grp+'-m', fmt(s));
+      setText('sub-'+grp+'-a', fmt(s*12));
+    });
+    document.querySelectorAll('.row').forEach(row=>{
+      const inp=row.querySelector('input.eur');
+      const pctEl=row.querySelector('.pct');
+      const annEl=row.querySelector('.ann');
+      if(!inp||!pctEl||!annEl) return;
+      const v=parseFloat(inp.value)||0;
+      annEl.textContent=fmt(v*12);
+      const grp=inp.getAttribute('data-grp');
+      const isRev=REVENU_GROUPS.includes(grp);
+      const denom=isRev?totalRevenus:totalCharges;
+      pctEl.textContent=denom>0?fmtPct(v/denom):'—';
+    });
+    setText('tot-charges-m', fmt(totalCharges));
+    setText('tot-charges-a', fmt(totalCharges*12));
+    setText('tot-revenus-m', fmt(totalRevenus));
+    setText('tot-revenus-a', fmt(totalRevenus*12));
+    const badgeC=document.getElementById('badge-charges');
+    const badgeR=document.getElementById('badge-revenus');
+    if(badgeC) badgeC.textContent=totalCharges>0?fmt(totalCharges)+' / mois':'—';
+    if(badgeR) badgeR.textContent=totalRevenus>0?fmt(totalRevenus)+' / mois':'—';
+    const rav=totalRevenus-totalCharges;
+    setText('syn-rev-m', fmt(totalRevenus));
+    setText('syn-rev-a', fmt(totalRevenus*12));
+    setText('syn-ch-m',  fmt(totalCharges));
+    setText('syn-ch-a',  fmt(totalCharges*12));
+    setText('syn-rav-m', fmt(rav));
+    setText('syn-rav-a', fmt(rav*12));
+    const taux=totalRevenus>0?totalCharges/totalRevenus:0;
+    setText('syn-taux', totalRevenus>0?fmtPct(taux):'—');
+    const fill=document.getElementById('taux-fill');
+    if(fill){
+      const pct=Math.min(taux*100,100);
+      fill.style.width=pct+'%';
+      fill.className='taux-fill'+(pct>=80?' danger':pct>=65?' warn':'');
+    }
+  }
+
+  // ── Collecte / Restore des données ────────────────────────────
+  function collectData(){
+    const eurInputs=[];
+    document.querySelectorAll('input.eur').forEach(el=>{ eurInputs.push(el.value||''); });
+    return {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      nom: document.getElementById('cli-nom')?.value||'',
+      situation: document.getElementById('cli-sit')?.value||'',
+      date: document.getElementById('cli-date')?.value||'',
+      eurInputs
+    };
+  }
+
+  function restoreData(data){
+    if(!data||data.version!==1) return false;
+    if(data.nom    !== undefined){ const el=document.getElementById('cli-nom'); if(el) el.value=data.nom; }
+    if(data.situation !== undefined){ const el=document.getElementById('cli-sit'); if(el) el.value=data.situation; }
+    if(data.date   !== undefined){ const el=document.getElementById('cli-date'); if(el) el.value=data.date; }
+    const allInputs=[...document.querySelectorAll('input.eur')];
+    (data.eurInputs||[]).forEach((v,i)=>{ if(allInputs[i]) allInputs[i].value=v; });
+    calc();
+    return true;
+  }
+
+  // ── localStorage ──────────────────────────────────────────────
+  function saveToLS(){
+    try{
+      localStorage.setItem(LS_KEY, JSON.stringify(collectData()));
+      updateSaveStatus('saved');
+    } catch(e){ updateSaveStatus('error'); }
+  }
+
+  function loadFromLS(){
+    try{
+      const raw=localStorage.getItem(LS_KEY);
+      if(!raw) return false;
+      const data=JSON.parse(raw);
+      const ok=restoreData(data);
+      if(ok){
+        const d=new Date(data.savedAt);
+        const label='Reprise auto — '+d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        updateSaveStatus('saved', label);
+        return true;
+      }
+    } catch(e){}
+    return false;
+  }
+
+  function updateSaveStatus(state, label){
+    const el=document.getElementById('save-status');
+    const lbl=document.getElementById('save-label');
+    if(!el||!lbl) return;
+    el.className='save-status '+state;
+    if(state==='saved'){
+      lbl.textContent=label||'Saisie sauvegardée automatiquement';
+    } else if(state==='unsaved'){
+      lbl.textContent='Modifications non sauvegardées…';
+    } else {
+      lbl.textContent='Aucune saisie en cours';
+    }
+  }
+
+  function scheduleSave(){
+    updateSaveStatus('unsaved');
+    clearTimeout(saveTimer);
+    saveTimer=setTimeout(saveToLS, 1200);
+  }
+
+  // ── Export JSON ───────────────────────────────────────────────
+  window.exportJSON=function(){
+    const data=collectData();
+    const nom=(document.getElementById('cli-nom')?.value||'client').replace(/\s+/g,'-');
+    const date=new Date().toISOString().split('T')[0];
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='budget-'+nom+'-'+date+'.json';
+    a.click();
+    updateSaveStatus('saved','Fichier téléchargé — '+a.download);
+  };
+
+  // ── Import JSON ───────────────────────────────────────────────
+  window.importJSON=function(evt){
+    const file=evt.target.files[0];
+    if(!file) return;
+    const reader=new FileReader();
+    reader.onload=function(e){
+      try{
+        const data=JSON.parse(e.target.result);
+        if(restoreData(data)){
+          saveToLS();
+          updateSaveStatus('saved','Saisie chargée — '+file.name);
+        } else {
+          alert('Fichier non reconnu. Vérifiez qu\'il s\'agit bien d\'un fichier de sauvegarde Proactifs Conseils.');
+        }
+      } catch(err){
+        alert('Impossible de lire ce fichier.');
+      }
+      evt.target.value='';
+    };
+    reader.readAsText(file);
+  };
+
+  // ── Reset ─────────────────────────────────────────────────────
+  window.resetAll=function(){
+    if(!confirm('Réinitialiser toutes les valeurs saisies ?\n\nCette action effacera aussi la sauvegarde automatique.')) return;
+    document.querySelectorAll('input.eur').forEach(el=>{ el.value=''; });
+    ['cli-nom','cli-sit'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+    try{ localStorage.removeItem(LS_KEY); } catch(e){}
+    calc();
+    updateSaveStatus('neutral','Aucune saisie en cours');
+  };
+
+  // ── Notes par ligne ───────────────────────────────────────────
+  const allRows = [...document.querySelectorAll('.row')];
+  const notes = {};  // index → texte note
+
+  function buildNoteUI(){
+    allRows.forEach((row, idx) => {
+      const lbl = row.querySelector('.lbl');
+      if(!lbl) return;
+
+      // Bouton 💬
+      const btn = document.createElement('button');
+      btn.className = 'note-btn';
+      btn.title = 'Ajouter / modifier une note';
+      btn.textContent = '💬';
+      btn.addEventListener('click', () => toggleNote(idx));
+      lbl.appendChild(btn);
+
+      // Affichage note (mode normal)
+      const disp = document.createElement('div');
+      disp.className = 'note-display';
+      disp.id = 'note-disp-'+idx;
+      lbl.appendChild(disp);
+
+      // Zone saisie note (mode correction)
+      const wrap = document.createElement('div');
+      wrap.className = 'note-wrap';
+      wrap.id = 'note-wrap-'+idx;
+      const inp = document.createElement('textarea');
+      inp.className = 'note-input';
+      inp.rows = 1;
+      inp.placeholder = 'Note conseiller… (ex : à vérifier, incohérent avec la déclaration)';
+      inp.id = 'note-inp-'+idx;
+      inp.addEventListener('input', () => {
+        notes[idx] = inp.value;
+        updateNoteDisplay(idx);
+        btn.classList.toggle('has-note', !!inp.value.trim());
+        scheduleSave();
+        // Auto-resize
+        inp.style.height = 'auto';
+        inp.style.height = inp.scrollHeight + 'px';
+      });
+      wrap.appendChild(inp);
+      row.appendChild(wrap);
+    });
+  }
+
+  function toggleNote(idx){
+    const wrap = document.getElementById('note-wrap-'+idx);
+    const inp  = document.getElementById('note-inp-'+idx);
+    if(!wrap) return;
+    const isOpen = wrap.classList.contains('open');
+    wrap.classList.toggle('open', !isOpen);
+    if(!isOpen && inp) { inp.focus(); }
+  }
+
+  function updateNoteDisplay(idx){
+    const disp = document.getElementById('note-disp-'+idx);
+    const text = (notes[idx]||'').trim();
+    if(!disp) return;
+    if(text){ disp.textContent = '📝 ' + text; disp.classList.add('visible'); }
+    else { disp.textContent = ''; disp.classList.remove('visible'); }
+    const btn = allRows[idx]?.querySelector('.note-btn');
+    if(btn) btn.classList.toggle('has-note', !!text);
+  }
+
+  function restoreNotes(savedNotes){
+    if(!savedNotes) return;
+    Object.keys(savedNotes).forEach(k => {
+      const idx = parseInt(k);
+      notes[idx] = savedNotes[k];
+      const inp = document.getElementById('note-inp-'+idx);
+      if(inp){ inp.value = savedNotes[k]; inp.style.height='auto'; inp.style.height=inp.scrollHeight+'px'; }
+      updateNoteDisplay(idx);
+    });
+  }
+
+  // ── Toggle mode correction ─────────────────────────────────────
+  window.toggleCorrection = function(){
+    const active = document.body.classList.toggle('correction-mode');
+    const btn = document.getElementById('btn-correction');
+    const banner = document.getElementById('correction-banner');
+    if(btn){ btn.classList.toggle('active', active); btn.textContent = active ? '✓ Terminer correction' : '✏️ Mode correction'; }
+    if(banner) banner.classList.toggle('show', active);
+    // Fermer toutes les notes ouvertes en quittant le mode
+    if(!active){
+      document.querySelectorAll('.note-wrap.open').forEach(w => w.classList.remove('open'));
+    }
+  };
+
+  // ── Patch collectData pour inclure les notes ──────────────────
+  const _collectDataOrig = collectData;
+  collectData = function(){
+    const d = _collectDataOrig();
+    d.notes = Object.assign({}, notes);
+    return d;
+  };
+
+  // ── Patch restoreData pour restaurer les notes ────────────────
+  const _restoreDataOrig = restoreData;
+  restoreData = function(data){
+    const ok = _restoreDataOrig(data);
+    if(ok && data.notes) restoreNotes(data.notes);
+    return ok;
+  };
+
+  // ── Init ──────────────────────────────────────────────────────
+  buildNoteUI();
+
+  const df=document.getElementById('cli-date');
+  if(df && !df.value) df.value=new Date().toISOString().split('T')[0];
+
+  document.querySelectorAll('input.eur, #cli-nom, #cli-sit, #cli-date').forEach(el=>{
+    el.addEventListener('input', ()=>{ calc(); scheduleSave(); });
+  });
+
+  const restored=loadFromLS();
+  if(!restored){ calc(); updateSaveStatus('neutral'); }
+
+})();
+</script>
+</body>
+</html>
