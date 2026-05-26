@@ -13,6 +13,8 @@
 -- ── EXTENSIONS ─────────────────────────────────────────────
 -- pg_net est utilisé par notify_make_new_client / send_reminders
 create extension if not exists pg_net with schema extensions;
+-- vault stocke la clé API Brevo (chiffrée, accessible uniquement par les fonctions SECURITY DEFINER)
+create extension if not exists supabase_vault;
 
 
 -- ══════════════════════════════════════════════════════════
@@ -315,10 +317,11 @@ create trigger projets_updated_at  before update on projets  for each row execut
 create trigger seo_articles_updated_at before update on seo_articles for each row execute function update_updated_at();
 
 -- ── notify_make_new_client : email confirmation client + sync Brevo ─
--- Lit la clé Brevo dans settings → table à sécuriser.
+-- Lit la clé Brevo dans le Vault (SECURITY DEFINER requis).
 create or replace function notify_make_new_client()
 returns trigger
 language plpgsql
+security definer
 set search_path to 'public'
 as $$
 declare
@@ -329,7 +332,7 @@ declare
   html    text;
   subject text;
 begin
-  select value into api_key from settings where key = 'brevo_api_key';
+  select decrypted_secret into api_key from vault.decrypted_secrets where name = 'brevo_api_key';
 
   if NEW.source = 'fiche' then
     subject := 'Votre dossier a bien été reçu — Proactifs Conseils Patrimoine';
@@ -383,9 +386,11 @@ create trigger on_new_client_notify
   execute function notify_make_new_client();
 
 -- ── send_reminders : appelée par cron (rappels J-1 et J-7) ──
+-- Lit la clé Brevo dans le Vault (SECURITY DEFINER requis).
 create or replace function send_reminders()
 returns void
 language plpgsql
+security definer
 set search_path to 'public'
 as $$
 declare
@@ -400,7 +405,7 @@ declare
   nb_sent   int := 0;
   summary   text := '';
 begin
-  select value into api_key from settings where key = 'brevo_api_key';
+  select decrypted_secret into api_key from vault.decrypted_secrets where name = 'brevo_api_key';
 
   for rec in
     select e.*, c.email_c1, c.prenom_c1, c.nom_c1, c.telephone_c1
