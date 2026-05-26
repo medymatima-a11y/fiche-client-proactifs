@@ -2739,21 +2739,50 @@ function card(title, rows) {
 // pour fermer la faille des anonymous sign-ins. Le lien envoyé au client
 // pointe vers une nouvelle fiche INSERT-only ; le pré-remplissage par
 // clientId reviendra en Phase 2 via une Edge Function de magic link signé.
-function copyFicheLink() {
-  const url  = `https://fiche-clients.proactifsconseils.fr`;
-  const btn  = document.getElementById('btn-copy-link');
-  navigator.clipboard.writeText(url).then(() => {
-    btn.textContent = '✅ Copié !';
+async function copyFicheLink() {
+  const btn = document.getElementById('btn-copy-link');
+  if (!currentClientId) {
+    navigator.clipboard.writeText('https://fiche-clients.proactifsconseils.fr');
+    btn.textContent = '✅ Lien vierge copié';
+    setTimeout(() => { btn.textContent = '🔗 Lien fiche'; }, 2500);
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '⏳ Génération…';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-fiche-link`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ clientId: currentClientId })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Erreur ${res.status}`);
+    }
+    const { url, clientName, expiresInDays } = await res.json();
+    await navigator.clipboard.writeText(url);
+    btn.textContent = '✅ Lien copié !';
     btn.style.background = 'var(--green)';
     btn.style.color = '#fff';
     btn.style.borderColor = 'var(--green)';
+    console.log(`Lien sécurisé pour ${clientName} copié (valide ${expiresInDays}j)`);
     setTimeout(() => {
       btn.textContent = '🔗 Lien fiche';
       btn.style.background = '';
       btn.style.color = '';
       btn.style.borderColor = '';
-    }, 2500);
-  });
+    }, 3000);
+  } catch (err) {
+    console.error('Erreur génération lien:', err);
+    alert('Erreur génération lien : ' + err.message);
+    btn.textContent = '🔗 Lien fiche';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 // ── VCARD GOOGLE CONTACTS ───────────────────────────────────

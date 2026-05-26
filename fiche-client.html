@@ -932,30 +932,31 @@
 const SUPABASE_URL = 'https://ullnkylrixdvormohryl.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbG5reWxyaXhkdm9ybW9ocnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NjUzNDgsImV4cCI6MjA5NDE0MTM0OH0.Fu5xc-VVA49qp1-WHgve8ZYpOB-QrciHzVeZx0GXmKk';
 
-// ── MODE ÉDITION ────────────────────────────────────────────
-// ⚠ Désactivé depuis l'audit RLS 2026-05-26 : reposait sur
-// signInAnonymously qui ouvrait toute la base aux anonymes.
-// L'édition se fait maintenant exclusivement dans le CRM.
-const _params      = new URLSearchParams(window.location.search);
+// ── MODE ÉDITION VIA MAGIC LINK ─────────────────────────────
+// Le paramètre ?token=<JWT> active le mode édition sécurisé.
+// Le token est signé côté serveur (Edge Function generate-fiche-link)
+// et vérifié par l'Edge Function fiche-client-api.
+// L'ancien ?clientId= est bloqué (legacy).
+const _params       = new URLSearchParams(window.location.search);
 const _legacyEditId = _params.get('clientId');
-const IS_EDIT_MODE = false;
-if (_legacyEditId) {
-  // Affiche un message au lieu d'ouvrir le mode édition fantôme
+const MAGIC_TOKEN   = _params.get('token');
+const IS_EDIT_MODE  = !!MAGIC_TOKEN;
+const FICHE_API_URL = `${SUPABASE_URL}/functions/v1/fiche-client-api`;
+
+if (_legacyEditId && !MAGIC_TOKEN) {
   document.addEventListener('DOMContentLoaded', () => {
     document.body.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2e4a,#253d5c);font-family:Segoe UI,Arial,sans-serif;padding:24px">
         <div style="background:#fff;border-radius:14px;padding:40px 48px;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
           <div style="font-size:40px;margin-bottom:14px">🔒</div>
-          <h1 style="color:#1a2e4a;font-size:20px;font-weight:700;margin-bottom:12px">Édition désactivée sur ce lien</h1>
+          <h1 style="color:#1a2e4a;font-size:20px;font-weight:700;margin-bottom:12px">Lien obsolète</h1>
           <p style="color:#7a8a9a;font-size:13px;line-height:1.6;margin-bottom:18px">
-            Le mode édition par lien personnalisé a été désactivé pour des raisons de sécurité.
-            L'édition des dossiers clients s'effectue maintenant dans le CRM interne.
+            Ce lien n'est plus valide. Contactez votre conseiller pour recevoir un nouveau lien sécurisé.
           </p>
-          <a href="https://crm-proactifs.vercel.app" style="display:inline-block;background:#c9a84c;color:#1a2e4a;text-decoration:none;padding:11px 26px;border-radius:8px;font-weight:700;font-size:13px">Ouvrir le CRM →</a>
         </div>
       </div>`;
   });
-  throw new Error('Edit mode disabled — see CRM');
+  throw new Error('Legacy clientId link blocked');
 }
 // ═══════════════════════════════════════════════════════════
 
@@ -971,7 +972,74 @@ const SB_HEADERS = {
   'Prefer':        'return=representation'
 };
 
-// (mode édition retiré — audit RLS 2026-05-26, voir CRM pour l'édition)
+// ── CHARGEMENT DONNÉES CLIENT (mode magic link) ──────────────
+async function loadClientForEdit() {
+  if (!IS_EDIT_MODE) return;
+  try {
+    const res = await fetch(`${FICHE_API_URL}?token=${MAGIC_TOKEN}`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        document.body.innerHTML = `
+          <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2e4a,#253d5c);font-family:Segoe UI,Arial,sans-serif;padding:24px">
+            <div style="background:#fff;border-radius:14px;padding:40px 48px;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+              <div style="font-size:40px;margin-bottom:14px">⏰</div>
+              <h1 style="color:#1a2e4a;font-size:20px;font-weight:700;margin-bottom:12px">Lien expiré</h1>
+              <p style="color:#7a8a9a;font-size:13px;line-height:1.6">Ce lien de modification a expiré. Contactez votre conseiller pour en recevoir un nouveau.</p>
+            </div>
+          </div>`;
+        return;
+      }
+      throw new Error(err.error || `Erreur ${res.status}`);
+    }
+    const c = await res.json();
+
+    const set = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+    set('c1-nom', c.nom_c1); set('c1-prenom', c.prenom_c1);
+    set('c1-dob', c.date_naissance_c1); set('c1-lieu', c.lieu_naissance_c1);
+    set('c1-tel', c.telephone_c1); set('c1-email', c.email_c1);
+    set('c1-profession', c.profession_c1); set('c1-entreprise', c.entreprise_c1);
+    set('c1-statut-pro', c.statut_pro_c1);
+    set('c2-nom', c.nom_c2); set('c2-prenom', c.prenom_c2);
+    set('c2-dob', c.date_naissance_c2); set('c2-lieu', c.lieu_naissance_c2);
+    set('c2-tel', c.telephone_c2); set('c2-email', c.email_c2);
+    set('c2-profession', c.profession_c2); set('c2-entreprise', c.entreprise_c2);
+    set('c2-statut-pro', c.statut_pro_c2);
+    set('adresse', c.adresse); set('code-postal', c.code_postal); set('ville', c.ville);
+    set('c2-adresse', c.c2_adresse); set('c2-code-postal', c.c2_code_postal); set('c2-ville', c.c2_ville);
+    set('statut-marital', c.statut_marital); set('regime', c.regime); set('date-union', c.date_union);
+    set('enfants-noms', c.enfants_noms); set('enfants-dob', c.enfants_dob);
+    if (c.salaire_c1) set('sal-c1', String(c.salaire_c1));
+    if (c.salaire_c2) set('sal-c2', String(c.salaire_c2));
+    if (c.impot_c1) set('impot-c1', String(c.impot_c1));
+    if (c.impot_c2) set('impot-c2', String(c.impot_c2));
+    set('banques', c.banques);
+
+    if (Array.isArray(c.epargne) && c.epargne.length) {
+      c.epargne.forEach((ep, i) => {
+        let row = document.querySelector(`tr[data-ep="${i}"]`);
+        if (!row) { addEpargneRow(); row = document.querySelector(`tr[data-ep]:last-child`); }
+        if (row) {
+          const s = (col, v) => { const inp = row.querySelector(`[data-col="${col}"]`); if (inp && v) inp.value = v; };
+          s('type', ep.type); s('produit', ep.produit); s('organisme', ep.organisme);
+          s('montant_c1', ep.montant_c1); s('montant_c2', ep.montant_c2);
+        }
+      });
+    }
+
+    // Adapter l'interface pour le mode édition
+    document.querySelector('.header-title').textContent = 'MISE À JOUR DE VOTRE DOSSIER';
+    const btn = document.getElementById('btn-submit');
+    btn.textContent = 'Mettre à jour';
+    document.querySelector('.footer-note').innerHTML =
+      '<strong>Vous modifiez votre dossier existant.</strong> Cliquez sur « Mettre à jour » pour enregistrer vos modifications.';
+    // Masquer le brouillon en mode édition
+    document.getElementById('draft-banner')?.classList.remove('visible');
+  } catch (err) {
+    console.error('Erreur chargement client:', err);
+    alert('Impossible de charger votre dossier : ' + err.message);
+  }
+}
 
 // ── FORMAT MONTANTS ────────────────────────────────────────
 function formatMontant(input) {
@@ -1432,7 +1500,11 @@ function clearDraft() {
 
 // Init + sauvegarde auto
 document.addEventListener('DOMContentLoaded', () => {
-  loadDraft();
+  if (IS_EDIT_MODE) {
+    loadClientForEdit();
+  } else {
+    loadDraft();
+  }
   if (!localStorage.getItem(DRAFT_KEY)) { initImmo(); initCredit(); }
   // Formatage automatique des montants (blur = format, focus = raw)
   const body = document.querySelector('.body');
@@ -1453,8 +1525,10 @@ document.addEventListener('DOMContentLoaded', () => {
     ta.addEventListener('input', resize);
     resize();
   });
-  document.querySelector('.body').addEventListener('input', saveDraft);
-  document.querySelector('.body').addEventListener('change', saveDraft);
+  if (!IS_EDIT_MODE) {
+    document.querySelector('.body').addEventListener('input', saveDraft);
+    document.querySelector('.body').addEventListener('change', saveDraft);
+  }
   recalculateTotal();
 });
 
@@ -1549,76 +1623,103 @@ async function submitForm() {
     statut_pro_c1:       document.getElementById('c1-statut-pro')?.value || null,
     statut_pro_c2:       document.getElementById('c2-statut-pro')?.value || null,
     epargne:             collectEpargne(),
-    statut:              'prospect',
-    source:              'fiche',
   };
 
+  if (!IS_EDIT_MODE) {
+    payload.statut = 'prospect';
+    payload.source = 'fiche';
+  }
+
   try {
-    // INSERT direct via la policy `insert_open` (to public) — pas d'auth requise.
-    // Pas de mode édition : voir audit RLS 2026-05-26, édition transférée au CRM.
-    const token = SUPABASE_KEY;
-    const url   = `${SUPABASE_URL}/rest/v1/clients`;
-    const res = await fetch(url, {
-      method:  'POST',
-      headers: {
-        'apikey':        SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Content-Type':  'application/json',
-        'Prefer':        'return=representation'
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || `Erreur ${res.status}`);
-    }
-    const inserted = await res.json();
-    const clientId = inserted[0]?.id;
-    if (!clientId) throw new Error('ID client non retourné');
-
-    // 3. Upload des documents (avec le même token authenticated)
-    const docDb = createClient(SUPABASE_URL, SUPABASE_KEY, {
-      global: { headers: { Authorization: `Bearer ${token}` } }
-    });
-    const docItems = document.querySelectorAll('.doc-item[id]');
-    for (const item of docItems) {
-      const fileInput = item.querySelector('input[type="file"]');
-      if (!fileInput?.files?.length) continue;
-      const type = item.id.replace('doc-', '');
-
-      for (const file of fileInput.files) {
-        const path = `${clientId}/${type}/${file.name}`;
-        const { error: upErr } = await docDb.storage
-          .from('documents')
-          .upload(path, file, { upsert: true });
-        if (upErr) { console.warn('Upload doc:', upErr.message); continue; }
-
-        await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
-          method: 'POST',
-          headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            client_id:    clientId,
-            type,
-            nom_fichier:  file.name,
-            storage_path: path,
-            taille_ko:    Math.round(file.size / 1024),
-          })
-        });
+    if (IS_EDIT_MODE) {
+      // ── MODE ÉDITION : PATCH via Edge Function sécurisée ──
+      const res = await fetch(FICHE_API_URL + `?token=${MAGIC_TOKEN}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Erreur ${res.status}`);
       }
-    }
 
-    // 4. Confirmation
-    localStorage.removeItem(DRAFT_KEY);
-    document.getElementById('draft-banner').classList.remove('visible');
-    btn.textContent = '✅ Envoyé avec succès';
-    btn.style.background = '#27ae60';
-    document.querySelector('.footer-note').innerHTML =
-      '<strong style="color:#27ae60">Merci ! Votre dossier a bien été transmis à Proactifs Conseils Patrimoine.</strong><br>Vous serez contacté prochainement pour fixer un rendez-vous.';
+      // Upload des documents via Edge Function
+      const docItems = document.querySelectorAll('.doc-item[id]');
+      for (const item of docItems) {
+        const fileInput = item.querySelector('input[type="file"]');
+        if (!fileInput?.files?.length) continue;
+        const type = item.id.replace('doc-', '');
+        for (const file of fileInput.files) {
+          const fd = new FormData();
+          fd.append('file', file);
+          fd.append('type', type);
+          await fetch(FICHE_API_URL + `?token=${MAGIC_TOKEN}`, { method: 'POST', body: fd });
+        }
+      }
+
+      btn.textContent = '✅ Dossier mis à jour';
+      btn.style.background = '#27ae60';
+      document.querySelector('.footer-note').innerHTML =
+        '<strong style="color:#27ae60">Vos modifications ont été enregistrées.</strong><br>Votre conseiller en sera informé.';
+
+    } else {
+      // ── MODE CRÉATION : INSERT direct via policy insert_open ──
+      const token = SUPABASE_KEY;
+      const url   = `${SUPABASE_URL}/rest/v1/clients`;
+      const res = await fetch(url, {
+        method:  'POST',
+        headers: {
+          'apikey':        SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type':  'application/json',
+          'Prefer':        'return=representation'
+        },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Erreur ${res.status}`);
+      }
+      const inserted = await res.json();
+      const clientId = inserted[0]?.id;
+      if (!clientId) throw new Error('ID client non retourné');
+
+      const docDb = createClient(SUPABASE_URL, SUPABASE_KEY, {
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      });
+      const docItems = document.querySelectorAll('.doc-item[id]');
+      for (const item of docItems) {
+        const fileInput = item.querySelector('input[type="file"]');
+        if (!fileInput?.files?.length) continue;
+        const type = item.id.replace('doc-', '');
+        for (const file of fileInput.files) {
+          const path = `${clientId}/${type}/${file.name}`;
+          const { error: upErr } = await docDb.storage
+            .from('documents').upload(path, file, { upsert: true });
+          if (upErr) { console.warn('Upload doc:', upErr.message); continue; }
+          await fetch(`${SUPABASE_URL}/rest/v1/documents`, {
+            method: 'POST',
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              client_id: clientId, type, nom_fichier: file.name,
+              storage_path: path, taille_ko: Math.round(file.size / 1024),
+            })
+          });
+        }
+      }
+
+      localStorage.removeItem(DRAFT_KEY);
+      document.getElementById('draft-banner').classList.remove('visible');
+      btn.textContent = '✅ Envoyé avec succès';
+      btn.style.background = '#27ae60';
+      document.querySelector('.footer-note').innerHTML =
+        '<strong style="color:#27ae60">Merci ! Votre dossier a bien été transmis à Proactifs Conseils Patrimoine.</strong><br>Vous serez contacté prochainement pour fixer un rendez-vous.';
+    }
 
   } catch (err) {
     console.error(err);
     btn.disabled = false;
-    btn.textContent = 'Envoyer';
+    btn.textContent = IS_EDIT_MODE ? 'Mettre à jour' : 'Envoyer';
     alert('Une erreur est survenue : ' + err.message);
   }
 }
