@@ -445,7 +445,7 @@ table.crm-table{width:100%;border-collapse:collapse}
     <nav class="nav">
       <div class="nav-section">Principal</div>
       <div class="nav-item active" onclick="showView('dashboard')"><span class="icon">📊</span>Dashboard</div>
-      <div class="nav-item" onclick="showView('dashboard')"><span class="icon">👥</span>Clients <span class="nav-badge" id="badge-count">—</span></div>
+      <div class="nav-item" onclick="showView('clients')"><span class="icon">👥</span>Clients <span class="nav-badge" id="badge-count">—</span></div>
       <div class="nav-item" onclick="showPipeline()"><span class="icon">🎯</span>Pipeline</div>
       <div class="nav-section">Outils</div>
       <div class="nav-item" onclick="showImport()"><span class="icon">📥</span>Importer clients</div>
@@ -594,6 +594,10 @@ table.crm-table{width:100%;border-collapse:collapse}
           <div id="echeances-dashboard"><div style="color:var(--muted);font-size:12px">Aucune échéance imminente.</div></div>
         </div>
 
+      </div>
+
+      <!-- CLIENTS -->
+      <div class="view" id="view-clients">
         <div class="table-header" style="flex-wrap:wrap;gap:10px">
           <h2>Clients <span id="clients-count" style="font-size:12px;font-weight:400;color:var(--muted)"></span></h2>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-left:auto">
@@ -629,7 +633,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 
       <!-- CLIENT DETAIL -->
       <div class="view" id="view-client">
-        <div class="back-btn" onclick="showView('dashboard')">← Retour</div>
+        <div class="back-btn" onclick="showView('clients')">← Retour</div>
         <div class="merge-banner" id="merge-banner" style="display:none"></div>
         <div class="client-header" id="client-header">
           <div class="avatar-lg" id="detail-avatar">?</div>
@@ -837,6 +841,8 @@ table.crm-table{width:100%;border-collapse:collapse}
 
         <!-- ══ BUDGET MENSUEL ══════════════════════════════════ -->
         <div class="tab-pane" id="tab-budget">
+
+          <!-- Import zone -->
           <div class="add-form" style="margin-bottom:16px">
             <h3>📥 Importer un budget client</h3>
             <p style="font-size:12px;color:var(--muted);margin:8px 0 14px">
@@ -858,9 +864,13 @@ table.crm-table{width:100%;border-collapse:collapse}
               <input type="file" id="budget-file-input" accept=".json" style="display:none" onchange="importBudgetJSON(event)">
             </div>
           </div>
+
+          <!-- Aperçu avant enregistrement (caché jusqu'à import) -->
           <div id="budget-preview" style="display:none">
             <div style="background:#f0faf8;border:1.5px solid #1E7A6E;border-radius:10px;padding:16px;margin-bottom:16px">
-              <div style="font-size:11px;font-weight:700;color:#1E7A6E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">Aperçu — données importées</div>
+              <div style="font-size:11px;font-weight:700;color:#1E7A6E;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px">
+                Aperçu — données importées
+              </div>
               <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px">
                 <div style="background:#fff;border-radius:8px;padding:10px;text-align:center;border:1px solid var(--border)">
                   <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Revenus / mois</div>
@@ -884,14 +894,18 @@ table.crm-table{width:100%;border-collapse:collapse}
               </div>
               <div class="form-field" style="margin-bottom:10px">
                 <label>Notes conseiller (corrections, observations)</label>
-                <textarea id="bud-notes-input" rows="3" placeholder="ex : loyer sous-estimé, mutuelle non déclarée…"></textarea>
+                <textarea id="bud-notes-input" rows="3"
+                  placeholder="ex : loyer sous-estimé, mutuelle non déclarée, crédit auto à vérifier…"></textarea>
               </div>
               <div class="form-actions">
                 <button class="btn btn-primary btn-sm" onclick="saveBudget()">💾 Enregistrer dans le CRM</button>
-                <button class="btn btn-sm" onclick="cancelBudgetImport()" style="background:#f4f6f9;border:1px solid var(--border);color:var(--muted)">Annuler</button>
+                <button class="btn btn-sm" onclick="cancelBudgetImport()"
+                  style="background:#f4f6f9;border:1px solid var(--border);color:var(--muted)">Annuler</button>
               </div>
             </div>
           </div>
+
+          <!-- Historique -->
           <div id="budget-history"></div>
         </div>
 
@@ -1973,8 +1987,8 @@ function filterByStatCard(type) {
       break;
   }
 
+  showView('clients');
   renderTable(allClients);
-  document.querySelector('.table-header')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function filterClients() {
@@ -2396,6 +2410,8 @@ let _pendingBudget = null;
 
 const BUDGET_CHARGE_GROUPS = ['assur','impot','loge','enf','ani','trans','cred','epar','lois','pens','autc'];
 const BUDGET_REVENU_GROUPS = ['ract','rret','rpat','rsoc','raut'];
+
+// Regroupement inputs → groupes (ordre identique au HTML tableau budgétaire)
 const BUDGET_GROUP_SIZES = {
   assur:5, impot:4, loge:8, enf:3, ani:2, trans:3, cred:4, epar:1, lois:3, pens:1, autc:2,
   ract:10, rret:4, rpat:3, rsoc:2, raut:2
@@ -2446,7 +2462,8 @@ async function loadBudget() {
         <div style="display:flex;gap:8px;align-items:center">
           <span style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px;background:${badgeBg};color:${badgeCo}">${b.statut}</span>
           <button class="btn btn-sm" onclick="validateBudget('${b.id}')"
-            style="font-size:10px;padding:3px 10px;background:#f4f6f9;border:1px solid var(--border);color:var(--navy)">✓ Valider</button>
+            style="font-size:10px;padding:3px 10px;background:#f4f6f9;border:1px solid var(--border);color:var(--navy)"
+            title="Marquer comme validé">✓ Valider</button>
         </div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:11px">
@@ -2490,12 +2507,13 @@ function importBudgetJSON(evt) {
       document.getElementById('prev-ch').textContent   = fmtBudget(t.totalCharges);
       const ravEl = document.getElementById('prev-rav');
       ravEl.textContent = (t.resteAVivre >= 0 ? '+' : '') + fmtBudget(t.resteAVivre);
-      ravEl.style.color = t.resteAVivre >= 0 ? '#1E7A6E' : '#e74c3c';
+      ravEl.style.color  = t.resteAVivre >= 0 ? '#1E7A6E' : '#e74c3c';
       document.getElementById('prev-taux').textContent = t.tauxEffort > 0 ? (t.tauxEffort * 100).toFixed(1) + ' %' : '—';
       const bar = document.getElementById('prev-taux-bar');
       const pct = Math.min(t.tauxEffort * 100, 100);
       bar.style.width = pct + '%';
       bar.style.background = pct >= 80 ? '#e74c3c' : pct >= 65 ? '#C4973A' : '#1E7A6E';
+      // Pré-remplir notes avec les notes conseiller du fichier si présentes
       const notes = data.notes ? Object.values(data.notes).filter(Boolean).join(' | ') : '';
       document.getElementById('bud-notes-input').value = notes;
       document.getElementById('budget-preview').style.display = 'block';
@@ -2515,7 +2533,7 @@ async function saveBudget() {
   if (!_pendingBudget) return;
   const t = computeBudgetTotals(_pendingBudget.eurInputs);
   const notes = document.getElementById('bud-notes-input').value.trim();
-  await apiPost('budgets_mensuels', {
+  const payload = {
     client_id:        currentClientId,
     date_saisie:      _pendingBudget.date || new Date().toISOString().split('T')[0],
     statut:           'brouillon',
@@ -2525,7 +2543,8 @@ async function saveBudget() {
     reste_a_vivre:    Math.round(t.resteAVivre * 100) / 100,
     taux_effort:      Math.round(t.tauxEffort * 10000) / 10000,
     notes_conseiller: notes || null
-  });
+  };
+  await apiPost('budgets_mensuels', payload);
   showToast('✅ Budget enregistré dans le CRM');
   cancelBudgetImport();
   loadBudget();
@@ -2547,9 +2566,7 @@ function downloadBudgetTemplate() {
 async function sendBudgetEmail() {
   const clients = await apiGet(`clients?id=eq.${currentClientId}`);
   const c = clients?.[0];
-  if (!c?.email_c1) {
-    showToast('⚠️ Aucun email renseigné pour ce client', 'error'); return;
-  }
+  if (!c?.email_c1) { showToast('⚠️ Aucun email renseigné pour ce client', 'error'); return; }
   const btn = document.getElementById('btn-send-budget');
   const orig = btn.textContent;
   btn.textContent = '⏳ Envoi…'; btn.disabled = true;
@@ -2960,8 +2977,13 @@ function showView(name) {
   currentView = name;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-'+name)?.classList.add('active');
-  if (name==='dashboard') { document.getElementById('topbar-title').textContent='Dashboard'; }
-  if (name==='import')   { document.getElementById('topbar-title').textContent='Importer des clients'; }
+  const titles = { dashboard:'Dashboard', clients:'Clients', import:'Importer des clients' };
+  document.getElementById('topbar-title').textContent = titles[name] || '';
+  // Mise à jour de l'état actif dans la sidebar
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  if (name==='dashboard') document.querySelector('.nav-item[onclick*="dashboard"]')?.classList.add('active');
+  if (name==='clients')   document.querySelector('.nav-item[onclick*="clients"]')?.classList.add('active');
+  if (name==='pipeline')  document.querySelector('.nav-item[onclick*="Pipeline"]')?.classList.add('active');
 }
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
