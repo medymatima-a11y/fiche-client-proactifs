@@ -1686,6 +1686,7 @@ async function loadAll() {
   renderDuplicatesAlert();
   renderTachesDashboard();
   renderTachesList();
+  checkAndNotify(echeances);
   document.getElementById('table-loading').style.display = 'none';
   document.getElementById('clients-table').style.display = 'table';
   document.getElementById('badge-count').textContent = clients.length;
@@ -3237,6 +3238,52 @@ function refreshTachesUI() {
   renderTachesDashboard();
   renderTachesList();
   document.getElementById('badge-taches').textContent = allTaches.filter(t=>t.statut!=='fait').length || '0';
+}
+
+// ── NOTIFICATIONS NAVIGATEUR ────────────────────────────────
+async function checkAndNotify(echeances) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    await Notification.requestPermission();
+  }
+  if (Notification.permission !== 'granted') return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+  const alerts = [];
+
+  const overdueTaches = allTaches.filter(t =>
+    t.statut !== 'fait' && t.date_echeance && new Date(t.date_echeance) < today
+  );
+  const urgentTaches = allTaches.filter(t =>
+    t.statut !== 'fait' && t.date_echeance && (() => {
+      const d = new Date(t.date_echeance); d.setHours(0,0,0,0);
+      const diff = Math.round((d - today) / 86400000);
+      return diff >= 0 && diff <= 1;
+    })()
+  );
+
+  const overdueEch = echeances.filter(e => {
+    const d = new Date(e.date_echeance); d.setHours(0,0,0,0);
+    return d < today;
+  });
+  const urgentEch = echeances.filter(e => {
+    const d = new Date(e.date_echeance); d.setHours(0,0,0,0);
+    const diff = Math.round((d - today) / 86400000);
+    return diff >= 0 && diff <= 1;
+  });
+
+  if (overdueTaches.length) alerts.push(`${overdueTaches.length} tâche(s) en retard`);
+  if (urgentTaches.length) alerts.push(`${urgentTaches.length} tâche(s) pour aujourd'hui/demain`);
+  if (overdueEch.length) alerts.push(`${overdueEch.length} échéance(s) client en retard`);
+  if (urgentEch.length) alerts.push(`${urgentEch.length} échéance(s) client imminente(s)`);
+
+  if (alerts.length) {
+    new Notification('CRM Proactifs — Rappels', {
+      body: alerts.join('\n'),
+      icon: 'https://crm.proactifsconseils.fr/Icone%20CRM_Proactifs.png',
+      tag: 'crm-rappels'
+    });
+  }
 }
 
 // ── NAV ─────────────────────────────────────────────────────
