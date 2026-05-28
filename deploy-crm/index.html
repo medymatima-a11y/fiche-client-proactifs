@@ -467,8 +467,6 @@ table.crm-table{width:100%;border-collapse:collapse}
   <div class="main">
     <div class="topbar">
       <div class="topbar-title" id="topbar-title">Dashboard</div>
-      <div class="topbar-search"><span>🔍</span><input type="text" id="search-input" placeholder="Rechercher un client…" oninput="filterClients()" /></div>
-      <button class="btn btn-primary btn-sm" onclick="window.open('https://fiche-clients.proactifsconseils.fr','_blank')">+ Nouveau client</button>
     </div>
 
     <div class="content">
@@ -610,6 +608,7 @@ table.crm-table{width:100%;border-collapse:collapse}
             <div class="filter-row" id="filter-row">
               <button class="filter-btn active" onclick="setFilter(this,'')">Tous</button>
             </div>
+            <button class="btn btn-primary btn-sm" onclick="window.open('https://fiche-clients.proactifsconseils.fr','_blank')">+ Nouveau client</button>
           </div>
         </div>
         <div class="table-wrap">
@@ -1840,8 +1839,7 @@ function clearSearch() {
 
 function renderTable(clients) {
   const inlineEl = document.getElementById('clients-search');
-  const topbarEl = document.getElementById('search-input');
-  const q = (inlineEl?.value || topbarEl?.value || '').toLowerCase().trim();
+  const q = (inlineEl?.value || '').toLowerCase().trim();
 
   // Afficher/masquer le bouton effacer
   const btnClear = document.getElementById('btn-clear-search');
@@ -4559,3 +4557,4 @@ init();
 </div>
 </body>
 </html>
+                                                                                                                                                                                                                                         
