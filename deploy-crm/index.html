@@ -4,20 +4,24 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>CRM — Proactifs Conseils Patrimoine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#1a2e4a;--gold:#c9a84c;--light:#f4f6f9;--border:#dde3ed;
-  --text:#2c3e50;--muted:#7a8a9a;--green:#27ae60;--orange:#e67e22;
-  --red:#e74c3c;--blue:#2980b9;--sidebar:220px;
+  --navy:#132D1E;--gold:#C4973A;--light:#FAFAF7;--border:#E5E2DA;
+  --text:#111827;--muted:#6B7280;--green:#1E7A6E;--orange:#e67e22;
+  --red:#e74c3c;--blue:#2A9D8F;--sidebar:220px;
+  --sand:#F3F1EB;--gold-light:#E8C97A;--gold-pale:#FBF4E3;--ink-soft:#374151;
 }
 html,body{height:100%}
-body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:var(--text);background:var(--light)}
+body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);background:var(--light)}
 
 /* LOGIN */
-.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,#253d5c 100%)}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,#1C3D28 100%)}
 .login-card{background:#fff;border-radius:12px;padding:40px 36px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 .login-logo{font-size:15px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:6px}
 .login-sub{font-size:11px;color:var(--muted);text-align:center;margin-bottom:28px}
@@ -27,7 +31,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:var(--text);ba
 .login-field input:focus{border-color:var(--navy)}
 .login-error{color:var(--red);font-size:11px;margin-bottom:12px;text-align:center;display:none}
 .login-btn{width:100%;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px}
-.login-btn:hover{background:#253d5c}
+.login-btn:hover{background:#1C3D28}
 .login-btn:disabled{opacity:.6;cursor:default}
 
 /* APP */
