@@ -360,6 +360,40 @@ table.crm-table{width:100%;border-collapse:collapse}
 .dup-card .dup-text{flex:1;font-size:12px;color:#1a2e4a;font-weight:600}
 .dup-card .dup-arrow{font-size:14px;color:var(--gold)}
 
+/* TACHES (TO-DO) */
+.todo-widget{background:#fff;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:10px;padding:16px 20px;margin-bottom:24px}
+.todo-widget h3{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.todo-widget h3 .todo-count{background:var(--blue);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px}
+.todo-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.todo-row:last-child{border-bottom:none}
+.todo-check{width:18px;height:18px;border:2px solid var(--border);border-radius:4px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.todo-check:hover{border-color:var(--green);background:#e6f9ee}
+.todo-check.done{background:var(--green);border-color:var(--green);color:#fff}
+.todo-prio{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.todo-prio.haute{background:var(--red)}
+.todo-prio.normale{background:var(--gold)}
+.todo-prio.basse{background:var(--border)}
+.todo-titre{flex:1;color:var(--text)}
+.todo-titre.done{text-decoration:line-through;color:var(--muted)}
+.todo-client-tag{font-size:10px;color:var(--blue);font-weight:600;cursor:pointer}
+.todo-client-tag:hover{text-decoration:underline}
+.todo-date{font-size:10px;color:var(--muted);white-space:nowrap}
+.todo-date.overdue{color:var(--red);font-weight:600}
+.todo-cat{font-size:9px;padding:2px 7px;border-radius:20px;background:var(--light);color:var(--muted);font-weight:600}
+.todo-del{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;padding:2px 4px}
+.todo-del:hover{color:var(--red)}
+.todo-filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.todo-add-inline{display:flex;gap:8px;margin-bottom:16px;align-items:center}
+.todo-add-inline input{flex:1;border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:12px;font-family:inherit;color:var(--text);outline:none}
+.todo-add-inline input:focus{border-color:var(--navy)}
+.todo-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1001;align-items:center;justify-content:center}
+.todo-modal-overlay.open{display:flex}
+.todo-modal{background:#fff;border-radius:12px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.todo-modal-header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.todo-modal-header h2{font-size:14px;font-weight:700}
+.todo-modal-body{padding:20px}
+.todo-modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--light)}
+
 /* LOADING */
 .loading{text-align:center;padding:40px;color:var(--muted)}
 .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--navy);border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px}
@@ -447,6 +481,7 @@ table.crm-table{width:100%;border-collapse:collapse}
       <div class="nav-item active" onclick="showView('dashboard')"><span class="icon">📊</span>Dashboard</div>
       <div class="nav-item" onclick="showView('clients')"><span class="icon">👥</span>Clients <span class="nav-badge" id="badge-count">—</span></div>
       <div class="nav-item" onclick="showPipeline()"><span class="icon">🎯</span>Pipeline</div>
+      <div class="nav-item" onclick="showView('taches')"><span class="icon">✅</span>Tâches <span class="nav-badge" id="badge-taches" style="background:var(--blue)">—</span></div>
       <div class="nav-section">Outils</div>
       <div class="nav-item" onclick="showImport()"><span class="icon">📥</span>Importer clients</div>
       <div class="nav-item" onclick="openQuickProspect()"><span class="icon">⚡</span>Nouveau prospect</div>
@@ -592,6 +627,66 @@ table.crm-table{width:100%;border-collapse:collapse}
           <div id="echeances-dashboard"><div style="color:var(--muted);font-size:12px">Aucune échéance imminente.</div></div>
         </div>
 
+        <!-- Tâches à faire (widget) -->
+        <div class="todo-widget">
+          <h3>✅ Mes tâches <span class="todo-count" id="todo-widget-count">0</span> <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:auto;cursor:pointer" onclick="showView('taches')">Voir tout →</span></h3>
+          <div id="todo-widget-list"><div style="color:var(--muted);font-size:12px">Aucune tâche en cours.</div></div>
+        </div>
+
+      </div>
+
+      <!-- TACHES -->
+      <div class="view" id="view-taches">
+        <div style="max-width:900px">
+          <div class="todo-add-inline">
+            <input type="text" id="todo-quick-input" placeholder="Ajouter une tâche rapide…" onkeydown="if(event.key==='Enter')quickAddTache()" />
+            <button class="btn btn-primary btn-sm" onclick="quickAddTache()">+ Ajouter</button>
+            <button class="btn btn-outline btn-sm" onclick="openTacheModal()">＋ Détaillée</button>
+          </div>
+          <div class="todo-filters">
+            <button class="filter-btn active" onclick="setTacheFilter(this,'')">Toutes</button>
+            <button class="filter-btn" onclick="setTacheFilter(this,'a_faire')">À faire</button>
+            <button class="filter-btn" onclick="setTacheFilter(this,'en_cours')">En cours</button>
+            <button class="filter-btn" onclick="setTacheFilter(this,'fait')">Faites</button>
+            <span style="width:1px;height:20px;background:var(--border);margin:0 4px"></span>
+            <button class="filter-btn" onclick="setTachePrioFilter(this,'haute')">🔴 Haute</button>
+            <button class="filter-btn" onclick="setTachePrioFilter(this,'normale')">🟡 Normale</button>
+            <button class="filter-btn" onclick="setTachePrioFilter(this,'basse')">⚪ Basse</button>
+          </div>
+          <div id="taches-list"><div class="empty-state">Chargement…</div></div>
+        </div>
+      </div>
+
+      <!-- MODAL TACHE DÉTAILLÉE -->
+      <div class="todo-modal-overlay" id="tache-modal">
+        <div class="todo-modal">
+          <div class="todo-modal-header">
+            <h2 id="tache-modal-title">Nouvelle tâche</h2>
+            <span style="cursor:pointer;font-size:18px" onclick="closeTacheModal()">✕</span>
+          </div>
+          <div class="todo-modal-body">
+            <div class="form-grid two">
+              <div class="form-field"><label>Titre</label><input type="text" id="tm-titre" /></div>
+              <div class="form-field"><label>Catégorie</label><input type="text" id="tm-categorie" placeholder="Admin, Client, Réglementaire…" list="cat-suggestions" /></div>
+              <datalist id="cat-suggestions"><option value="Admin"><option value="Client"><option value="Réglementaire"><option value="Partenaire"><option value="Commercial"><option value="Comptabilité"></datalist>
+              <div class="form-field"><label>Priorité</label>
+                <select id="tm-priorite"><option value="normale">Normale</option><option value="haute">Haute</option><option value="basse">Basse</option></select>
+              </div>
+              <div class="form-field"><label>Statut</label>
+                <select id="tm-statut"><option value="a_faire">À faire</option><option value="en_cours">En cours</option><option value="fait">Fait</option></select>
+              </div>
+              <div class="form-field"><label>Date d'échéance</label><input type="date" id="tm-date" /></div>
+              <div class="form-field"><label>Client (optionnel)</label>
+                <select id="tm-client"><option value="">— Aucun —</option></select>
+              </div>
+              <div class="form-field full"><label>Description</label><textarea id="tm-description" rows="3"></textarea></div>
+            </div>
+          </div>
+          <div class="todo-modal-footer">
+            <button class="btn btn-outline" onclick="closeTacheModal()">Annuler</button>
+            <button class="btn btn-primary" onclick="saveTache()">Enregistrer</button>
+          </div>
+        </div>
       </div>
 
       <!-- CLIENTS -->
@@ -1072,7 +1167,8 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let allClients = [], currentFilter = '', currentClientId = null, authToken = null;
+let allClients = [], allTaches = [], currentFilter = '', currentClientId = null, authToken = null;
+let tacheFilter = '', tachePrioFilter = '', editingTacheId = null;
 
 // Garde authToken synchronisé avec la session Supabase, y compris quand
 // le client rafraîchit automatiquement le JWT (toutes les ~55 min).
@@ -1573,12 +1669,14 @@ async function apiDelete(table, id) {
 async function loadAll() {
   document.getElementById('table-loading').style.display = 'block';
   document.getElementById('clients-table').style.display = 'none';
-  const [clients, echeances, missions] = await Promise.all([
+  const [clients, echeances, missions, taches] = await Promise.all([
     apiGet('clients?order=created_at.desc'),
     apiGet('echeances?statut=eq.a_faire&order=date_echeance.asc'),
-    apiGet('missions?select=montant_ht,commission,statut')
+    apiGet('missions?select=montant_ht,commission,statut'),
+    apiGet('taches?order=created_at.desc')
   ]);
   allClients = clients;
+  allTaches = taches;
   renderStats(clients);
   renderTable(clients);
   renderEcheancesDashboard(echeances, clients);
@@ -1586,9 +1684,12 @@ async function loadAll() {
   renderClientChart(clients);
   renderConformiteAlert();
   renderDuplicatesAlert();
+  renderTachesDashboard();
+  renderTachesList();
   document.getElementById('table-loading').style.display = 'none';
   document.getElementById('clients-table').style.display = 'table';
   document.getElementById('badge-count').textContent = clients.length;
+  document.getElementById('badge-taches').textContent = taches.filter(t=>t.statut!=='fait').length || '0';
   const si = document.getElementById('sort-date'); if(si) si.textContent=' ↓';
 }
 
@@ -2968,19 +3069,190 @@ async function movePipeline(clientId, newStage) {
   showPipeline();
 }
 
+// ── TÂCHES (TO-DO) ──────────────────────────────────────────
+function renderTachesDashboard() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const pending = allTaches.filter(t => t.statut !== 'fait');
+  pending.sort((a,b) => {
+    const po = {haute:0,normale:1,basse:2};
+    if (po[a.priorite] !== po[b.priorite]) return po[a.priorite] - po[b.priorite];
+    if (a.date_echeance && b.date_echeance) return new Date(a.date_echeance) - new Date(b.date_echeance);
+    if (a.date_echeance) return -1;
+    if (b.date_echeance) return 1;
+    return 0;
+  });
+  const show = pending.slice(0, 7);
+  const el = document.getElementById('todo-widget-list');
+  document.getElementById('todo-widget-count').textContent = pending.length;
+  if (!show.length) { el.innerHTML = '<div style="color:var(--muted);font-size:12px">Aucune tâche en cours. ✅</div>'; return; }
+  el.innerHTML = show.map(t => {
+    const client = t.client_id ? allClients.find(c => c.id === t.client_id) : null;
+    const clientName = client ? [client.prenom_c1, client.nom_c1].filter(Boolean).join(' ') : '';
+    const isOverdue = t.date_echeance && new Date(t.date_echeance) < today;
+    return `<div class="todo-row">
+      <div class="todo-check" onclick="toggleTache('${t.id}')" title="Marquer comme fait">✓</div>
+      <div class="todo-prio ${t.priorite}"></div>
+      <div class="todo-titre">${t.titre}</div>
+      ${clientName ? `<span class="todo-client-tag" onclick="openClient('${t.client_id}')">${clientName}</span>` : ''}
+      ${t.categorie ? `<span class="todo-cat">${t.categorie}</span>` : ''}
+      ${t.date_echeance ? `<span class="todo-date${isOverdue?' overdue':''}">${formatDate(t.date_echeance)}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function renderTachesList() {
+  const today = new Date(); today.setHours(0,0,0,0);
+  let list = [...allTaches];
+  if (tacheFilter) list = list.filter(t => t.statut === tacheFilter);
+  if (tachePrioFilter) list = list.filter(t => t.priorite === tachePrioFilter);
+  list.sort((a,b) => {
+    const so = {a_faire:0,en_cours:1,fait:2};
+    if (so[a.statut] !== so[b.statut]) return so[a.statut] - so[b.statut];
+    const po = {haute:0,normale:1,basse:2};
+    if (po[a.priorite] !== po[b.priorite]) return po[a.priorite] - po[b.priorite];
+    if (a.date_echeance && b.date_echeance) return new Date(a.date_echeance) - new Date(b.date_echeance);
+    if (a.date_echeance) return -1;
+    if (b.date_echeance) return 1;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
+  const el = document.getElementById('taches-list');
+  if (!list.length) { el.innerHTML = '<div class="empty-state">Aucune tâche trouvée.</div>'; return; }
+  el.innerHTML = list.map(t => {
+    const client = t.client_id ? allClients.find(c => c.id === t.client_id) : null;
+    const clientName = client ? [client.prenom_c1, client.nom_c1].filter(Boolean).join(' ') : '';
+    const isDone = t.statut === 'fait';
+    const isOverdue = !isDone && t.date_echeance && new Date(t.date_echeance) < today;
+    const statutLabel = {a_faire:'À faire',en_cours:'En cours',fait:'Fait'}[t.statut];
+    return `<div class="todo-row" style="padding:10px 14px;background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+      <div class="todo-check${isDone?' done':''}" onclick="cycleTacheStatut('${t.id}')" title="${isDone?'Rouvrir':'Avancer le statut'}">${isDone?'✓':''}</div>
+      <div class="todo-prio ${t.priorite}" title="${t.priorite}"></div>
+      <div style="flex:1;min-width:0">
+        <div class="todo-titre${isDone?' done':''}">${t.titre}</div>
+        ${t.description ? `<div style="font-size:10px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.description}</div>` : ''}
+      </div>
+      ${clientName ? `<span class="todo-client-tag" onclick="openClient('${t.client_id}')">${clientName}</span>` : ''}
+      ${t.categorie ? `<span class="todo-cat">${t.categorie}</span>` : ''}
+      <span class="ech-status-btn ${t.statut}" onclick="cycleTacheStatut('${t.id}')" style="cursor:pointer;font-size:10px">${statutLabel}</span>
+      ${t.date_echeance ? `<span class="todo-date${isOverdue?' overdue':''}">${formatDate(t.date_echeance)}</span>` : ''}
+      <span style="cursor:pointer;font-size:12px;color:var(--muted)" onclick="editTache('${t.id}')" title="Modifier">✏️</span>
+      <button class="todo-del" onclick="deleteTache('${t.id}')" title="Supprimer">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function setTacheFilter(btn, val) {
+  tacheFilter = tacheFilter === val ? '' : val;
+  document.querySelectorAll('.todo-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  if (tacheFilter) btn.classList.add('active');
+  else document.querySelector('.todo-filters .filter-btn')?.classList.add('active');
+  renderTachesList();
+}
+function setTachePrioFilter(btn, val) {
+  tachePrioFilter = tachePrioFilter === val ? '' : val;
+  document.querySelectorAll('.todo-filters .filter-btn').forEach(b => {
+    if (b.onclick && b.onclick.toString().includes('setTachePrioFilter')) b.classList.remove('active');
+  });
+  if (tachePrioFilter) btn.classList.add('active');
+  renderTachesList();
+}
+
+async function quickAddTache() {
+  const input = document.getElementById('todo-quick-input');
+  const titre = input.value.trim();
+  if (!titre) return;
+  input.value = '';
+  const row = await apiPost('taches', { titre });
+  if (row && row[0]) { allTaches.unshift(row[0]); refreshTachesUI(); }
+}
+
+function openTacheModal(tache) {
+  editingTacheId = tache ? tache.id : null;
+  document.getElementById('tache-modal-title').textContent = tache ? 'Modifier la tâche' : 'Nouvelle tâche';
+  document.getElementById('tm-titre').value = tache?.titre || '';
+  document.getElementById('tm-categorie').value = tache?.categorie || '';
+  document.getElementById('tm-priorite').value = tache?.priorite || 'normale';
+  document.getElementById('tm-statut').value = tache?.statut || 'a_faire';
+  document.getElementById('tm-date').value = tache?.date_echeance || '';
+  document.getElementById('tm-description').value = tache?.description || '';
+  const sel = document.getElementById('tm-client');
+  sel.innerHTML = '<option value="">— Aucun —</option>' + allClients.map(c =>
+    `<option value="${c.id}"${tache?.client_id===c.id?' selected':''}>${[c.prenom_c1,c.nom_c1].filter(Boolean).join(' ')}</option>`
+  ).join('');
+  document.getElementById('tache-modal').classList.add('open');
+}
+function closeTacheModal() { document.getElementById('tache-modal').classList.remove('open'); editingTacheId = null; }
+
+async function saveTache() {
+  const data = {
+    titre: document.getElementById('tm-titre').value.trim(),
+    categorie: document.getElementById('tm-categorie').value.trim() || null,
+    priorite: document.getElementById('tm-priorite').value,
+    statut: document.getElementById('tm-statut').value,
+    date_echeance: document.getElementById('tm-date').value || null,
+    client_id: document.getElementById('tm-client').value || null,
+    description: document.getElementById('tm-description').value.trim() || null
+  };
+  if (!data.titre) return;
+  if (editingTacheId) {
+    await apiPatch('taches', editingTacheId, data);
+    const idx = allTaches.findIndex(t => t.id === editingTacheId);
+    if (idx >= 0) Object.assign(allTaches[idx], data);
+  } else {
+    const row = await apiPost('taches', data);
+    if (row && row[0]) allTaches.unshift(row[0]);
+  }
+  closeTacheModal();
+  refreshTachesUI();
+}
+
+function editTache(id) {
+  const t = allTaches.find(x => x.id === id);
+  if (t) openTacheModal(t);
+}
+
+async function toggleTache(id) {
+  await apiPatch('taches', id, { statut: 'fait' });
+  const t = allTaches.find(x => x.id === id);
+  if (t) t.statut = 'fait';
+  refreshTachesUI();
+}
+
+async function cycleTacheStatut(id) {
+  const t = allTaches.find(x => x.id === id);
+  if (!t) return;
+  const next = {a_faire:'en_cours',en_cours:'fait',fait:'a_faire'}[t.statut] || 'a_faire';
+  await apiPatch('taches', id, { statut: next });
+  t.statut = next;
+  refreshTachesUI();
+}
+
+async function deleteTache(id) {
+  if (!confirm('Supprimer cette tâche ?')) return;
+  await apiDelete('taches', id);
+  allTaches = allTaches.filter(t => t.id !== id);
+  refreshTachesUI();
+}
+
+function refreshTachesUI() {
+  renderTachesDashboard();
+  renderTachesList();
+  document.getElementById('badge-taches').textContent = allTaches.filter(t=>t.statut!=='fait').length || '0';
+}
+
 // ── NAV ─────────────────────────────────────────────────────
 let currentView = 'dashboard';
 function showView(name) {
   currentView = name;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-'+name)?.classList.add('active');
-  const titles = { dashboard:'Dashboard', clients:'Clients', import:'Importer des clients' };
+  const titles = { dashboard:'Dashboard', clients:'Clients', import:'Importer des clients', taches:'Tâches' };
   document.getElementById('topbar-title').textContent = titles[name] || '';
-  // Mise à jour de l'état actif dans la sidebar
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   if (name==='dashboard') document.querySelector('.nav-item[onclick*="dashboard"]')?.classList.add('active');
   if (name==='clients')   document.querySelector('.nav-item[onclick*="clients"]')?.classList.add('active');
   if (name==='pipeline')  document.querySelector('.nav-item[onclick*="Pipeline"]')?.classList.add('active');
+  if (name==='taches')    document.querySelector('.nav-item[onclick*="taches"]')?.classList.add('active');
+  if (name==='taches')    renderTachesList();
 }
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
