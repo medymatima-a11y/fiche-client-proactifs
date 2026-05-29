@@ -3398,8 +3398,19 @@ async function copyFicheLink() {
       throw new Error(err.error || `Erreur ${res.status}`);
     }
     const { url, clientName, expiresInDays } = await res.json();
-    await navigator.clipboard.writeText(url);
-    btn.textContent = '✅ Lien copié !';
+    const html = `<a href="${url}">Fiche client à compléter</a>`;
+    // Copie au format "rich text" (HTML) + fallback texte brut pour les éditeurs basiques
+    try {
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          'text/html':  new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([url],  { type: 'text/plain' })
+        })
+      ]);
+    } catch {
+      await navigator.clipboard.writeText(html);
+    }
+    btn.textContent = '✅ Lien HTML copié !';
     btn.style.background = 'var(--green)';
     btn.style.color = '#fff';
     btn.style.borderColor = 'var(--green)';
