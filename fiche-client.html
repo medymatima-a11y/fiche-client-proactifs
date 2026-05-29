@@ -943,20 +943,27 @@ const MAGIC_TOKEN   = _params.get('token');
 const IS_EDIT_MODE  = !!MAGIC_TOKEN;
 const FICHE_API_URL = `${SUPABASE_URL}/functions/v1/fiche-client-api`;
 
-if (_legacyEditId && !MAGIC_TOKEN) {
+if (!MAGIC_TOKEN) {
   document.addEventListener('DOMContentLoaded', () => {
     document.body.innerHTML = `
       <div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a2e4a,#253d5c);font-family:Segoe UI,Arial,sans-serif;padding:24px">
-        <div style="background:#fff;border-radius:14px;padding:40px 48px;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
-          <div style="font-size:40px;margin-bottom:14px">🔒</div>
-          <h1 style="color:#1a2e4a;font-size:20px;font-weight:700;margin-bottom:12px">Lien obsolète</h1>
-          <p style="color:#7a8a9a;font-size:13px;line-height:1.6;margin-bottom:18px">
-            Ce lien n'est plus valide. Contactez votre conseiller pour recevoir un nouveau lien sécurisé.
+        <div style="background:#fff;border-radius:14px;padding:44px 48px;max-width:540px;box-shadow:0 20px 60px rgba(0,0,0,.3);text-align:center">
+          <div style="font-size:44px;margin-bottom:16px">🔐</div>
+          <h1 style="color:#1a2e4a;font-size:22px;font-weight:700;margin-bottom:14px">Accès personnalisé requis</h1>
+          <p style="color:#5a6a7a;font-size:14px;line-height:1.6;margin-bottom:22px">
+            Cette fiche client n'est accessible qu'à partir du lien sécurisé que votre conseiller vous a envoyé par email.
+          </p>
+          <p style="color:#7a8a9a;font-size:13px;line-height:1.6;margin-bottom:24px">
+            Vous n'avez pas reçu votre lien ? Contactez Medy Matima :<br>
+            <a href="mailto:medy@proactifsconseils.fr" style="color:#b8941a;text-decoration:none;font-weight:600">medy@proactifsconseils.fr</a>
+          </p>
+          <p style="color:#a0a8b0;font-size:11px;border-top:1px solid #e8e8e8;padding-top:18px">
+            Proactifs Conseils Patrimoine — Cabinet de gestion de patrimoine, Colombes (92)
           </p>
         </div>
       </div>`;
   });
-  throw new Error('Legacy clientId link blocked');
+  throw new Error('No token: public form access blocked');
 }
 // ═══════════════════════════════════════════════════════════
 
