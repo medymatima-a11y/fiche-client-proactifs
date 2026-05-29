@@ -4877,4 +4877,93 @@ init();
 <div class="statuts-overlay" id="statuts-overlay" onclick="closeStatutsSettings(event)">
   <div class="statuts-box">
     <div class="statuts-header">
-      <h3>⚙️ Gestion des statuts clients</
+      <h3>⚙️ Gestion des statuts clients</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeStatutsSettingsBtn()">✕</button>
+    </div>
+    <div class="statuts-body">
+      <div class="statuts-list" id="statuts-list"></div>
+      <div class="statuts-add">
+        <h4>+ Ajouter un statut</h4>
+        <div class="statuts-add-grid">
+          <div class="form-field"><label>Nom du statut *</label><input type="text" id="new-st-label" placeholder="ex : VIP, En attente…" /></div>
+          <div class="form-field"><label>Compte dans les stats comme</label>
+            <select id="new-st-type">
+              <option value="autre">Aucun comptage spécial</option>
+              <option value="actif">Clients actifs</option>
+              <option value="prospect">Prospects</option>
+            </select>
+          </div>
+          <div class="form-field"><label>Couleur de fond</label><input type="color" id="new-st-bg" value="#e8f4fd" style="height:34px;padding:2px 4px;cursor:pointer" /></div>
+          <div class="form-field"><label>Couleur du texte</label><input type="color" id="new-st-color" value="#1a5276" style="height:34px;padding:2px 4px;cursor:pointer" /></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <button class="btn btn-primary btn-sm" onclick="addStatut()">+ Ajouter</button>
+          <span id="new-st-preview" style="font-size:11px;color:var(--muted)">Aperçu : <span class="badge" id="badge-preview-span" style="background:#e8f4fd;color:#1a5276">Aperçu</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="statuts-footer">
+      <button class="btn btn-outline btn-sm" onclick="resetStatuts()" style="color:var(--muted)">↺ Réinitialiser</button>
+      <button class="btn btn-primary btn-sm" onclick="closeStatutsSettingsBtn()">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modale aperçu bilan -->
+<div class="bilan-modal-overlay" id="bilan-modal-overlay" onclick="closeBilanModal(event)">
+  <div class="bilan-modal-bar">
+    <button class="btn btn-outline btn-sm" onclick="closeBilanModalBtn()" style="background:#fff">✕ Fermer</button>
+    <button class="btn btn-gold btn-sm" onclick="printBilan()">🖨️ Imprimer / Enregistrer PDF</button>
+  </div>
+  <div class="bilan-modal-content" id="bilan-modal-content"></div>
+</div>
+
+<!-- Modal édition échéance -->
+<div class="ech-modal-overlay" id="ech-modal" onclick="if(event.target===this)closeEchModal()">
+  <div class="ech-modal">
+    <div class="ech-modal-header">
+      <h2>✏️ Modifier l'échéance</h2>
+      <button onclick="closeEchModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">×</button>
+    </div>
+    <div class="ech-modal-body">
+      <div class="form-field full">
+        <label>Titre</label>
+        <input type="text" id="ech-edit-titre" placeholder="ex : Renouvellement MIF2" />
+      </div>
+      <div class="form-field">
+        <label>Type</label>
+        <select id="ech-edit-type">
+          <option>Renouvellement MIF2</option>
+          <option>Bilan annuel</option>
+          <option>Relance client</option>
+          <option>AV — 8 ans</option>
+          <option>PER — Versement</option>
+          <option>Fin de bail</option>
+          <option>Autre</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Date échéance</label>
+        <input type="date" id="ech-edit-date" />
+      </div>
+      <div class="form-field">
+        <label>Statut</label>
+        <select id="ech-edit-statut">
+          <option value="a_faire">○ À faire</option>
+          <option value="reporte">⏸ Reporté</option>
+          <option value="fait">✅ Fait</option>
+        </select>
+      </div>
+      <div class="form-field full">
+        <label>Notes</label>
+        <input type="text" id="ech-edit-notes" placeholder="Détails…" />
+      </div>
+    </div>
+    <div class="ech-modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeEchModal()">Annuler</button>
+      <button class="btn btn-primary btn-sm" onclick="updateEcheance()">💾 Enregistrer</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
