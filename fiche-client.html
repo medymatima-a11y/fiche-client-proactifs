@@ -1039,6 +1039,51 @@ async function loadClientForEdit() {
       });
     }
 
+    // Patrimoine immobilier
+    if (c.immobilier && typeof c.immobilier === 'object') {
+      const im = c.immobilier;
+      (im.active || []).forEach(key => {
+        const chip = document.querySelector(`.ap-chip[data-immo="${key}"]`);
+        if (chip) chip.classList.add('checked');
+        const row = document.querySelector(`tr[data-immo="${key}"]`);
+        if (row) row.classList.add('dyn-visible');
+      });
+      document.querySelectorAll('tr[data-immo]').forEach(row => {
+        const d = im[row.dataset.immo];
+        if (!d) return;
+        const s = (col, v) => { const inp = row.querySelector(`[data-col="${col}"]`); if (inp && v != null) inp.value = v; };
+        s('adresse', d.adresse); s('valeur', d.valeur); s('achat', d.achat);
+        s('date_achat', d.date_achat); s('loyers', d.loyers);
+      });
+      (im.extras || []).forEach(extra => {
+        addImmoRow();
+        const row = document.querySelector('#immo-extra-rows tr:last-child');
+        if (row) {
+          const s = (col, v) => { const inp = row.querySelector(`[data-col="${col}"]`); if (inp && v != null) inp.value = v; };
+          s('type', extra.type); s('adresse', extra.adresse); s('valeur', extra.valeur);
+          s('achat', extra.achat); s('date_achat', extra.date_achat); s('loyers', extra.loyers);
+        }
+      });
+    }
+
+    // Crédits bancaires
+    if (c.credits && typeof c.credits === 'object') {
+      const cr = c.credits;
+      (cr.active || []).forEach(key => {
+        const chip = document.querySelector(`.ap-chip[data-credit="${key}"]`);
+        if (chip) chip.classList.add('checked');
+        const row = document.querySelector(`tr[data-credit="${key}"]`);
+        if (row) row.classList.add('dyn-visible');
+      });
+      document.querySelectorAll('tr[data-credit]').forEach(row => {
+        const d = cr[row.dataset.credit];
+        if (!d) return;
+        const s = (col, v) => { const inp = row.querySelector(`[data-col="${col}"]`); if (inp && v != null) inp.value = v; };
+        s('type', d.type); s('capital', d.capital); s('restant', d.restant);
+        s('mensualite', d.mensualite); s('date_fin', d.date_fin); s('taux', d.taux);
+      });
+    }
+
     const btn = document.getElementById('btn-submit');
     btn.textContent = 'Mettre à jour';
     document.querySelector('.footer-note').innerHTML =
@@ -1594,7 +1639,59 @@ function collectPayloadForSave() {
     statut_pro_c1:     document.getElementById('c1-statut-pro')?.value  || null,
     statut_pro_c2:     document.getElementById('c2-statut-pro')?.value  || null,
     epargne:           collectEpargne(),
+    immobilier:        collectImmobilier(),
+    credits:           collectCredits(),
   };
+}
+
+// ── Lecture immobilier ─────────────────────────────────────
+function collectImmobilier() {
+  const data = { active: [], extras: [] };
+  document.querySelectorAll('.ap-chip[data-immo].checked').forEach(chip => {
+    data.active.push(chip.dataset.immo);
+  });
+  document.querySelectorAll('tr[data-immo]').forEach(row => {
+    const get = col => row.querySelector(`[data-col="${col}"]`)?.value || null;
+    data[row.dataset.immo] = {
+      adresse:    get('adresse'),
+      valeur:     parseMontant(get('valeur')),
+      achat:      parseMontant(get('achat')),
+      date_achat: get('date_achat'),
+      loyers:     parseMontant(get('loyers')),
+    };
+  });
+  document.querySelectorAll('#immo-extra-rows tr').forEach(row => {
+    const get = col => row.querySelector(`[data-col="${col}"]`)?.value || null;
+    data.extras.push({
+      type:       get('type'),
+      adresse:    get('adresse'),
+      valeur:     parseMontant(get('valeur')),
+      achat:      parseMontant(get('achat')),
+      date_achat: get('date_achat'),
+      loyers:     parseMontant(get('loyers')),
+    });
+  });
+  return data;
+}
+
+// ── Lecture crédits ────────────────────────────────────────
+function collectCredits() {
+  const data = { active: [] };
+  document.querySelectorAll('.ap-chip[data-credit].checked').forEach(chip => {
+    data.active.push(chip.dataset.credit);
+  });
+  document.querySelectorAll('tr[data-credit]').forEach(row => {
+    const get = col => row.querySelector(`[data-col="${col}"]`)?.value || null;
+    data[row.dataset.credit] = {
+      type:       get('type'),
+      capital:    parseMontant(get('capital')),
+      restant:    parseMontant(get('restant')),
+      mensualite: parseMontant(get('mensualite')),
+      date_fin:   get('date_fin'),
+      taux:       get('taux'),
+    };
+  });
+  return data;
 }
 
 // ── Auto-sauvegarde côté serveur (mode édition) ────────────
