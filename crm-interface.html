@@ -2413,7 +2413,8 @@ async function loadEcheances() {
       <button class="ech-status-btn ${e.statut||'a_faire'}" onclick="toggleEcheance('${e.id}','${e.statut||'a_faire'}')">
         ${e.statut==='fait'?'✅ Fait':e.statut==='reporte'?'⏸ Reporté':'○ À faire'}
       </button>
-      <button class="btn btn-outline btn-sm" onclick="editEcheance('${e.id}')" title="Modifier" style="margin-right:2px">✏️</button>
+      <button class="btn btn-outline btn-sm" title="Modifier" style="margin-right:2px"
+        onclick="editEcheance('${e.id}','${(e.titre||'').replace(/'/g,"\\'")}','${e.type||''}','${e.date_echeance||''}','${(e.notes||'').replace(/'/g,"\\'")}','${e.statut||'a_faire'}')">✏️</button>
       <button class="btn btn-outline btn-sm" onclick="deleteEcheance('${e.id}')">×</button>
     </div>`;
   }).join('');
@@ -2499,16 +2500,13 @@ async function deleteEcheance(id) {
 }
 
 let editingEcheanceId = null;
-async function editEcheance(id) {
-  const list = await apiGet(`echeances?id=eq.${id}`);
-  if (!list.length) return;
-  const e = list[0];
+function editEcheance(id, titre, type, date, notes, statut) {
   editingEcheanceId = id;
-  document.getElementById('ech-edit-titre').value  = e.titre || '';
-  document.getElementById('ech-edit-type').value   = e.type  || 'Autre';
-  document.getElementById('ech-edit-date').value   = e.date_echeance || '';
-  document.getElementById('ech-edit-notes').value  = e.notes || '';
-  document.getElementById('ech-edit-statut').value = e.statut || 'a_faire';
+  document.getElementById('ech-edit-titre').value  = titre  || '';
+  document.getElementById('ech-edit-type').value   = type   || 'Autre';
+  document.getElementById('ech-edit-date').value   = date   || '';
+  document.getElementById('ech-edit-notes').value  = notes  || '';
+  document.getElementById('ech-edit-statut').value = statut || 'a_faire';
   document.getElementById('ech-modal').classList.add('open');
 }
 function closeEchModal() {
