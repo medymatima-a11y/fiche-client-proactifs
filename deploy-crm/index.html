@@ -397,6 +397,14 @@ table.crm-table{width:100%;border-collapse:collapse}
 .todo-modal-header h2{font-size:14px;font-weight:700}
 .todo-modal-body{padding:20px}
 .todo-modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--light)}
+.ech-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1005;align-items:center;justify-content:center}
+.ech-modal-overlay.open{display:flex}
+.ech-modal{background:#fff;border-radius:12px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.ech-modal-header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.ech-modal-header h2{font-size:14px;font-weight:700}
+.ech-modal-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ech-modal-body .full{grid-column:1/-1}
+.ech-modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--light)}
 
 /* LOADING */
 .loading{text-align:center;padding:40px;color:var(--muted)}
@@ -2405,6 +2413,7 @@ async function loadEcheances() {
       <button class="ech-status-btn ${e.statut||'a_faire'}" onclick="toggleEcheance('${e.id}','${e.statut||'a_faire'}')">
         ${e.statut==='fait'?'✅ Fait':e.statut==='reporte'?'⏸ Reporté':'○ À faire'}
       </button>
+      <button class="btn btn-outline btn-sm" onclick="editEcheance('${e.id}')" title="Modifier" style="margin-right:2px">✏️</button>
       <button class="btn btn-outline btn-sm" onclick="deleteEcheance('${e.id}')">×</button>
     </div>`;
   }).join('');
@@ -2487,6 +2496,39 @@ async function toggleEcheance(id, current) {
 async function deleteEcheance(id) {
   if (!confirm('Supprimer cette échéance ?')) return;
   await apiDelete('echeances', id); loadEcheances(); loadAll();
+}
+
+let editingEcheanceId = null;
+async function editEcheance(id) {
+  const list = await apiGet(`echeances?id=eq.${id}`);
+  if (!list.length) return;
+  const e = list[0];
+  editingEcheanceId = id;
+  document.getElementById('ech-edit-titre').value  = e.titre || '';
+  document.getElementById('ech-edit-type').value   = e.type  || 'Autre';
+  document.getElementById('ech-edit-date').value   = e.date_echeance || '';
+  document.getElementById('ech-edit-notes').value  = e.notes || '';
+  document.getElementById('ech-edit-statut').value = e.statut || 'a_faire';
+  document.getElementById('ech-modal').classList.add('open');
+}
+function closeEchModal() {
+  document.getElementById('ech-modal').classList.remove('open');
+  editingEcheanceId = null;
+}
+async function updateEcheance() {
+  if (!editingEcheanceId) return;
+  const titre = document.getElementById('ech-edit-titre').value.trim();
+  const date  = document.getElementById('ech-edit-date').value;
+  if (!titre || !date) { alert('Titre et date obligatoires'); return; }
+  await apiPatch('echeances', editingEcheanceId, {
+    titre,
+    type:          document.getElementById('ech-edit-type').value,
+    date_echeance: date,
+    notes:         document.getElementById('ech-edit-notes').value || null,
+    statut:        document.getElementById('ech-edit-statut').value,
+  });
+  closeEchModal();
+  loadEcheances(); loadAll();
 }
 
 // ── STATUT ──────────────────────────────────────────────────
@@ -4838,44 +4880,4 @@ init();
   <div class="statuts-box">
     <div class="statuts-header">
       <h3>⚙️ Gestion des statuts clients</h3>
-      <button class="btn btn-outline btn-sm" onclick="closeStatutsSettingsBtn()">✕</button>
-    </div>
-    <div class="statuts-body">
-      <div class="statuts-list" id="statuts-list"></div>
-      <div class="statuts-add">
-        <h4>+ Ajouter un statut</h4>
-        <div class="statuts-add-grid">
-          <div class="form-field"><label>Nom du statut *</label><input type="text" id="new-st-label" placeholder="ex : VIP, En attente…" /></div>
-          <div class="form-field"><label>Compte dans les stats comme</label>
-            <select id="new-st-type">
-              <option value="autre">Aucun comptage spécial</option>
-              <option value="actif">Clients actifs</option>
-              <option value="prospect">Prospects</option>
-            </select>
-          </div>
-          <div class="form-field"><label>Couleur de fond</label><input type="color" id="new-st-bg" value="#e8f4fd" style="height:34px;padding:2px 4px;cursor:pointer" /></div>
-          <div class="form-field"><label>Couleur du texte</label><input type="color" id="new-st-color" value="#1a5276" style="height:34px;padding:2px 4px;cursor:pointer" /></div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <button class="btn btn-primary btn-sm" onclick="addStatut()">+ Ajouter</button>
-          <span id="new-st-preview" style="font-size:11px;color:var(--muted)">Aperçu : <span class="badge" id="badge-preview-span" style="background:#e8f4fd;color:#1a5276">Aperçu</span></span>
-        </div>
-      </div>
-    </div>
-    <div class="statuts-footer">
-      <button class="btn btn-outline btn-sm" onclick="resetStatuts()" style="color:var(--muted)">↺ Réinitialiser</button>
-      <button class="btn btn-primary btn-sm" onclick="closeStatutsSettingsBtn()">Fermer</button>
-    </div>
-  </div>
-</div>
-
-<!-- Modale aperçu bilan -->
-<div class="bilan-modal-overlay" id="bilan-modal-overlay" onclick="closeBilanModal(event)">
-  <div class="bilan-modal-bar">
-    <button class="btn btn-outline btn-sm" onclick="closeBilanModalBtn()" style="background:#fff">✕ Fermer</button>
-    <button class="btn btn-gold btn-sm" onclick="printBilan()">🖨️ Imprimer / Enregistrer PDF</button>
-  </div>
-  <div class="bilan-modal-content" id="bilan-modal-content"></div>
-</div>
-</body>
-</html>
+      <button class="btn btn-outline btn-sm" onclick="close
