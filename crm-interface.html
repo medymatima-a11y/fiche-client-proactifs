@@ -397,6 +397,14 @@ table.crm-table{width:100%;border-collapse:collapse}
 .todo-modal-header h2{font-size:14px;font-weight:700}
 .todo-modal-body{padding:20px}
 .todo-modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--light)}
+.ech-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1005;align-items:center;justify-content:center}
+.ech-modal-overlay.open{display:flex}
+.ech-modal{background:#fff;border-radius:12px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden}
+.ech-modal-header{background:var(--navy);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between}
+.ech-modal-header h2{font-size:14px;font-weight:700}
+.ech-modal-body{padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ech-modal-body .full{grid-column:1/-1}
+.ech-modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;background:var(--light)}
 
 /* LOADING */
 .loading{text-align:center;padding:40px;color:var(--muted)}
@@ -2405,6 +2413,7 @@ async function loadEcheances() {
       <button class="ech-status-btn ${e.statut||'a_faire'}" onclick="toggleEcheance('${e.id}','${e.statut||'a_faire'}')">
         ${e.statut==='fait'?'✅ Fait':e.statut==='reporte'?'⏸ Reporté':'○ À faire'}
       </button>
+      <button class="btn btn-outline btn-sm" onclick="editEcheance('${e.id}')" title="Modifier" style="margin-right:2px">✏️</button>
       <button class="btn btn-outline btn-sm" onclick="deleteEcheance('${e.id}')">×</button>
     </div>`;
   }).join('');
@@ -2487,6 +2496,39 @@ async function toggleEcheance(id, current) {
 async function deleteEcheance(id) {
   if (!confirm('Supprimer cette échéance ?')) return;
   await apiDelete('echeances', id); loadEcheances(); loadAll();
+}
+
+let editingEcheanceId = null;
+async function editEcheance(id) {
+  const list = await apiGet(`echeances?id=eq.${id}`);
+  if (!list.length) return;
+  const e = list[0];
+  editingEcheanceId = id;
+  document.getElementById('ech-edit-titre').value  = e.titre || '';
+  document.getElementById('ech-edit-type').value   = e.type  || 'Autre';
+  document.getElementById('ech-edit-date').value   = e.date_echeance || '';
+  document.getElementById('ech-edit-notes').value  = e.notes || '';
+  document.getElementById('ech-edit-statut').value = e.statut || 'a_faire';
+  document.getElementById('ech-modal').classList.add('open');
+}
+function closeEchModal() {
+  document.getElementById('ech-modal').classList.remove('open');
+  editingEcheanceId = null;
+}
+async function updateEcheance() {
+  if (!editingEcheanceId) return;
+  const titre = document.getElementById('ech-edit-titre').value.trim();
+  const date  = document.getElementById('ech-edit-date').value;
+  if (!titre || !date) { alert('Titre et date obligatoires'); return; }
+  await apiPatch('echeances', editingEcheanceId, {
+    titre,
+    type:          document.getElementById('ech-edit-type').value,
+    date_echeance: date,
+    notes:         document.getElementById('ech-edit-notes').value || null,
+    statut:        document.getElementById('ech-edit-statut').value,
+  });
+  closeEchModal();
+  loadEcheances(); loadAll();
 }
 
 // ── STATUT ──────────────────────────────────────────────────
@@ -4876,6 +4918,54 @@ init();
     <button class="btn btn-gold btn-sm" onclick="printBilan()">🖨️ Imprimer / Enregistrer PDF</button>
   </div>
   <div class="bilan-modal-content" id="bilan-modal-content"></div>
+</div>
+
+<!-- Modal édition échéance -->
+<div class="ech-modal-overlay" id="ech-modal" onclick="if(event.target===this)closeEchModal()">
+  <div class="ech-modal">
+    <div class="ech-modal-header">
+      <h2>✏️ Modifier l'échéance</h2>
+      <button onclick="closeEchModal()" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer">×</button>
+    </div>
+    <div class="ech-modal-body">
+      <div class="form-field full">
+        <label>Titre</label>
+        <input type="text" id="ech-edit-titre" placeholder="ex : Renouvellement MIF2" />
+      </div>
+      <div class="form-field">
+        <label>Type</label>
+        <select id="ech-edit-type">
+          <option>Renouvellement MIF2</option>
+          <option>Bilan annuel</option>
+          <option>Relance client</option>
+          <option>AV — 8 ans</option>
+          <option>PER — Versement</option>
+          <option>Fin de bail</option>
+          <option>Autre</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label>Date échéance</label>
+        <input type="date" id="ech-edit-date" />
+      </div>
+      <div class="form-field">
+        <label>Statut</label>
+        <select id="ech-edit-statut">
+          <option value="a_faire">○ À faire</option>
+          <option value="reporte">⏸ Reporté</option>
+          <option value="fait">✅ Fait</option>
+        </select>
+      </div>
+      <div class="form-field full">
+        <label>Notes</label>
+        <input type="text" id="ech-edit-notes" placeholder="Détails…" />
+      </div>
+    </div>
+    <div class="ech-modal-footer">
+      <button class="btn btn-outline btn-sm" onclick="closeEchModal()">Annuler</button>
+      <button class="btn btn-primary btn-sm" onclick="updateEcheance()">💾 Enregistrer</button>
+    </div>
+  </div>
 </div>
 </body>
 </html>
