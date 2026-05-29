@@ -975,6 +975,11 @@ const SB_HEADERS = {
 // ── CHARGEMENT DONNÉES CLIENT (mode magic link) ──────────────
 async function loadClientForEdit() {
   if (!IS_EDIT_MODE) return;
+  // Feedback synchrone immédiat : titre + bannière de chargement
+  document.querySelector('.header-title').textContent = 'MISE À JOUR DE VOTRE DOSSIER';
+  const banner = document.getElementById('draft-banner');
+  banner.classList.add('visible');
+  banner.innerHTML = '<div class="draft-left"><div class="draft-dot" style="background:#4299e1;animation:pulse 1s infinite"></div><span>Chargement de votre dossier…</span></div>';
   try {
     const res = await fetch(`${FICHE_API_URL}?token=${MAGIC_TOKEN}`);
     if (!res.ok) {
@@ -1027,17 +1032,15 @@ async function loadClientForEdit() {
       });
     }
 
-    // Adapter l'interface pour le mode édition
-    document.querySelector('.header-title').textContent = 'MISE À JOUR DE VOTRE DOSSIER';
     const btn = document.getElementById('btn-submit');
     btn.textContent = 'Mettre à jour';
     document.querySelector('.footer-note').innerHTML =
       '<strong>Vous modifiez votre dossier existant.</strong> Cliquez sur « Mettre à jour » pour enregistrer vos modifications.';
-    // Masquer le brouillon en mode édition
-    document.getElementById('draft-banner')?.classList.remove('visible');
+    banner.classList.remove('visible');
   } catch (err) {
     console.error('Erreur chargement client:', err);
-    alert('Impossible de charger votre dossier : ' + err.message);
+    banner.classList.add('visible');
+    banner.innerHTML = `<div class="draft-left"><div class="draft-dot" style="background:#e53e3e"></div><span style="color:#c53030">Erreur : ${err.message} — Vous pouvez remplir la fiche manuellement.</span></div>`;
   }
 }
 
