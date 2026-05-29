@@ -1528,9 +1528,13 @@ document.addEventListener('DOMContentLoaded', () => {
     ta.addEventListener('input', resize);
     resize();
   });
-  if (!IS_EDIT_MODE) {
-    document.querySelector('.body').addEventListener('input', saveDraft);
-    document.querySelector('.body').addEventListener('change', saveDraft);
+  const _body = document.querySelector('.body');
+  if (IS_EDIT_MODE) {
+    _body.addEventListener('input',  () => { clearTimeout(_autoSaveTimer); _autoSaveTimer = setTimeout(autoSaveToServer, 3000); });
+    _body.addEventListener('change', () => { clearTimeout(_autoSaveTimer); _autoSaveTimer = setTimeout(autoSaveToServer, 3000); });
+  } else {
+    _body.addEventListener('input',  saveDraft);
+    _body.addEventListener('change', saveDraft);
   }
   recalculateTotal();
 });
@@ -1543,6 +1547,74 @@ function fileChosen(input, id) {
   const names = Array.from(input.files).map(f => f.name).join(', ');
   status.textContent = names;
   item.classList.add('uploaded');
+}
+
+// ── Collecte payload formulaire (réutilisé par auto-save et submit) ──
+function collectPayloadForSave() {
+  return {
+    nom_c1:            document.getElementById('c1-nom')?.value         || null,
+    prenom_c1:         document.getElementById('c1-prenom')?.value      || null,
+    date_naissance_c1: document.getElementById('c1-dob')?.value         || null,
+    lieu_naissance_c1: document.getElementById('c1-lieu')?.value        || null,
+    telephone_c1:      document.getElementById('c1-tel')?.value         || null,
+    email_c1:          document.getElementById('c1-email')?.value       || null,
+    profession_c1:     document.getElementById('c1-profession')?.value  || null,
+    entreprise_c1:     document.getElementById('c1-entreprise')?.value  || null,
+    nom_c2:            document.getElementById('c2-nom')?.value         || null,
+    prenom_c2:         document.getElementById('c2-prenom')?.value      || null,
+    date_naissance_c2: document.getElementById('c2-dob')?.value         || null,
+    lieu_naissance_c2: document.getElementById('c2-lieu')?.value        || null,
+    telephone_c2:      document.getElementById('c2-tel')?.value         || null,
+    email_c2:          document.getElementById('c2-email')?.value       || null,
+    profession_c2:     document.getElementById('c2-profession')?.value  || null,
+    entreprise_c2:     document.getElementById('c2-entreprise')?.value  || null,
+    adresse:           document.getElementById('adresse')?.value        || null,
+    statut_marital:    document.getElementById('statut-marital')?.value || null,
+    regime:            document.getElementById('regime')?.value         || null,
+    date_union:        document.getElementById('date-union')?.value     || null,
+    enfants_noms:      document.getElementById('enfants-noms')?.value   || null,
+    enfants_dob:       document.getElementById('enfants-dob')?.value    || null,
+    salaire_c1:        parseMontant(document.getElementById('sal-c1')?.value),
+    salaire_c2:        parseMontant(document.getElementById('sal-c2')?.value),
+    impot_c1:          parseMontant(document.getElementById('impot-c1')?.value),
+    impot_c2:          parseMontant(document.getElementById('impot-c2')?.value),
+    banques:           document.getElementById('banques')?.value        || null,
+    code_postal:       document.getElementById('code-postal')?.value    || null,
+    ville:             document.getElementById('ville')?.value          || null,
+    c2_adresse:        document.getElementById('c2-adresse')?.value     || null,
+    c2_code_postal:    document.getElementById('c2-code-postal')?.value || null,
+    c2_ville:          document.getElementById('c2-ville')?.value       || null,
+    statut_pro_c1:     document.getElementById('c1-statut-pro')?.value  || null,
+    statut_pro_c2:     document.getElementById('c2-statut-pro')?.value  || null,
+    epargne:           collectEpargne(),
+  };
+}
+
+// ── Auto-sauvegarde côté serveur (mode édition) ────────────
+let _autoSaveTimer = null, _isSaving = false;
+async function autoSaveToServer() {
+  if (!IS_EDIT_MODE || _isSaving) return;
+  _isSaving = true;
+  const banner = document.getElementById('draft-banner');
+  banner.classList.add('visible');
+  banner.innerHTML = '<div class="draft-left"><div class="draft-dot" style="background:#4299e1"></div><span>Sauvegarde en cours…</span></div>';
+  try {
+    const res = await fetch(FICHE_API_URL + `?token=${MAGIC_TOKEN}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(collectPayloadForSave())
+    });
+    if (res.ok) {
+      banner.innerHTML = '<div class="draft-left"><div class="draft-dot" style="background:#27ae60"></div><span>Progression sauvegardée ✓</span></div><span class="draft-clear" onclick="this.closest(\'#draft-banner\').classList.remove(\'visible\')" style="cursor:pointer;font-size:11px;color:var(--muted)">✕</span>';
+      setTimeout(() => banner.classList.remove('visible'), 4000);
+    } else {
+      banner.classList.remove('visible');
+    }
+  } catch {
+    banner.classList.remove('visible');
+  } finally {
+    _isSaving = false;
+  }
 }
 
 // ── Lecture des données épargne depuis le tableau ──────────
@@ -1585,48 +1657,8 @@ async function submitForm() {
   btn.disabled = true;
   btn.textContent = 'Envoi en cours…';
 
-  // Collecte des données textuelles
-  const payload = {
-    nom_c1:              document.getElementById('c1-nom')?.value        || null,
-    prenom_c1:           document.getElementById('c1-prenom')?.value     || null,
-    date_naissance_c1:   document.getElementById('c1-dob')?.value        || null,
-    lieu_naissance_c1:   document.getElementById('c1-lieu')?.value       || null,
-    telephone_c1:        document.getElementById('c1-tel')?.value        || null,
-    email_c1:            document.getElementById('c1-email')?.value      || null,
-    profession_c1:       document.getElementById('c1-profession')?.value || null,
-    entreprise_c1:       document.getElementById('c1-entreprise')?.value || null,
-
-    nom_c2:              document.getElementById('c2-nom')?.value        || null,
-    prenom_c2:           document.getElementById('c2-prenom')?.value     || null,
-    date_naissance_c2:   document.getElementById('c2-dob')?.value        || null,
-    lieu_naissance_c2:   document.getElementById('c2-lieu')?.value       || null,
-    telephone_c2:        document.getElementById('c2-tel')?.value        || null,
-    email_c2:            document.getElementById('c2-email')?.value      || null,
-    profession_c2:       document.getElementById('c2-profession')?.value || null,
-    entreprise_c2:       document.getElementById('c2-entreprise')?.value || null,
-
-    adresse:             document.getElementById('adresse')?.value       || null,
-    statut_marital:      document.getElementById('statut-marital')?.value|| null,
-    regime:              document.getElementById('regime')?.value        || null,
-    date_union:          document.getElementById('date-union')?.value    || null,
-    enfants_noms:        document.getElementById('enfants-noms')?.value  || null,
-    enfants_dob:         document.getElementById('enfants-dob')?.value   || null,
-
-    salaire_c1:  parseMontant(document.getElementById('sal-c1')?.value),
-    salaire_c2:  parseMontant(document.getElementById('sal-c2')?.value),
-    impot_c1:    parseMontant(document.getElementById('impot-c1')?.value),
-    impot_c2:    parseMontant(document.getElementById('impot-c2')?.value),
-
-    banques:             document.getElementById('banques')?.value       || null,
-    code_postal:         document.getElementById('code-postal')?.value   || null,
-    ville:               document.getElementById('ville')?.value         || null,
-    c2_adresse:          document.getElementById('c2-adresse')?.value    || null,
-    c2_code_postal:      document.getElementById('c2-code-postal')?.value|| null,
-    c2_ville:            document.getElementById('c2-ville')?.value      || null,
-    statut_pro_c1:       document.getElementById('c1-statut-pro')?.value || null,
-    statut_pro_c2:       document.getElementById('c2-statut-pro')?.value || null,
-    epargne:             collectEpargne(),
-  };
+  // Collecte des données
+  const payload = collectPayloadForSave();
 
   if (!IS_EDIT_MODE) {
     payload.statut = 'prospect';
