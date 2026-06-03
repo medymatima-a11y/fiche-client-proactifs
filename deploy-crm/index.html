@@ -2968,8 +2968,15 @@ async function sendBudgetEmail() {
 
 // ── DOCUMENTS ───────────────────────────────────────────────
 async function loadDocuments() {
-  const docs = await apiGet(`documents?client_id=eq.${currentClientId}&order=date_upload.desc`);
+  const docs = await apiGet(`documents?client_id=eq.${currentClientId}&order=date_upload.desc&limit=100`);
   const el = document.getElementById('documents-list');
+  // Badge debug temporaire — affiche le nombre réel retourné par l'API
+  el.parentElement.querySelector('#doc-debug-count')?.remove();
+  const badge = document.createElement('p');
+  badge.id = 'doc-debug-count';
+  badge.style = 'font-size:11px;color:var(--muted);margin-bottom:8px';
+  badge.textContent = `${docs.length} document(s) en base`;
+  el.parentElement.insertBefore(badge, el);
   if (!docs.length) { el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:20px">Aucun document reçu.</p>'; return; }
   el.innerHTML = docs.map(d => {
     const isImg = /\.(jpg|jpeg|png)$/i.test(d.nom_fichier || '');
