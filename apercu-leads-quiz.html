@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aperçu — Leads Quiz · CRM Proactifs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#132D1E;--gold:#C4973A;--light:#FAFAF7;--border:#E5E2DA;
+  --text:#111827;--muted:#6B7280;--green:#1E7A6E;--orange:#e67e22;
+  --red:#e74c3c;--blue:#2A9D8F;--sidebar:220px;--gold-pale:#FBF4E3;
+}
+html,body{height:100%;font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);background:var(--light)}
+.app{display:flex;height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--navy);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;z-index:20}
+.sidebar-brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sidebar-brand .name{color:#fff;font-size:13px;font-weight:700}
+.sidebar-brand .sub{color:rgba(255,255,255,.45);font-size:10px;margin-top:2px}
+.nav{padding:12px 0;flex:1;overflow-y:auto}
+.nav-section{font-size:9px;font-weight:700;color:rgba(255,255,255,.3);letter-spacing:1.5px;text-transform:uppercase;padding:10px 18px 4px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 18px;cursor:pointer;color:rgba(255,255,255,.65);font-size:12px;font-weight:500;transition:background .15s,color .15s;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff;border-left-color:var(--gold)}
+.nav-item .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;transition:all .3s}
+.nav-badge.pulse{animation:badgePulse .6s ease 3}
+@keyframes badgePulse{0%,100%{transform:scale(1)}50%{transform:scale(1.35)}}
+.sidebar-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.08)}
+.user-chip{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.avatar{width:32px;height:32px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--navy);flex-shrink:0}
+.user-info .uname{color:#fff;font-size:11px;font-weight:600}
+.user-info .urole{color:rgba(255,255,255,.4);font-size:10px}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden;position:relative}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:12px;height:54px;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar-title{font-size:15px;font-weight:700;color:var(--navy);flex:1;display:flex;align-items:center;gap:8px}
+.badge-new{background:#fff3e0;color:var(--orange);font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;border:1px solid #ffe0b2;cursor:default}
+.btn{padding:7px 14px;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity .15s,transform .1s;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{opacity:.88}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-gold{background:var(--gold);color:var(--navy)}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-green{background:var(--green);color:#fff}
+.btn-sm{padding:5px 12px;font-size:11px}
+.scroll-area{flex:1;overflow-y:auto;overflow-x:hidden}
+.content{padding:22px 28px}
+
+/* ── STAT CARDS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:15px 18px;position:relative;overflow:hidden;cursor:pointer;transition:transform .15s,box-shadow .15s}
+.stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
+.stat-card.orange::before{background:var(--orange)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.gold::before{background:var(--gold)}
+.stat-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.09)}
+.stat-card.active-filter{box-shadow:0 0 0 2px var(--navy);transform:translateY(-1px)}
+.stat-label{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.stat-value{font-size:26px;font-weight:700;color:var(--navy)}
+.stat-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── FILTERS ── */
+.filters-section{background:#fff;border:1px solid var(--border);border-radius:10px;padding:13px 18px;margin-bottom:14px}
+.filters-row{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.filter-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.filter-chip{padding:4px 11px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:11px;font-weight:500;cursor:pointer;color:var(--muted);transition:all .15s;white-space:nowrap;user-select:none}
+.filter-chip:hover{border-color:#bbb;color:var(--text)}
+.filter-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);font-weight:600}
+.filter-divider{width:1px;height:20px;background:var(--border);margin:0 3px}
+.filters-stats{margin-left:auto;font-size:11px;color:var(--muted)}
+.filters-stats strong{color:var(--text)}
+
+/* ── TABLE ── */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border)}
+.table-header h2{font-size:13px;font-weight:700;color:var(--navy)}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 13px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;border-bottom:1px solid var(--border);background:#FAFAF7;white-space:nowrap}
+tbody tr{border-bottom:1px solid var(--border);transition:background .1s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:#f9f8f5}
+tbody tr.highlight-new{animation:rowHighlight 2s ease forwards}
+@keyframes rowHighlight{0%{background:#fff8e1}100%{background:transparent}}
+td{padding:10px 13px;font-size:12px;vertical-align:middle}
+.contact-name{font-weight:600;color:var(--navy);font-size:12px}
+.contact-email{font-size:11px;color:var(--muted);margin-top:1px}
+.td-phone{color:var(--text);white-space:nowrap;font-size:12px}
+.td-date{color:var(--muted);font-size:11px;white-space:nowrap}
+.td-preocc{max-width:190px;font-size:11px;color:var(--text);line-height:1.4}
+.td-actions{text-align:right;position:relative;white-space:nowrap}
+.note-count{display:inline-flex;align-items:center;gap:3px;background:#f0f4f2;border-radius:10px;padding:2px 7px;font-size:10px;color:var(--green);font-weight:600;cursor:pointer;transition:background .15s}
+.note-count:hover{background:#d6ede3}
+.note-count-zero{background:#f5f5f5;color:var(--muted)}
+
+/* ── BADGES ── */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px;white-space:nowrap}
+.badge-nouveau{background:#fff3e0;color:#bf5700}
+.badge-contacte{background:#e3f4f4;color:#1a6b62}
+.badge-qualifie{background:#e6f5ee;color:#145c3e}
+.badge-converti{background:var(--gold-pale);color:#7a5310;border:1px solid #e8c97a}
+.badge-perdu{background:#f3f4f6;color:#6B7280}
+.badge-credit{background:#e0f2f1;color:#00695c}
+.badge-retraite{background:#ede7f6;color:#512da8}
+.badge-fiscalite{background:#e8eaf6;color:#283593}
+.badge-investisseur{background:#fef9c3;color:#854d0e}
+.badge-salarie{background:#dbeafe;color:#1e40af}
+.badge-chef{background:#fce7f3;color:#9d174d}
+.badge-primo{background:#dcfce7;color:#166534}
+
+/* ── ACTIONS DROPDOWN ── */
+.actions-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:14px;color:var(--muted);transition:all .12s;line-height:1}
+.actions-btn:hover{background:var(--light);border-color:#bbb;color:var(--text)}
+.dropdown{position:absolute;right:13px;top:calc(100% - 6px);z-index:100;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);min-width:195px;overflow:hidden;display:none;animation:fadeDown .12s ease}
+.dropdown.open{display:block}
+@keyframes fadeDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.dropdown-item{display:flex;align-items:center;gap:10px;padding:9px 14px;cursor:pointer;font-size:12px;color:var(--text);transition:background .1s;border:none;background:none;width:100%;text-align:left}
+.dropdown-item:hover{background:var(--light)}
+.dropdown-item.danger{color:var(--red)}
+.dropdown-item.danger:hover{background:#fff5f5}
+.dropdown-item .di-icon{font-size:13px;width:16px;text-align:center}
+.dropdown-divider{height:1px;background:var(--border);margin:3px 0}
+.dropdown-section{padding:6px 14px 3px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+
+/* ── NOTES DRAWER ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-overlay.open{opacity:1;pointer-events:all}
+.drawer{position:fixed;top:0;right:0;height:100vh;width:420px;max-width:95vw;background:#fff;box-shadow:-8px 0 32px rgba(0,0,0,.12);z-index:51;transform:translateX(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column}
+.drawer-overlay.open .drawer{transform:translateX(0)}
+.drawer-head{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;background:var(--navy);flex-shrink:0}
+.drawer-head-info{flex:1}
+.drawer-head-info h3{color:#fff;font-size:14px;font-weight:700;margin-bottom:3px}
+.drawer-head-info .dh-sub{color:rgba(255,255,255,.5);font-size:11px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.drawer-close{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;padding:0;transition:color .15s;line-height:1;margin-top:2px}
+.drawer-close:hover{color:#fff}
+.drawer-lead-recap{padding:14px 20px;border-bottom:1px solid var(--border);background:#fafaf7;display:flex;gap:16px;flex-wrap:wrap;flex-shrink:0}
+.dlr-item{font-size:11px}
+.dlr-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:2px}
+.dlr-val{color:var(--text);font-weight:500}
+.drawer-timeline{flex:1;overflow-y:auto;padding:16px 20px}
+.timeline-empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.timeline-empty .te-icon{font-size:32px;margin-bottom:10px;opacity:.4}
+.timeline-empty p{font-size:12px}
+.timeline-item{display:flex;gap:12px;margin-bottom:20px;position:relative}
+.timeline-item:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:-20px;width:1px;background:var(--border)}
+.tl-avatar{width:30px;height:30px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--navy);flex-shrink:0;position:relative;z-index:1}
+.tl-body{flex:1;background:#f9f8f5;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.tl-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.tl-author{font-size:11px;font-weight:600;color:var(--navy)}
+.tl-date{font-size:10px;color:var(--muted)}
+.tl-text{font-size:12px;color:var(--text);line-height:1.6;white-space:pre-wrap}
+.tl-delete{background:none;border:none;color:var(--muted);cursor:pointer;font-size:11px;padding:1px 4px;border-radius:4px;opacity:0;transition:opacity .15s}
+.tl-body:hover .tl-delete{opacity:1}
+.tl-delete:hover{color:var(--red);background:#fff5f5}
+.drawer-input-area{padding:16px 20px;border-top:1px solid var(--border);background:#fff;flex-shrink:0}
+.note-input-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px}
+.note-input-wrap{position:relative}
+.note-textarea{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;outline:none;color:var(--text);resize:none;min-height:80px;transition:border-color .15s;line-height:1.5}
+.note-textarea:focus{border-color:var(--navy)}
+.note-input-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.char-count{font-size:10px;color:var(--muted);align-self:center;flex:1}
+
+/* ── MODALS ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:14px;width:480px;max-width:95vw;box-shadow:0 24px 60px rgba(0,0,0,.2);transform:translateY(12px) scale(.98);transition:transform .2s;overflow:hidden}
+.modal-overlay.open .modal{transform:translateY(0) scale(1)}
+.modal-head{background:var(--navy);padding:18px 22px;display:flex;align-items:center;justify-content:space-between}
+.modal-head h3{color:#fff;font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px}
+.modal-head h3 em{color:var(--gold);font-style:normal}
+.modal-close{background:none;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:18px;transition:color .15s}
+.modal-close:hover{color:#fff}
+.modal-body{padding:22px}
+.lead-recap{background:var(--light);border:1px solid var(--border);border-radius:8px;padding:13px 16px;margin-bottom:18px;display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.recap-item .recap-label{color:var(--muted);font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:.8px;margin-bottom:2px}
+.recap-item .recap-val{color:var(--text);font-weight:500;font-size:12px}
+.form-row{margin-bottom:14px}
+.form-row label{display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.form-row select,.form-row input,.form-row textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:inherit;outline:none;color:var(--text);background:#fff;transition:border-color .15s}
+.form-row select:focus,.form-row input:focus,.form-row textarea:focus{border-color:var(--navy)}
+.form-row textarea{resize:vertical;min-height:65px}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modal-foot{padding:14px 22px;background:#f9f8f5;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:10px}
+.auto-actions{background:#e6f5ee;border:1px solid #b7dfc8;border-radius:8px;padding:12px 14px;margin-top:4px}
+.auto-actions .aa-title{font-size:11px;color:var(--green);font-weight:700;margin-bottom:5px}
+.auto-actions .aa-list{font-size:11px;color:#374151;line-height:1.8}
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.status-option{border:2px solid var(--border);border-radius:8px;padding:10px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px}
+.status-option:hover{border-color:#bbb;background:var(--light)}
+.status-option.selected{border-color:var(--navy);background:#f0f4f2}
+.status-option .so-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.status-option .so-label{font-size:12px;font-weight:600;color:var(--text)}
+
+/* ── NOTIFICATION BANNER ── */
+.notif-banner{position:fixed;top:28px;right:28px;z-index:300;width:340px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.15);overflow:hidden;transform:translateX(380px);opacity:0;transition:transform .35s cubic-bezier(.34,1.56,.64,1),opacity .25s}
+.notif-banner.show{transform:translateX(0);opacity:1}
+.notif-banner-bar{height:4px;background:var(--orange);width:100%;position:relative;overflow:hidden}
+.notif-banner-bar::after{content:'';position:absolute;top:0;right:0;height:100%;background:rgba(255,255,255,.4);animation:notifProgress 5s linear forwards}
+@keyframes notifProgress{from{width:100%}to{width:0%}}
+.notif-banner-body{padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.notif-icon{font-size:22px;flex-shrink:0;margin-top:1px}
+.notif-content{flex:1}
+.notif-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:3px}
+.notif-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.notif-actions{display:flex;gap:8px;margin-top:10px}
+.notif-btn{padding:4px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:none;transition:opacity .15s}
+.notif-btn:hover{opacity:.85}
+.notif-btn-primary{background:var(--navy);color:#fff}
+.notif-btn-ghost{background:var(--light);border:1px solid var(--border);color:var(--muted)}
+.notif-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px;transition:color .15s}
+.notif-close:hover{color:var(--text)}
+
+/* ── NOTIFICATION SETTINGS PANEL ── */
+.notif-settings{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px}
+.notif-settings-title{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.notif-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.notif-row:last-child{border-bottom:none}
+.notif-row-info{flex:1}
+.notif-row-label{font-size:12px;font-weight:600;color:var(--text)}
+.notif-row-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.toggle{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:#d1d5db;border-radius:20px;transition:.25s}
+.toggle-slider::before{content:'';position:absolute;height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.25s}
+.toggle input:checked+.toggle-slider{background:var(--green)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── EMPTY STATE ── */
+.empty-state{text-align:center;padding:50px 20px;color:var(--muted)}
+.empty-state .es-icon{font-size:36px;margin-bottom:10px;opacity:.4}
+.empty-state p{font-size:12px}
+
+/* ── APERCU BANNER ── */
+.apercu-banner{background:linear-gradient(90deg,#1a3a50,#2a5a7a);color:#fff;text-align:center;padding:7px;font-size:11px;font-weight:600;letter-spacing:.4px;flex-shrink:0}
+.apercu-banner span{opacity:.7;font-weight:400}
+</style>
+</head>
+<body>
+
+<div class="apercu-banner">
+  APERÇU — Module Leads Quiz &nbsp;·&nbsp;
+  <span>Cliquez sur "Notes" d'un lead, ou sur le bouton </span>
+  <button onclick="simulateNewLead()" style="background:var(--orange);color:#fff;border:none;border-radius:4px;padding:1px 10px;font-size:10px;font-weight:700;cursor:pointer;margin:0 4px">▶ Simuler nouveau lead</button>
+  <span> pour tester les notifications</span>
+</div>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="name">Proactifs Conseils</div>
+      <div class="sub">Gestion de patrimoine</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section">Principal</div>
+      <div class="nav-item" onclick="showToast('Vue Dashboard')"><span class="icon">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="showToast('Vue Clients')"><span class="icon">👥</span>Clients <span class="nav-badge" style="background:var(--blue)">12</span></div>
+      <div class="nav-item active"><span class="icon">🔥</span>Leads Quiz <span class="nav-badge" style="background:var(--orange)" id="sidebar-badge">4</span></div>
+      <div class="nav-item" onclick="showToast('Vue Pipeline')"><span class="icon">🎯</span>Pipeline</div>
+      <div class="nav-item" onclick="showToast('Vue Tâches')"><span class="icon">✅</span>Tâches <span class="nav-badge" style="background:var(--red)">3</span></div>
+      <div class="nav-section">Actions</div>
+      <div class="nav-item" onclick="showToast('Import clients')"><span class="icon">📥</span>Importer clients</div>
+      <div class="nav-item" onclick="showToast('Nouveau prospect')"><span class="icon">⚡</span>Nouveau prospect</div>
+      <div class="nav-section">Paramètres</div>
+      <div class="nav-item" onclick="showToast('Paramètres')"><span class="icon">⚙️</span>Statuts clients</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip">
+        <div class="avatar">M</div>
+        <div class="user-info"><div class="uname">Medy Matima</div><div class="urole">Administrateur</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">
+        🔥 Leads Quiz
+        <span class="badge-new" id="topbar-badge-new">4 nouveaux</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="showToast('Export CSV en cours…')">⬇ Exporter</button>
+      <button class="btn btn-gold btn-sm" onclick="showToast('Import Airtable → aperçu uniquement')">⬆ Importer Airtable</button>
+      <button class="btn btn-primary btn-sm" onclick="showToast('Ajout manuel → aperçu uniquement')">+ Ajouter</button>
+    </div>
+
+    <div class="scroll-area">
+    <div class="content">
+
+      <!-- NOTIFICATION SETTINGS -->
+      <div class="notif-settings">
+        <div class="notif-settings-title">
+          <span>🔔 Notifications</span>
+          <span style="font-size:10px;font-weight:400;color:var(--muted)">Configurez vos alertes</span>
+        </div>
+        <div class="notif-row">
+          <div class="notif-row-info">
+            <div class="notif-row-label">Email à chaque nouveau lead</div>
+            <div class="notif-row-desc">Email vers <strong>medy@proactifsconseils.fr</strong> avec le résumé du lead</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked ? 'Notifications email activées' : 'Notifications email désactivées')"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-row-info">
+            <div class="notif-row-label">Badge en temps réel</div>
+            <div class="notif-row-desc">Compteur de nouveaux leads mis à jour via Supabase Realtime</div>
+          </div>
+          <label class="toggle"><input type="checkbox" checked onchange="showToast(this.checked ? 'Badge temps réel activé' : 'Badge temps réel désactivé')"><span class="toggle-slider"></span></label>
+        </div>
+        <div class="notif-row">
+          <div class="notif-row-info">
+            <div class="notif-row-label">Récap quotidien</div>
+            <div class="notif-row-desc">Résumé des leads de la journée envoyé à 9h — même mécanisme que le récap tâches</div>
+          </div>
+          <label class="toggle"><input type="checkbox" onchange="showToast(this.checked ? 'Récap quotidien activé' : 'Récap quotidien désactivé')"><span class="toggle-slider"></span></label>
+        </div>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div class="stats-row">
+        <div class="stat-card orange" onclick="filterByStatut('nouveau')" id="card-nouveau">
+          <div class="stat-label">Nouveaux</div>
+          <div class="stat-value" id="count-nouveau">4</div>
+          <div class="stat-sub">Non traités</div>
+        </div>
+        <div class="stat-card blue" onclick="filterByStatut('contacté')" id="card-contacte">
+          <div class="stat-label">Contactés</div>
+          <div class="stat-value" id="count-contacte">3</div>
+          <div class="stat-sub">En qualification</div>
+        </div>
+        <div class="stat-card green" onclick="filterByStatut('qualifié')" id="card-qualifie">
+          <div class="stat-label">Qualifiés</div>
+          <div class="stat-value" id="count-qualifie">2</div>
+          <div class="stat-sub">Prêts pour R1</div>
+        </div>
+        <div class="stat-card gold" onclick="filterByStatut('converti')" id="card-converti">
+          <div class="stat-label">Convertis</div>
+          <div class="stat-value" id="count-converti">1</div>
+          <div class="stat-sub">Devenus clients</div>
+        </div>
+      </div>
+
+      <!-- FILTERS -->
+      <div class="filters-section">
+        <div class="filters-row">
+          <span class="filter-label">Source</span>
+          <div id="filter-source">
+            <span class="filter-chip active" data-val="">Tous</span>
+            <span class="filter-chip" data-val="Quiz Crédit">Quiz Crédit</span>
+            <span class="filter-chip" data-val="Quiz Retraite">Quiz Retraite</span>
+            <span class="filter-chip" data-val="Quiz Fiscalité">Quiz Fiscalité</span>
+          </div>
+          <div class="filter-divider"></div>
+          <span class="filter-label">Situation</span>
+          <div id="filter-situation">
+            <span class="filter-chip active" data-val="">Tous</span>
+            <span class="filter-chip" data-val="Investisseur">Investisseur</span>
+            <span class="filter-chip" data-val="Salarié">Salarié</span>
+            <span class="filter-chip" data-val="Chef d'entreprise">Chef d'ent.</span>
+            <span class="filter-chip" data-val="Primo-accédant">Primo-acc.</span>
+          </div>
+          <div class="filter-divider"></div>
+          <span class="filter-label">Statut</span>
+          <div id="filter-statut">
+            <span class="filter-chip active" data-val="">Tous</span>
+            <span class="filter-chip" data-val="nouveau">Nouveau</span>
+            <span class="filter-chip" data-val="contacté">Contacté</span>
+            <span class="filter-chip" data-val="qualifié">Qualifié</span>
+            <span class="filter-chip" data-val="converti">Converti</span>
+            <span class="filter-chip" data-val="perdu">Perdu</span>
+          </div>
+          <span class="filters-stats" id="filters-stats"><strong>10</strong> leads</span>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-wrap">
+        <div class="table-header">
+          <h2>Tous les leads</h2>
+          <button class="btn btn-outline btn-sm" onclick="clearFilters()">↺ Réinitialiser</button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Nom · Email</th>
+              <th>Tél.</th>
+              <th>Source</th>
+              <th>Situation</th>
+              <th>Préoccupation</th>
+              <th>Notes</th>
+              <th>Statut</th>
+              <th>Date</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="leads-tbody"></tbody>
+        </table>
+        <div class="empty-state" id="empty-state" style="display:none">
+          <div class="es-icon">🔍</div>
+          <p>Aucun lead ne correspond aux filtres</p>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+    </div><!-- /scroll-area -->
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- ── NOTES DRAWER ── -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()">
+  <div class="drawer" onclick="event.stopPropagation()">
+    <div class="drawer-head">
+      <div class="drawer-head-info">
+        <h3 id="drawer-lead-name">Notes de suivi</h3>
+        <div class="dh-sub" id="drawer-lead-meta"></div>
+      </div>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div class="drawer-lead-recap" id="drawer-recap"></div>
+    <div class="drawer-timeline" id="drawer-timeline"></div>
+    <div class="drawer-input-area">
+      <div class="note-input-label">Ajouter une note</div>
+      <div class="note-input-wrap">
+        <textarea class="note-textarea" id="note-input" placeholder="Ex : Rappelé ce matin, intéressé par le R1. Souhaite un RDV la semaine prochaine…" maxlength="500" oninput="updateCharCount()"></textarea>
+      </div>
+      <div class="note-input-actions">
+        <span class="char-count" id="char-count">0 / 500</span>
+        <button class="btn btn-outline btn-sm" onclick="closeDrawer()">Fermer</button>
+        <button class="btn btn-green btn-sm" onclick="addNote()">✓ Enregistrer la note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CONVERTIR EN CLIENT ── -->
+<div class="modal-overlay" id="modal-convert">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Convertir en client — <em id="convert-name-head"></em></h3>
+      <button class="modal-close" onclick="closeModal('modal-convert')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="lead-recap" id="convert-recap"></div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label>Statut CRM</label>
+          <select><option selected>prospect</option><option>actif</option><option>client</option></select>
+        </div>
+        <div class="form-row">
+          <label>Type de dossier</label>
+          <select><option selected>patrimonial</option><option>courtage</option><option>mixte</option></select>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Note initiale</label>
+        <textarea placeholder="Lead issu du quiz…"></textarea>
+      </div>
+      <div class="auto-actions">
+        <div class="aa-title">✓ Actions automatiques</div>
+        <div class="aa-list">
+          · Création d'une fiche dans la table <strong>clients</strong><br>
+          · Sync Brevo — liste Prospects actifs<br>
+          · Email de bienvenue envoyé au lead<br>
+          · Statut du lead → <strong>Converti</strong>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-convert')">Annuler</button>
+      <button class="btn btn-primary" onclick="doConvert()">✓ Créer le client</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL CHANGER STATUT ── -->
+<div class="modal-overlay" id="modal-status">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Changer le statut — <em id="status-name-head"></em></h3>
+      <button class="modal-close" onclick="closeModal('modal-status')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="status-grid" id="status-grid"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeModal('modal-status')">Annuler</button>
+      <button class="btn btn-primary" onclick="doChangeStatus()">Appliquer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── NOTIFICATION BANNER ── -->
+<div class="notif-banner" id="notif-banner">
+  <div class="notif-banner-bar"></div>
+  <div class="notif-banner-body">
+    <div class="notif-icon">🔥</div>
+    <div class="notif-content">
+      <div class="notif-title" id="notif-title">Nouveau lead — Quiz Retraite</div>
+      <div class="notif-desc" id="notif-desc">Marie Dupont · Salarié · Préparer sa retraite</div>
+      <div class="notif-actions">
+        <button class="notif-btn notif-btn-primary" onclick="viewNewLead()">Voir le lead</button>
+        <button class="notif-btn notif-btn-ghost" onclick="dismissNotif()">Ignorer</button>
+      </div>
+    </div>
+    <button class="notif-close" onclick="dismissNotif()">✕</button>
+  </div>
+</div>
+
+<!-- ── TOAST ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────
+const leads = [
+  { id:1,  prenom:'Sophie',   nom:'Martin',   email:'sophie.martin@gmail.com',  tel:'06 12 34 56 78', source:'Quiz Crédit',    situation:'Investisseur',       preoccupation:'Obtenir un crédit immobilier',         statut:'converti', date:'28/05/2026' },
+  { id:2,  prenom:'Thomas',   nom:'Dubois',   email:'t.dubois@hotmail.fr',       tel:'07 89 01 23 45', source:'Quiz Retraite',  situation:'Salarié',            preoccupation:'Préparer sa retraite anticipée',       statut:'qualifié', date:'30/05/2026' },
+  { id:3,  prenom:'Aurélie',  nom:'Fontaine', email:'aurelie.f@gmail.com',       tel:'06 45 67 89 01', source:'Quiz Fiscalité', situation:"Chef d'entreprise",  preoccupation:'Réduire ses impôts sur les revenus',   statut:'qualifié', date:'01/06/2026' },
+  { id:4,  prenom:'Mehdi',    nom:'Lacoste',  email:'mehdi.lacoste@yahoo.fr',    tel:'07 23 45 67 89', source:'Quiz Crédit',    situation:'Primo-accédant',     preoccupation:'Financer un premier achat immobilier', statut:'contacté', date:'01/06/2026' },
+  { id:5,  prenom:'Camille',  nom:'Renaud',   email:'camille.r@outlook.fr',      tel:'06 78 90 12 34', source:'Quiz Retraite',  situation:'Salarié',            preoccupation:'Optimiser son épargne retraite',       statut:'contacté', date:'02/06/2026' },
+  { id:6,  prenom:'Nicolas',  nom:'Bernard',  email:'n.bernard@gmail.com',       tel:'07 34 56 78 90', source:'Quiz Fiscalité', situation:'Investisseur',       preoccupation:'Défiscaliser ses revenus locatifs',    statut:'contacté', date:'02/06/2026' },
+  { id:7,  prenom:'Isabelle', nom:'Morel',    email:'isabelle.morel@gmail.com',  tel:'06 56 78 90 12', source:'Quiz Crédit',    situation:'Investisseur',       preoccupation:'Renégocier son crédit en cours',       statut:'nouveau',  date:'02/06/2026' },
+  { id:8,  prenom:'Julien',   nom:'Petit',    email:'julien.petit@gmail.com',    tel:'07 12 34 56 78', source:'Quiz Retraite',  situation:"Chef d'entreprise",  preoccupation:'Préparer sa retraite de dirigeant',    statut:'nouveau',  date:'02/06/2026' },
+  { id:9,  prenom:'Carole',   nom:'Simon',    email:'carole.s@gmail.com',        tel:'06 23 45 67 89', source:'Quiz Fiscalité', situation:'Salarié',            preoccupation:'Réduire ses impôts — TMI 30%',         statut:'nouveau',  date:'03/06/2026' },
+  { id:10, prenom:'David',    nom:'Lefebvre', email:'david.l@gmail.com',         tel:'07 67 89 01 23', source:'Quiz Crédit',    situation:'Primo-accédant',     preoccupation:'Obtenir un prêt — primo-accédant',     statut:'nouveau',  date:'03/06/2026' },
+];
+
+// Notes par lead (id → tableau de {id, texte, date, heure})
+const notesData = {
+  1: [
+    { id:'n1a', texte:'Contact initial établi. Cliente très motivée pour obtenir un crédit sur une résidence locative à Colombes.', date:'29/05/2026', heure:'10h14' },
+    { id:'n1b', texte:'R1 planifié le 05/06 à 14h. A demandé à recevoir une documentation sur les taux actuels.', date:'31/05/2026', heure:'16h30' },
+  ],
+  2: [{ id:'n2a', texte:'Salarié cadre, départ retraite prévu dans 8 ans. Souhaite un bilan patrimonial complet avant le R1.', date:'01/06/2026', heure:'11h05' }],
+};
+let noteCounter = 100;
+
+// ── HELPERS ──────────────────────────────────────────────────────────────
+const sBadge = {
+  'nouveau':  '<span class="badge badge-nouveau">Nouveau</span>',
+  'contacté': '<span class="badge badge-contacte">Contacté</span>',
+  'qualifié': '<span class="badge badge-qualifie">Qualifié</span>',
+  'converti': '<span class="badge badge-converti">Converti ✓</span>',
+  'perdu':    '<span class="badge badge-perdu">Perdu</span>',
+};
+const srcBadge = {
+  'Quiz Crédit':    '<span class="badge badge-credit">Quiz Crédit</span>',
+  'Quiz Retraite':  '<span class="badge badge-retraite">Quiz Retraite</span>',
+  'Quiz Fiscalité': '<span class="badge badge-fiscalite">Quiz Fiscalité</span>',
+};
+const sitBadge = {
+  'Investisseur':    '<span class="badge badge-investisseur">Investisseur</span>',
+  'Salarié':         '<span class="badge badge-salarie">Salarié</span>',
+  "Chef d'entreprise":'<span class="badge badge-chef">Chef d\'ent.</span>',
+  'Primo-accédant':  '<span class="badge badge-primo">Primo-acc.</span>',
+};
+
+// ── FILTERS ───────────────────────────────────────────────────────────────
+let activeFilters = { source:'', situation:'', statut:'' };
+let activeCardFilter = '';
+
+['filter-source','filter-situation','filter-statut'].forEach(gid => {
+  const type = gid.replace('filter-','');
+  document.getElementById(gid).querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.getElementById(gid).querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilters[type] = chip.dataset.val;
+      activeCardFilter = '';
+      clearCardHighlights();
+      renderTable();
+    });
+  });
+});
+
+function filterByStatut(s) {
+  if (activeCardFilter === s) { activeCardFilter=''; activeFilters.statut=''; clearCardHighlights(); resetStatutChip(); }
+  else {
+    activeCardFilter=s; activeFilters.statut=s; clearCardHighlights();
+    const km = {nouveau:'nouveau',contacté:'contacte',qualifié:'qualifie',converti:'converti'};
+    document.getElementById(`card-${km[s]}`)?.classList.add('active-filter');
+    document.getElementById('filter-statut').querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.val===s));
+  }
+  renderTable();
+}
+function clearCardHighlights(){ ['card-nouveau','card-contacte','card-qualifie','card-converti'].forEach(id => document.getElementById(id)?.classList.remove('active-filter')); }
+function resetStatutChip(){ document.getElementById('filter-statut').querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.val==='')); }
+function clearFilters(){ activeFilters={source:'',situation:'',statut:''}; activeCardFilter=''; clearCardHighlights(); ['filter-source','filter-situation','filter-statut'].forEach(g => document.getElementById(g).querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.val===''))); renderTable(); }
+
+// ── RENDER TABLE ──────────────────────────────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById('leads-tbody');
+  tbody.innerHTML = '';
+  let visible = 0;
+  leads.forEach(l => {
+    const show = (!activeFilters.source || l.source===activeFilters.source)
+              && (!activeFilters.situation || l.situation===activeFilters.situation)
+              && (!activeFilters.statut || l.statut===activeFilters.statut);
+    if (!show) return;
+    visible++;
+    const notes = notesData[l.id] || [];
+    const nc = notes.length;
+    const ncClass = nc === 0 ? 'note-count note-count-zero' : 'note-count';
+    const ncIcon = nc === 0 ? '💬' : '📝';
+    const tr = document.createElement('tr');
+    tr.id = `row-${l.id}`;
+    tr.innerHTML = `
+      <td><div class="contact-name">${l.prenom} ${l.nom}</div><div class="contact-email">${l.email}</div></td>
+      <td class="td-phone">${l.tel}</td>
+      <td>${srcBadge[l.source]||l.source}</td>
+      <td>${sitBadge[l.situation]||l.situation}</td>
+      <td class="td-preocc">${l.preoccupation}</td>
+      <td><span class="${ncClass}" onclick="openDrawer(${l.id})" title="Voir / ajouter des notes">${ncIcon} ${nc === 0 ? 'Aucune' : nc + ' note' + (nc>1?'s':'')}</span></td>
+      <td>${sBadge[l.statut]||l.statut}</td>
+      <td class="td-date">${l.date}</td>
+      <td class="td-actions">
+        <button class="actions-btn" onclick="toggleDropdown(${l.id},event)">···</button>
+        <div class="dropdown" id="dd-${l.id}">
+          <div class="dropdown-section">Actions</div>
+          <button class="dropdown-item" onclick="openDrawer(${l.id})"><span class="di-icon">📝</span> Notes de suivi (${nc})</button>
+          <button class="dropdown-item" onclick="openStatusModal(${l.id})"><span class="di-icon">🔄</span> Changer le statut</button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item" onclick="openConvertModal(${l.id})" ${l.statut==='converti'?'style="opacity:.4;pointer-events:none"':''}>
+            <span class="di-icon">⭐</span> Convertir en client
+          </button>
+          <div class="dropdown-divider"></div>
+          <button class="dropdown-item danger" onclick="showToast('Suppression — aperçu uniquement');closeAllDropdowns()"><span class="di-icon">🗑</span> Supprimer</button>
+        </div>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('empty-state').style.display = visible===0 ? 'block' : 'none';
+  document.getElementById('filters-stats').innerHTML = `<strong>${visible}</strong> lead${visible>1?'s':''}`;
+  updateCounts(); updateBadges();
+}
+
+function updateCounts(){
+  const sf = activeFilters.source, sit = activeFilters.situation;
+  const f = l => (!sf||l.source===sf) && (!sit||l.situation===sit);
+  document.getElementById('count-nouveau').textContent  = leads.filter(l=>l.statut==='nouveau'  &&f(l)).length;
+  document.getElementById('count-contacte').textContent = leads.filter(l=>l.statut==='contacté' &&f(l)).length;
+  document.getElementById('count-qualifie').textContent = leads.filter(l=>l.statut==='qualifié' &&f(l)).length;
+  document.getElementById('count-converti').textContent = leads.filter(l=>l.statut==='converti' &&f(l)).length;
+}
+
+function updateBadges(){
+  const n = leads.filter(l=>l.statut==='nouveau').length;
+  const badge = document.getElementById('sidebar-badge');
+  badge.textContent = n;
+  const bn = document.getElementById('topbar-badge-new');
+  bn.textContent = `${n} nouveau${n>1?'x':''}`;
+  bn.style.display = n===0 ? 'none' : '';
+}
+
+// ── NOTES DRAWER ──────────────────────────────────────────────────────────
+let currentDrawerLeadId = null;
+
+function openDrawer(id) {
+  closeAllDropdowns();
+  currentDrawerLeadId = id;
+  const l = leads.find(x=>x.id===id);
+
+  document.getElementById('drawer-lead-name').textContent = `${l.prenom} ${l.nom}`;
+  document.getElementById('drawer-lead-meta').innerHTML =
+    `${srcBadge[l.source]||l.source} &nbsp; ${sitBadge[l.situation]||l.situation} &nbsp; ${sBadge[l.statut]||l.statut}`;
+
+  document.getElementById('drawer-recap').innerHTML = `
+    <div class="dlr-item"><div class="dlr-label">Email</div><div class="dlr-val">${l.email}</div></div>
+    <div class="dlr-item"><div class="dlr-label">Téléphone</div><div class="dlr-val">${l.tel}</div></div>
+    <div class="dlr-item" style="grid-column:span 2"><div class="dlr-label">Préoccupation</div><div class="dlr-val">${l.preoccupation}</div></div>
+  `;
+
+  document.getElementById('note-input').value = '';
+  document.getElementById('char-count').textContent = '0 / 500';
+  renderTimeline(id);
+  document.getElementById('drawer-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('note-input').focus(), 300);
+}
+
+function closeDrawer(){
+  document.getElementById('drawer-overlay').classList.remove('open');
+  currentDrawerLeadId = null;
+}
+
+function renderTimeline(id){
+  const notes = notesData[id] || [];
+  const container = document.getElementById('drawer-timeline');
+  if (notes.length === 0) {
+    container.innerHTML = `<div class="timeline-empty"><div class="te-icon">📝</div><p>Aucune note de suivi pour ce lead.<br>Ajoutez votre première note ci-dessous.</p></div>`;
+    return;
+  }
+  container.innerHTML = [...notes].reverse().map(n => `
+    <div class="timeline-item" id="tl-${n.id}">
+      <div class="tl-avatar">M</div>
+      <div class="tl-body">
+        <div class="tl-meta">
+          <span class="tl-author">Medy Matima</span>
+          <span class="tl-date">${n.date} à ${n.heure}</span>
+          <button class="tl-delete" onclick="deleteNote('${id}','${n.id}')" title="Supprimer">✕</button>
+        </div>
+        <div class="tl-text">${escHtml(n.texte)}</div>
+      </div>
+    </div>`).join('');
+}
+
+function addNote(){
+  const input = document.getElementById('note-input');
+  const text = input.value.trim();
+  if (!text) { input.focus(); showToast('Écrivez une note avant d\'enregistrer'); return; }
+  const id = currentDrawerLeadId;
+  if (!notesData[id]) notesData[id] = [];
+  const now = new Date();
+  const dateStr = `${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()}`;
+  const heureStr = `${String(now.getHours()).padStart(2,'0')}h${String(now.getMinutes()).padStart(2,'0')}`;
+  notesData[id].push({ id:`n${++noteCounter}`, texte:text, date:dateStr, heure:heureStr });
+  input.value = '';
+  document.getElementById('char-count').textContent = '0 / 500';
+  renderTimeline(id);
+  renderTable();
+  showToast('Note enregistrée ✓');
+}
+
+function deleteNote(leadId, noteId){
+  const arr = notesData[leadId];
+  if (!arr) return;
+  const idx = arr.findIndex(n=>n.id===noteId);
+  if (idx > -1) arr.splice(idx, 1);
+  renderTimeline(Number(leadId));
+  renderTable();
+  showToast('Note supprimée');
+}
+
+function updateCharCount(){
+  const v = document.getElementById('note-input').value.length;
+  document.getElementById('char-count').textContent = `${v} / 500`;
+}
+
+document.getElementById('note-input').addEventListener('keydown', e => {
+  if (e.key==='Enter' && (e.ctrlKey||e.metaKey)) addNote();
+});
+
+function escHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ── DROPDOWN ──────────────────────────────────────────────────────────────
+function toggleDropdown(id,e){
+  e.stopPropagation();
+  const dd = document.getElementById(`dd-${id}`);
+  const was = dd.classList.contains('open');
+  closeAllDropdowns();
+  if (!was) dd.classList.add('open');
+}
+function closeAllDropdowns(){ document.querySelectorAll('.dropdown.open').forEach(d=>d.classList.remove('open')); }
+document.addEventListener('click', closeAllDropdowns);
+
+// ── MODALS ────────────────────────────────────────────────────────────────
+let currentLeadId=null, selectedStatus=null;
+
+function openConvertModal(id){
+  closeAllDropdowns();
+  currentLeadId=id;
+  const l=leads.find(x=>x.id===id);
+  document.getElementById('convert-name-head').textContent=`${l.prenom} ${l.nom}`;
+  document.getElementById('convert-recap').innerHTML=`
+    <div class="recap-item"><div class="recap-label">Nom</div><div class="recap-val">${l.prenom} ${l.nom}</div></div>
+    <div class="recap-item"><div class="recap-label">Email</div><div class="recap-val">${l.email}</div></div>
+    <div class="recap-item"><div class="recap-label">Téléphone</div><div class="recap-val">${l.tel}</div></div>
+    <div class="recap-item"><div class="recap-label">Source</div><div class="recap-val">${l.source}</div></div>
+    <div class="recap-item"><div class="recap-label">Situation</div><div class="recap-val">${l.situation}</div></div>
+    <div class="recap-item" style="grid-column:span 2"><div class="recap-label">Préoccupation</div><div class="recap-val">${l.preoccupation}</div></div>
+  `;
+  openModal('modal-convert');
+}
+
+function doConvert(){
+  const l=leads.find(x=>x.id===currentLeadId);
+  if(l) l.statut='converti';
+  closeModal('modal-convert');
+  renderTable();
+  showToast(`⭐ ${l.prenom} ${l.nom} converti en client !`);
+}
+
+const STATUTS=[
+  {val:'nouveau',label:'Nouveau',color:'var(--orange)'},
+  {val:'contacté',label:'Contacté',color:'var(--blue)'},
+  {val:'qualifié',label:'Qualifié',color:'var(--green)'},
+  {val:'converti',label:'Converti',color:'var(--gold)'},
+  {val:'perdu',label:'Perdu',color:'var(--muted)'},
+];
+
+function openStatusModal(id){
+  closeAllDropdowns();
+  currentLeadId=id;
+  const l=leads.find(x=>x.id===id);
+  selectedStatus=l.statut;
+  document.getElementById('status-name-head').textContent=`${l.prenom} ${l.nom}`;
+  document.getElementById('status-grid').innerHTML=STATUTS.map(s=>`
+    <div class="status-option${s.val===l.statut?' selected':''}" onclick="selectStatus('${s.val}',this)">
+      <div class="so-dot" style="background:${s.color}"></div>
+      <div class="so-label">${s.label}</div>
+    </div>`).join('');
+  openModal('modal-status');
+}
+
+function selectStatus(val,el){
+  selectedStatus=val;
+  document.querySelectorAll('.status-option').forEach(o=>o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function doChangeStatus(){
+  const l=leads.find(x=>x.id===currentLeadId);
+  if(l&&selectedStatus) l.statut=selectedStatus;
+  closeModal('modal-status');
+  renderTable();
+  showToast(`Statut → ${selectedStatus}`);
+}
+
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); }));
+
+// ── NOTIFICATION SIMULATION ───────────────────────────────────────────────
+const FAKE_LEADS=[
+  {prenom:'Marie',nom:'Dupont',source:'Quiz Retraite',situation:'Salarié',preocc:'Préparer sa retraite'},
+  {prenom:'Antoine',nom:'Garnier',source:'Quiz Crédit',situation:'Investisseur',preocc:'Financer un bien locatif'},
+  {prenom:'Lucie',nom:'Marchand',source:'Quiz Fiscalité',situation:"Chef d'entreprise",preocc:'Optimiser sa fiscalité'},
+];
+let fakeIdx=0, notifTimer=null;
+
+function simulateNewLead(){
+  const fl=FAKE_LEADS[fakeIdx%FAKE_LEADS.length]; fakeIdx++;
+  // Add to leads
+  const newId=leads.length+1;
+  leads.push({id:newId,prenom:fl.prenom,nom:fl.nom,email:`${fl.prenom.toLowerCase()}.${fl.nom.toLowerCase()}@gmail.com`,tel:'0X XX XX XX XX',source:fl.source,situation:fl.situation,preoccupation:fl.preocc,statut:'nouveau',date:'03/06/2026'});
+  // Show notification banner
+  document.getElementById('notif-title').textContent=`🔥 Nouveau lead — ${fl.source}`;
+  document.getElementById('notif-desc').textContent=`${fl.prenom} ${fl.nom} · ${fl.situation} · ${fl.preocc}`;
+  const banner=document.getElementById('notif-banner');
+  banner.classList.add('show');
+  // Pulse badge
+  const badge=document.getElementById('sidebar-badge');
+  badge.classList.remove('pulse');
+  void badge.offsetWidth;
+  badge.classList.add('pulse');
+  clearTimeout(notifTimer);
+  notifTimer=setTimeout(dismissNotif,5000);
+  renderTable();
+}
+
+function dismissNotif(){ document.getElementById('notif-banner').classList.remove('show'); clearTimeout(notifTimer); }
+function viewNewLead(){
+  dismissNotif();
+  // scroll to latest & open its notes
+  const last=leads[leads.length-1];
+  openDrawer(last.id);
+  showToast(`Lead ${last.prenom} ${last.nom} ouvert`);
+}
+
+// ── TOAST ─────────────────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+renderTable();
+</script>
+</body>
+</html>
