@@ -1092,7 +1092,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 
         <!-- Documents -->
         <div class="tab-pane" id="tab-documents">
-          <div id="documents-list" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px"></div>
+          <div id="documents-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px"></div>
         </div>
 
         <!-- Missions -->
@@ -2970,13 +2970,6 @@ async function sendBudgetEmail() {
 async function loadDocuments() {
   const docs = await apiGet(`documents?client_id=eq.${currentClientId}&order=date_upload.desc&limit=100`);
   const el = document.getElementById('documents-list');
-  // Badge debug temporaire — affiche le nombre réel retourné par l'API
-  el.parentElement.querySelector('#doc-debug-count')?.remove();
-  const badge = document.createElement('p');
-  badge.id = 'doc-debug-count';
-  badge.style = 'font-size:11px;color:var(--muted);margin-bottom:8px';
-  badge.textContent = `${docs.length} document(s) en base`;
-  el.parentElement.insertBefore(badge, el);
   if (!docs.length) { el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:20px">Aucun document reçu.</p>'; return; }
   el.innerHTML = docs.map(d => {
     const isImg = /\.(jpg|jpeg|png)$/i.test(d.nom_fichier || '');
