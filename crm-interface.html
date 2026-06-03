@@ -2453,6 +2453,35 @@ async function dismissMerge(sourceId) {
   renderDuplicatesAlert();
 }
 
+// Normalise le champ immobilier : la fiche-client sauvegarde un objet
+// { active:[], rp:{}, extras:[] }, le CRM attend un tableau [{type,adresse,valeur,...}]
+function normalizeImmo(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  const labels = { rp:'Résidence principale', rs:'Résidence secondaire', loc1:'Locatif', locataire:'Locataire' };
+  const result = [];
+  (raw.active || []).forEach(key => {
+    const d = raw[key];
+    if (d && (d.adresse || d.valeur)) result.push({ type: labels[key] || key, ...d });
+  });
+  (raw.extras || []).forEach(e => result.push(e));
+  return result;
+}
+
+// Normalise le champ credits : la fiche-client sauvegarde un objet
+// { active:['autre1','autre2'], autre1:{}, autre2:{} }, le CRM attend un tableau
+function normalizeCredits(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw;
+  const labels = { rp:'Crédit RP', rs:'Crédit RS', auto:'Crédit auto' };
+  const result = [];
+  (raw.active || []).forEach(key => {
+    const d = raw[key];
+    if (d && (d.mensualite || d.restant || d.capital)) result.push({ type: d.type || labels[key] || key, ...d });
+  });
+  return result;
+}
+
 async function openClient(id) {
   const c = allClients.find(x => x.id === id);
   if (!c) return;
@@ -2524,9 +2553,9 @@ async function openClient(id) {
     return [k.replace(/_/g,' '),formatMoney(total)];
   });
   const epTotal = Object.values(epargne).reduce((s,v)=>s+(v.montant_c1||0)+(v.montant_c2||0),0);
-  const immo = (c.immobilier||[]).filter(i=>i.adresse||i.valeur);
+  const immo = normalizeImmo(c.immobilier).filter(i=>i.adresse||i.valeur);
   const immoTotal = immo.reduce((s,i)=>s+(i.valeur||0),0);
-  const credits = (c.credits||[]).filter(cr=>cr.mensualite||cr.restant);
+  const credits = normalizeCredits(c.credits).filter(cr=>cr.mensualite||cr.restant);
   const credTotal = credits.reduce((s,cr)=>s+(cr.mensualite||0),0);
   const credCRD = credits.reduce((s,cr)=>s+(cr.capital_restant||cr.restant||0),0);
 
@@ -4389,9 +4418,9 @@ async function loadBilan() {
   // Calcul auto patrimoine
   const ep    = c.epargne || {};
   const epTotal = Object.values(ep).reduce((s, v) => s + (parseFloat(v.montant_c1)||0) + (parseFloat(v.montant_c2)||0), 0);
-  const immo  = (c.immobilier||[]);
+  const immo  = normalizeImmo(c.immobilier);
   const immoTotal = immo.reduce((s, i) => s + (parseFloat(i.valeur)||0), 0);
-  const credits = (c.credits||[]);
+  const credits = normalizeCredits(c.credits);
   const dettes  = credits.reduce((s, cr) => s + (parseFloat(cr.restant)||0), 0);
   const brut = epTotal + immoTotal;
   const net  = brut - dettes;
@@ -4504,9 +4533,9 @@ function generateBilanHTML(c, bd) {
   const ep      = c.epargne || {};
   const epItems = Object.entries(ep).filter(([,v]) => parseFloat(v.montant_c1)||parseFloat(v.montant_c2));
   const epTotal = epItems.reduce((s,[,v]) => s+(parseFloat(v.montant_c1)||0)+(parseFloat(v.montant_c2)||0), 0);
-  const immo    = (c.immobilier||[]).filter(i => parseFloat(i.valeur)||i.adresse);
+  const immo    = normalizeImmo(c.immobilier).filter(i => parseFloat(i.valeur)||i.adresse);
   const immoTotal = immo.reduce((s,i) => s+(parseFloat(i.valeur)||0), 0);
-  const credits   = (c.credits||[]).filter(cr => parseFloat(cr.restant)||parseFloat(cr.mensualite));
+  const credits   = normalizeCredits(c.credits).filter(cr => parseFloat(cr.restant)||parseFloat(cr.mensualite));
   const dettes    = credits.reduce((s,cr) => s+(parseFloat(cr.restant)||0), 0);
   const mensAnn   = credits.reduce((s,cr) => s+(parseFloat(cr.mensualite)||0), 0) * 12;
   const brut      = epTotal + immoTotal;
