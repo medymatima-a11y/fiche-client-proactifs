@@ -1092,6 +1092,42 @@ table.crm-table{width:100%;border-collapse:collapse}
 
         <!-- Documents -->
         <div class="tab-pane" id="tab-documents">
+          <!-- Barre d'action -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <span style="font-size:12px;color:var(--muted)" id="doc-count-label"></span>
+            <button onclick="toggleDocUpload()" style="background:var(--navy);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer">+ Ajouter un document</button>
+          </div>
+          <!-- Formulaire d'upload (masqué par défaut) -->
+          <div id="doc-upload-form" style="display:none;background:#f8f7f3;border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:16px">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end">
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--navy);display:block;margin-bottom:4px">Type de document</label>
+                <select id="doc-upload-type" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px">
+                  <option value="cni">Carte d'identité (CNI)</option>
+                  <option value="impot">Avis d'imposition</option>
+                  <option value="salaire">Bulletin de salaire</option>
+                  <option value="releves">Relevé bancaire</option>
+                  <option value="av">Relevé AV / PER</option>
+                  <option value="scpi">SCPI / Locatif</option>
+                  <option value="amort">Tableau d'amortissement</option>
+                  <option value="retraite">Relevé retraite</option>
+                  <option value="contrat">Contrat mariage / PACS</option>
+                  <option value="domicile">Justificatif domicile</option>
+                  <option value="autre">Autre document</option>
+                </select>
+              </div>
+              <div>
+                <label style="font-size:11px;font-weight:700;color:var(--navy);display:block;margin-bottom:4px">Fichier(s)</label>
+                <input type="file" id="doc-upload-file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                  style="width:100%;padding:6px;border:1px solid var(--border);border-radius:6px;font-size:11px;background:#fff" />
+              </div>
+              <button onclick="uploadDocumentCRM()" id="doc-upload-btn"
+                style="background:var(--green);color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap">
+                ⬆ Envoyer
+              </button>
+            </div>
+            <div id="doc-upload-status" style="margin-top:8px;font-size:11px;color:var(--muted)"></div>
+          </div>
           <div id="documents-list" style="display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px"></div>
         </div>
 
@@ -2970,6 +3006,8 @@ async function sendBudgetEmail() {
 async function loadDocuments() {
   const docs = await apiGet(`documents?client_id=eq.${currentClientId}&order=date_upload.desc&limit=100`);
   const el = document.getElementById('documents-list');
+  const lbl = document.getElementById('doc-count-label');
+  if (lbl) lbl.textContent = docs.length ? `${docs.length} document(s)` : '';
   if (!docs.length) { el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:20px">Aucun document reçu.</p>'; return; }
   el.innerHTML = docs.map(d => {
     const isImg = /\.(jpg|jpeg|png)$/i.test(d.nom_fichier || '');
@@ -3001,6 +3039,60 @@ async function openDocument(card) {
     showToast('❌ Impossible d\'ouvrir le document : ' + e.message, 'error');
   } finally {
     card.style.opacity = '1';
+  }
+}
+
+function toggleDocUpload() {
+  const form = document.getElementById('doc-upload-form');
+  form.style.display = form.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('doc-upload-status').textContent = '';
+}
+
+async function uploadDocumentCRM() {
+  const fileInput = document.getElementById('doc-upload-file');
+  const type      = document.getElementById('doc-upload-type').value;
+  const btn       = document.getElementById('doc-upload-btn');
+  const status    = document.getElementById('doc-upload-status');
+
+  if (!fileInput.files.length) { status.textContent = '⚠ Sélectionne au moins un fichier.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Envoi…';
+  status.textContent = '';
+
+  let ok = 0, errors = [];
+  for (let i = 0; i < fileInput.files.length; i++) {
+    const file = fileInput.files[i];
+    const uniqueName = fileInput.files.length > 1 ? `${i}_${file.name}` : file.name;
+    const path = `${currentClientId}/${type}/${uniqueName}`;
+    try {
+      const { error: upErr } = await db.storage.from('documents').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      await apiPost('documents', {
+        client_id: currentClientId, type, nom_fichier: uniqueName,
+        storage_path: path, taille_ko: Math.round(file.size / 1024),
+      });
+      ok++;
+    } catch(e) {
+      errors.push(`${file.name} : ${e.message}`);
+    }
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬆ Envoyer';
+  fileInput.value = '';
+
+  if (ok > 0) {
+    status.style.color = '#27ae60';
+    status.textContent = `✅ ${ok} fichier(s) uploadé(s)`;
+    setTimeout(() => {
+      document.getElementById('doc-upload-form').style.display = 'none';
+      loadDocuments();
+    }, 1200);
+  }
+  if (errors.length) {
+    status.style.color = 'var(--red)';
+    status.textContent += ' ❌ ' + errors.join(' | ');
   }
 }
 
