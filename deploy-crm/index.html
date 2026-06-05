@@ -3054,11 +3054,16 @@ async function uploadDocumentCRM() {
   const btn       = document.getElementById('doc-upload-btn');
   const status    = document.getElementById('doc-upload-status');
 
-  if (!fileInput.files.length) { status.textContent = '⚠ Sélectionne au moins un fichier.'; return; }
+  if (!fileInput.files.length) {
+    status.style.color = 'var(--orange)';
+    status.textContent = '⚠ Sélectionne au moins un fichier.';
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = 'Envoi…';
-  status.textContent = '';
+  status.style.color = 'var(--muted)';
+  status.textContent = 'Upload en cours…';
 
   let ok = 0, errors = [];
   for (let i = 0; i < fileInput.files.length; i++) {
@@ -3066,33 +3071,42 @@ async function uploadDocumentCRM() {
     const uniqueName = fileInput.files.length > 1 ? `${i}_${file.name}` : file.name;
     const path = `${currentClientId}/${type}/${uniqueName}`;
     try {
+      // 1. Upload Storage
       const { error: upErr } = await db.storage.from('documents').upload(path, file, { upsert: true });
-      if (upErr) throw upErr;
-      await apiPost('documents', {
-        client_id: currentClientId, type, nom_fichier: uniqueName,
-        storage_path: path, taille_ko: Math.round(file.size / 1024),
+      if (upErr) throw new Error('Storage : ' + upErr.message);
+
+      // 2. Insert en base via db (gère le JWT automatiquement, erreur levée si échec)
+      const { error: dbErr } = await db.from('documents').insert({
+        client_id: currentClientId,
+        type,
+        nom_fichier: uniqueName,
+        storage_path: path,
+        taille_ko: Math.round(file.size / 1024),
       });
+      if (dbErr) throw new Error('DB : ' + dbErr.message);
+
       ok++;
     } catch(e) {
-      errors.push(`${file.name} : ${e.message}`);
+      errors.push(`${file.name} → ${e.message}`);
     }
   }
 
   btn.disabled = false;
   btn.textContent = '⬆ Envoyer';
-  fileInput.value = '';
 
   if (ok > 0) {
+    fileInput.value = '';
     status.style.color = '#27ae60';
-    status.textContent = `✅ ${ok} fichier(s) uploadé(s)`;
+    status.textContent = `✅ ${ok} fichier(s) ajouté(s)`;
     setTimeout(() => {
       document.getElementById('doc-upload-form').style.display = 'none';
+      status.textContent = '';
       loadDocuments();
-    }, 1200);
+    }, 1500);
   }
   if (errors.length) {
     status.style.color = 'var(--red)';
-    status.textContent += ' ❌ ' + errors.join(' | ');
+    status.textContent = '❌ ' + errors.join(' | ');
   }
 }
 
