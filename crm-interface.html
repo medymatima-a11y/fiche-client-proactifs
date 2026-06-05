@@ -3085,7 +3085,11 @@ function renderDocCategory(cat, docs, num) {
   const numStr = String(num).padStart(2, '0');
   const lock = cat.internalOnly ? '<span title="Catégorie interne — non visible par le client" style="font-size:10px;color:var(--muted);margin-left:6px">🔒</span>' : '';
   return `
-    <div class="doc-folder" style="background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden">
+    <div class="doc-folder" data-cat="${cat.key}"
+      ondragover="onDocDragOver(event, this)"
+      ondragleave="onDocDragLeave(event, this)"
+      ondrop="onDocDrop(event, this, '${cat.key}')"
+      style="background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;overflow:hidden;transition:border-color .15s, background .15s">
       <div onclick="toggleDocFolder(this)" data-open="${isOpen}"
         style="display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;background:${count ? '#fbf7ed' : '#fafafa'};border-bottom:${isOpen && count ? '1px solid var(--border)' : 'none'};transition:background .15s">
         <span class="doc-folder-arrow" style="font-size:10px;color:var(--muted);transition:transform .15s;display:inline-block;transform:${isOpen && count ? 'rotate(90deg)' : 'rotate(0deg)'}">▶</span>
@@ -3105,9 +3109,13 @@ function renderDocItem(d) {
   const clickable = !!d.storage_path;
   const typeLabel = getTypeLabel(d.type);
   const moved = d.categorie ? ' <span title="Déplacé manuellement" style="font-size:9px;color:var(--gold);font-weight:700">●</span>' : '';
-  return `<div data-doc-id="${d.id}" style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;position:relative;transition:background .15s"
+  return `<div class="doc-row" data-doc-id="${d.id}" draggable="true"
+    ondragstart="onDocDragStart(event,'${d.id}')"
+    ondragend="onDocDragEnd(event)"
+    style="display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:6px;position:relative;transition:background .15s, opacity .15s;cursor:grab"
     onmouseenter="this.style.background='#fafafa';this.querySelector('.doc-actions').style.opacity='1'"
-    onmouseleave="this.style.background='transparent';this.querySelector('.doc-actions').style.opacity='0';closeDocMenu(this)">
+    onmouseleave="this.style.background='transparent';this.querySelector('.doc-actions').style.opacity='0'">
+    <span title="Glisse-moi vers un autre dossier" style="font-size:12px;color:var(--muted);cursor:grab;user-select:none">⠿</span>
     <span style="font-size:16px">${icon}</span>
     <div data-path="${d.storage_path||''}" onclick="openDocument(this)" style="flex:1;min-width:0;${clickable ? 'cursor:pointer;' : 'opacity:0.55;'}">
       <div style="font-size:11px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.nom_fichier||typeLabel}${moved}</div>
@@ -3115,57 +3123,56 @@ function renderDocItem(d) {
     </div>
     <div class="doc-actions" style="opacity:0;transition:opacity .15s;display:flex;gap:4px;align-items:center">
       ${clickable ? '<span title="Ouvrir" style="font-size:13px;color:var(--muted)">↗</span>' : ''}
-      <button onclick="event.stopPropagation();toggleDocMenu(this,'${d.id}','${getCategoryForDoc(d)}')" title="Déplacer / Supprimer"
-        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;line-height:1;padding:2px 6px;border-radius:4px"
-        onmouseenter="this.style.background='#eee';this.style.color='var(--navy)'"
-        onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">⋮</button>
+      <button onclick="event.stopPropagation();deleteDocument('${d.id}')" title="Supprimer"
+        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:2px 6px;border-radius:4px"
+        onmouseenter="this.style.background='#fdecea';this.style.color='var(--red)'"
+        onmouseleave="this.style.background='transparent';this.style.color='var(--muted)'">🗑</button>
     </div>
   </div>`;
 }
 
-let _openDocMenu = null;
+// ── DRAG & DROP des documents entre dossiers ──────────────
+let _draggedDocId = null;
 
-function toggleDocMenu(btn, docId, currentCat) {
-  // Ferme un éventuel menu déjà ouvert
-  if (_openDocMenu && _openDocMenu !== btn) closeDocMenu(_openDocMenu);
-
-  const existing = btn.parentElement.querySelector('.doc-menu');
-  if (existing) { existing.remove(); _openDocMenu = null; return; }
-
-  const menu = document.createElement('div');
-  menu.className = 'doc-menu';
-  menu.style.cssText = 'position:absolute;right:6px;top:36px;background:#fff;border:1px solid var(--border);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.12);z-index:50;min-width:240px;overflow:hidden';
-  menu.onclick = e => e.stopPropagation();
-  const allCats = [...DOC_CATEGORIES, { key: 'divers', label: 'DIVERS' }];
-  menu.innerHTML = `
-    <div style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">Déplacer vers</div>
-    ${allCats.map((c, i) => `
-      <div onclick="moveDocument('${docId}','${c.key}')"
-        style="padding:8px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;${c.key === currentCat ? 'background:#fbf7ed;font-weight:700;color:var(--navy)' : 'color:var(--text)'}"
-        onmouseenter="this.style.background='#fafafa'"
-        onmouseleave="this.style.background='${c.key === currentCat ? '#fbf7ed' : 'transparent'}'">
-        <span style="font-size:14px">📁</span>
-        <span style="flex:1">${String(i+1).padStart(2,'0')}- ${c.label}</span>
-        ${c.key === currentCat ? '<span style="font-size:11px;color:var(--green)">✓</span>' : ''}
-      </div>`).join('')}
-    <div style="border-top:1px solid var(--border)">
-      <div onclick="deleteDocument('${docId}')"
-        style="padding:8px 12px;font-size:12px;cursor:pointer;color:var(--red);display:flex;align-items:center;gap:8px"
-        onmouseenter="this.style.background='#fdecea'"
-        onmouseleave="this.style.background='transparent'">
-        <span style="font-size:14px">🗑</span>
-        <span>Supprimer</span>
-      </div>
-    </div>`;
-  btn.parentElement.style.position = 'relative';
-  btn.parentElement.appendChild(menu);
-  _openDocMenu = btn;
+function onDocDragStart(e, docId) {
+  _draggedDocId = docId;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', docId);
+  e.currentTarget.style.opacity = '0.4';
 }
 
-function closeDocMenu(btn) {
-  const menu = btn.parentElement.querySelector('.doc-menu');
-  if (menu) menu.remove();
-  if (_openDocMenu === btn) _openDocMenu = null;
+function onDocDragEnd(e) {
+  e.currentTarget.style.opacity = '1';
+  _draggedDocId = null;
+  // Nettoie tout résidu de surlignage sur les dossiers
+  document.querySelectorAll('.doc-folder').forEach(f => {
+    f.style.borderColor = '';
+    f.style.background = '';
+  });
+}
+
+function onDocDragOver(e, folder) {
+  if (!_draggedDocId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  folder.style.borderColor = 'var(--gold)';
+  folder.style.background = '#fdf8ee';
+}
+
+function onDocDragLeave(e, folder) {
+  // Ne réinitialise que si on quitte vraiment le dossier (pas un enfant)
+  if (folder.contains(e.relatedTarget)) return;
+  folder.style.borderColor = '';
+  folder.style.background = '';
+}
+
+async function onDocDrop(e, folder, newCat) {
+  e.preventDefault();
+  const docId = _draggedDocId || e.dataTransfer.getData('text/plain');
+  folder.style.borderColor = '';
+  folder.style.background = '';
+  if (!docId) return;
+  await moveDocument(docId, newCat);
 }
 
 async function moveDocument(docId, newCat) {
