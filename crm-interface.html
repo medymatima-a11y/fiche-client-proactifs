@@ -3271,6 +3271,14 @@ async function uploadDocumentCRM() {
     return;
   }
 
+  const MAX_SIZE_MB = 20;
+  const oversized = Array.from(fileInput.files).filter(f => f.size > MAX_SIZE_MB * 1024 * 1024);
+  if (oversized.length) {
+    status.style.color = 'var(--orange)';
+    status.textContent = `⚠ Fichier(s) trop lourds (> ${MAX_SIZE_MB} Mo) : ${oversized.map(f => f.name).join(', ')}`;
+    return;
+  }
+
   btn.disabled = true;
   btn.textContent = 'Envoi…';
   status.style.color = 'var(--muted)';
@@ -3279,7 +3287,8 @@ async function uploadDocumentCRM() {
   let ok = 0, errors = [];
   for (let i = 0; i < fileInput.files.length; i++) {
     const file = fileInput.files[i];
-    const uniqueName = fileInput.files.length > 1 ? `${i}_${file.name}` : file.name;
+    const sanitize = n => n.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._\-]/g, '_');
+    const uniqueName = fileInput.files.length > 1 ? `${i}_${sanitize(file.name)}` : sanitize(file.name);
     const path = `${currentClientId}/${type}/${uniqueName}`;
     try {
       // 1. Upload Storage
@@ -6101,12 +6110,4 @@ init();
       <div class="nlb-desc"  id="lnb-desc"></div>
       <div class="nlb-actions">
         <button class="nlb-btn nlb-btn-primary" id="lnb-view-btn">Voir le lead</button>
-        <button class="nlb-btn nlb-btn-ghost"   onclick="dismissLeadsNotif()">Ignorer</button>
-      </div>
-    </div>
-    <button class="nlb-close" onclick="dismissLeadsNotif()">✕</button>
-  </div>
-</div>
-
-</body>
-</html>
+        <button class="nlb-btn nlb-btn-ghost"   onclick="dismissLeadsNotif()">Ig
