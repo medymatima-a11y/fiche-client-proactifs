@@ -249,19 +249,14 @@ const R = {
   cover(s, d) {
     const meta = [];
     meta.push(`<div><span>Client(s)</span><strong>${esc(d.client.nom)}</strong></div>`);
+    if (d.client.situation) meta.push(`<div><span>Situation</span><strong>${esc(d.client.situation)}</strong></div>`);
+    if (d.client.retraite) meta.push(`<div><span>Retraite visée</span><strong>${esc(d.client.retraite)}</strong></div>`);
     meta.push(`<div><span>Date</span><strong>${esc(d.client.date)}</strong></div>`);
-    let ctx = '';
-    if (d.client.situation || d.client.retraite) {
-      ctx = `<div class="cover-ctx">` +
-        (d.client.situation ? `<div><div class="label gold">Situation</div><p>${esc(d.client.situation)}</p></div>` : '') +
-        (d.client.retraite  ? `<div><div class="label gold">Retraite visée</div><p>${esc(d.client.retraite)}</p></div>` : '') +
-      `</div>`;
-    }
     return `<section class="slide dark cover">
       <div class="brand">${esc(d.cabinet)} · Gestion de patrimoine</div>
       <h1>Bilan patrimonial <em>&amp; propositions</em></h1>
       <div class="sub">Synthèse de votre situation et axes de travail — Rendez-vous n°2</div>
-      <div class="metarow">${meta.join("")}</div>${ctx}</section>`;
+      <div class="metarow">${meta.join("")}</div></section>`;
   },
 
   situation(s, d) {
@@ -525,8 +520,8 @@ function mapToDossier(c, bil) {
     lieu: 'Colombes (92)',
     client: {
       nom: buildNom(c),
-      situation: preco.situation_label || buildSituationStr(c),
-      retraite: preco.retraite_label || '',
+      situation: buildSituationStr(c),
+      retraite: '',
       date: preco.presentation_date || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     },
     profil: preco.profil || [
