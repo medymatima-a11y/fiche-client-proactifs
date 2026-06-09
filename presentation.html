@@ -76,6 +76,7 @@ tr.hl td{font-weight:700;color:var(--forest)}
 .foot{position:absolute;left:7vw;bottom:3.5vh;font-size:.78rem;color:var(--slate);font-style:italic}
 .dark .foot{color:#9CB2A4}
 .intro{margin-bottom:24px;max-width:80ch}
+.chiffrage-tag{display:inline-block;margin-top:10px;font-size:.82rem;font-weight:600;color:var(--teal);background:var(--teal-pale);border-radius:6px;padding:3px 10px}
 /* Loading */
 #loading{position:fixed;inset:0;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ivory)}
 #loading .spinner{width:40px;height:40px;border:3px solid rgba(196,151,58,.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
@@ -145,7 +146,8 @@ const CATALOG = {
   },
   scpi:{
     titre:"SCPI — diversification pilotée",
-    texte:"Immobilier mutualisé et géré : pas de gestion locative, mutualisation du risque locatif, ticket d'entrée faible. Complément idéal pour diversifier sans alourdir la gestion."
+    texte:"Immobilier mutualisé et géré : pas de gestion locative, mutualisation du risque locatif, ticket d'entrée faible. Complément idéal pour diversifier sans alourdir la gestion.",
+    libre:true
   },
   /* — TRANSMISSION — */
   demembrement:{
@@ -196,6 +198,23 @@ const CATALOG = {
       {titre:"Déduction immédiate", texte:"Versements déductibles du revenu global de l'année."},
       {titre:"Sortie flexible", texte:"Capital ou rente à la retraite — au choix."},
       {titre:"Transmissible", texte:"Capital décès au conjoint ou bénéficiaires désignés."}
+    ]
+  },
+  assurance_vie_transmission_split:{
+    titre:"AV — abattement 152 500 €",
+    table:{
+      head:["Scénario","Montant"],
+      rows:[
+        ["Abattement par bénéficiaire (primes avant 70 ans)","152 500 €"],
+        ["Avec 2 enfants bénéficiaires × 2 contrats","610 000 €",true],
+        ["Fiscalité au-delà","20 % jusqu'à 700 k€ puis 31,25 %"]
+      ],
+      note:"Les primes versées après 70 ans ne bénéficient pas de cet abattement (abattement global de 30 500 € pour l'ensemble des bénéficiaires)."
+    },
+    effects:[
+      {titre:"Hors succession", texte:"L'assurance-vie n'entre pas dans l'actif successoral — pas de droits de succession classiques."},
+      {titre:"Clause bénéficiaire", texte:"La rédaction de la clause conditionne l'efficacité totale du dispositif."},
+      {titre:"Cumul possible", texte:"Chaque souscripteur a ses propres plafonds — couple = double enveloppe."}
     ]
   },
   /* — EPARGNE — */
@@ -290,12 +309,16 @@ const R = {
   },
 
   cards(s, d) {
-    const cards = (s.cards || []).map((id, k) => {
-      const b = CATALOG[id]; if (!b) return "";
+    const cards = (s.cards || []).map((card, k) => {
+      // Supporte les deux formats : string "per_retraite" ou objet {id:"per_retraite", chiffrage:"..."}
+      const cardId = (typeof card === 'object' && card !== null) ? card.id : card;
+      const cardChiffrage = (typeof card === 'object' && card !== null) ? (card.chiffrage || null) : null;
+      const b = CATALOG[cardId]; if (!b) return "";
       let inner = `${s.numbered ? `<div class="n">${k + 1}</div>` : ""}<h3>${esc(b.titre)}</h3>`;
       if (b.texte) inner += `<p>${esc(b.texte)}</p>`;
       if (b.list) inner += liList(b.list);
       if (b.highlight) inner += `<div class="stat-box"><div class="big">${esc(b.highlight.big)}</div><p>${esc(b.highlight.sub)}</p></div>`;
+      if (cardChiffrage) inner += `<span class="chiffrage-tag">${esc(cardChiffrage)}</span>`;
       return `<div class="col card ${s.numbered ? 'lev' : ''}">${inner}</div>`;
     }).join("");
     return `<section class="slide"><div class="label gold">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
@@ -439,6 +462,7 @@ function mapToDossier(c, bil) {
   if (preco.diagnostic) {
     deck.push({ layout: 'diagnostic', label: '04 — Diagnostic', titre: 'Notre lecture de votre situation' });
   }
+  // Auto-cards : preco.deck_extra
   for (const slide of (preco.deck_extra || [])) {
     deck.push(slide);
   }
