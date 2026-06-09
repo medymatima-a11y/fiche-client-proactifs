@@ -1328,16 +1328,31 @@ table.crm-table{width:100%;border-collapse:collapse}
 
                 <!-- Solutions CATALOG -->
                 <div style="margin-bottom:14px">
-                  <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);display:block;margin-bottom:8px">Solutions à présenter</label>
-                  <div id="pres-catalog-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px"></div>
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 1</label>
+                    <input type="text" id="pres-cat1-label" placeholder="05 — Solutions" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+                    <input type="text" id="pres-cat1-titre" placeholder="Nos axes de travail" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
+                  </div>
+                  <div id="pres-catalog-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+
+                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 2 <span style="font-weight:400;color:#94a3b8;text-transform:none;font-size:10px">(optionnel)</span></label>
+                    <input type="text" id="pres-cat2-label" placeholder="05 — Objectif 2" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+                    <input type="text" id="pres-cat2-titre" placeholder="Titre du slide…" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
+                  </div>
+                  <div id="pres-catalog-list-2" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+
                   <div class="form-field">
                     <label>Slide détail (split layout)</label>
-                    <select id="pres-split-solution" style="margin-top:4px">
-                      <option value="">— Aucune —</option>
-                      <option value="per_couple_chiffrage">PER couple — chiffrage</option>
-                      <option value="per_fiscal">PER — impact fiscal</option>
-                      <option value="assurance_vie_transmission">AV — abattement 152 500 €</option>
-                    </select>
+                    <div style="display:flex;gap:6px;margin-top:4px">
+                      <input type="text" id="pres-split-label" placeholder="06 — Chiffrage" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+                      <select id="pres-split-solution" style="flex:1">
+                        <option value="">— Aucune —</option>
+                        <option value="per_couple_chiffrage">PER couple — chiffrage</option>
+                        <option value="per_fiscal">PER — impact fiscal</option>
+                        <option value="assurance_vie_transmission">AV — abattement 152 500 €</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
@@ -4864,18 +4879,26 @@ const PRES_CATALOG = [
 ];
 
 function initPresConfig() {
-  const list = document.getElementById('pres-catalog-list');
-  if (!list || list.dataset.init) return;
-  list.dataset.init = '1';
-  list.innerHTML = PRES_CATALOG.map(item => `
+  const catHtml = PRES_CATALOG.map(item => `
     <div class="pres-cat-item" style="display:flex;flex-direction:column;gap:4px;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-width:155px;max-width:220px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap">
-        <input type="checkbox" class="pres-catalog-cb" data-id="${item.id}" style="margin:0" onchange="presToggleChiffrage(this)">
+        <input type="checkbox" class="__CB_CLASS__" data-id="${item.id}" style="margin:0" onchange="presToggleChiffrage(this)">
         ${item.label}
       </label>
       ${item.libre ? `<input type="text" class="pres-cat-custom-label" placeholder="Préciser le type immo…" style="display:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;width:100%;box-sizing:border-box">` : ''}
       <input type="text" class="pres-cat-chiffrage" placeholder="Chiffrage (ex : 3 200 €/an)" style="display:none;border:1px solid #cbd5e1;border-radius:5px;padding:3px 8px;font-size:11px;color:#475569;width:100%;box-sizing:border-box">
     </div>`).join('');
+
+  const list = document.getElementById('pres-catalog-list');
+  if (list && !list.dataset.init) {
+    list.dataset.init = '1';
+    list.innerHTML = catHtml.replaceAll('__CB_CLASS__', 'pres-catalog-cb');
+  }
+  const list2 = document.getElementById('pres-catalog-list-2');
+  if (list2 && !list2.dataset.init) {
+    list2.dataset.init = '1';
+    list2.innerHTML = catHtml.replaceAll('__CB_CLASS__', 'pres-catalog-cb-2');
+  }
 }
 
 function presToggleChiffrage(cb) {
@@ -4946,6 +4969,8 @@ function collectPresConfig() {
 
   // Deck extra
   const deck_extra = [];
+
+  // Slide 1 (Objectif 1 / Solutions)
   const selectedCards = [...document.querySelectorAll('.pres-catalog-cb:checked')].map(cb => {
     const item = cb.closest('.pres-cat-item');
     const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
@@ -4956,15 +4981,39 @@ function collectPresConfig() {
     return obj;
   });
   if (selectedCards.length) {
+    const cat1label = (document.getElementById('pres-cat1-label')?.value || '').trim() || '05 — Solutions';
+    const cat1titre = (document.getElementById('pres-cat1-titre')?.value || '').trim() || 'Nos axes de travail';
     deck_extra.push({
       layout: 'cards',
-      label: '05 — Solutions',
-      titre: 'Nos axes de travail',
+      label: cat1label,
+      titre: cat1titre,
       numbered: true,
       intro: `${selectedCards.length} levier${selectedCards.length > 1 ? 's' : ''} prioritaire${selectedCards.length > 1 ? 's' : ''} pour votre situation.`,
       cards: selectedCards
     });
   }
+
+  // Slide 2 (Objectif 2, optionnel)
+  const selectedCards2 = [...document.querySelectorAll('.pres-catalog-cb-2:checked')].map(cb => {
+    const item = cb.closest('.pres-cat-item');
+    const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
+    const customLabel = (item?.querySelector('.pres-cat-custom-label')?.value || '').trim();
+    const obj = { id: cb.dataset.id };
+    if (chiffrage)   obj.chiffrage    = chiffrage;
+    if (customLabel) obj.custom_label = customLabel;
+    return obj;
+  });
+  if (selectedCards2.length) {
+    const cat2label = (document.getElementById('pres-cat2-label')?.value || '').trim() || '05 — Objectif 2';
+    const cat2titre = (document.getElementById('pres-cat2-titre')?.value || '').trim() || 'Nos solutions complémentaires';
+    deck_extra.push({
+      layout: 'cards',
+      label: cat2label,
+      titre: cat2titre,
+      cards: selectedCards2
+    });
+  }
+
   const splitSol = document.getElementById('pres-split-solution')?.value || '';
   if (splitSol) {
     const splitTitles = {
@@ -4972,9 +5021,10 @@ function collectPresConfig() {
       per_fiscal:                 'PER — impact fiscal immédiat',
       assurance_vie_transmission: 'AV — capital transmissible'
     };
+    const splitLabel = (document.getElementById('pres-split-label')?.value || '').trim() || '06 — Chiffrage';
     deck_extra.push({
       layout: 'split',
-      label: '06 — Chiffrage',
+      label: splitLabel,
       titre: splitTitles[splitSol] || 'Détail solution',
       solution: splitSol
     });
@@ -5053,11 +5103,14 @@ async function loadBilan() {
     document.getElementById('pres-pieces').value      = '';
     document.getElementById('pres-objectifs').innerHTML = '';
     document.getElementById('pres-etapes').innerHTML    = '';
-    document.querySelectorAll('.pres-catalog-cb').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.pres-catalog-cb,.pres-catalog-cb-2').forEach(cb => cb.checked = false);
     document.querySelectorAll('.pres-cat-chiffrage').forEach(el => { el.style.display = 'none'; el.value = ''; });
     document.querySelectorAll('.pres-cat-custom-label').forEach(el => { el.style.display = 'none'; el.value = ''; });
     const presSelect = document.getElementById('pres-split-solution');
     if (presSelect) presSelect.value = '';
+    ['pres-cat1-label','pres-cat1-titre','pres-cat2-label','pres-cat2-titre','pres-split-label'].forEach(id => {
+      const el = document.getElementById(id); if (el) el.value = '';
+    });
 
     if (bp && !Array.isArray(bp) && typeof bp === 'object') {
       document.getElementById('pres-situation').value  = bp.situation_label || '';
@@ -5069,29 +5122,51 @@ async function loadBilan() {
       (bp.objectifs     || []).forEach(o  => presAddObjectif(o));
       (bp.feuille_route || []).forEach(e  => presAddEtape(e));
       document.getElementById('pres-pieces').value = (bp.pieces || []).join('\n');
-      const cardsSlide = (bp.deck_extra || []).find(s => s.layout === 'cards');
-      if (cardsSlide?.cards) {
-        cardsSlide.cards.forEach(card => {
+      const cardSlides = (bp.deck_extra || []).filter(s => s.layout === 'cards');
+
+      // Slide cards 1
+      const cardsSlide = cardSlides[0];
+      if (cardsSlide) {
+        if (cardsSlide.label) { const el = document.getElementById('pres-cat1-label'); if (el) el.value = cardsSlide.label; }
+        if (cardsSlide.titre) { const el = document.getElementById('pres-cat1-titre'); if (el) el.value = cardsSlide.titre; }
+        (cardsSlide.cards || []).forEach(card => {
           const id = typeof card === 'string' ? card : card.id;
           const cb = document.querySelector(`.pres-catalog-cb[data-id="${id}"]`);
           if (!cb) return;
           cb.checked = true;
-          presToggleChiffrage(cb); // affiche les inputs
+          presToggleChiffrage(cb);
           if (typeof card === 'object') {
             const item = cb.closest('.pres-cat-item');
-            if (card.chiffrage) {
-              const el = item?.querySelector('.pres-cat-chiffrage');
-              if (el) el.value = card.chiffrage;
-            }
-            if (card.custom_label) {
-              const el = item?.querySelector('.pres-cat-custom-label');
-              if (el) el.value = card.custom_label;
-            }
+            if (card.chiffrage)    { const el = item?.querySelector('.pres-cat-chiffrage');    if (el) el.value = card.chiffrage; }
+            if (card.custom_label) { const el = item?.querySelector('.pres-cat-custom-label'); if (el) el.value = card.custom_label; }
           }
         });
       }
+
+      // Slide cards 2 (optionnel)
+      const cardsSlide2 = cardSlides[1];
+      if (cardsSlide2) {
+        if (cardsSlide2.label) { const el = document.getElementById('pres-cat2-label'); if (el) el.value = cardsSlide2.label; }
+        if (cardsSlide2.titre) { const el = document.getElementById('pres-cat2-titre'); if (el) el.value = cardsSlide2.titre; }
+        (cardsSlide2.cards || []).forEach(card => {
+          const id = typeof card === 'string' ? card : card.id;
+          const cb = document.querySelector(`.pres-catalog-cb-2[data-id="${id}"]`);
+          if (!cb) return;
+          cb.checked = true;
+          presToggleChiffrage(cb);
+          if (typeof card === 'object') {
+            const item = cb.closest('.pres-cat-item');
+            if (card.chiffrage)    { const el = item?.querySelector('.pres-cat-chiffrage');    if (el) el.value = card.chiffrage; }
+            if (card.custom_label) { const el = item?.querySelector('.pres-cat-custom-label'); if (el) el.value = card.custom_label; }
+          }
+        });
+      }
+
       const splitSlide = (bp.deck_extra || []).find(s => s.layout === 'split');
-      if (splitSlide?.solution) document.getElementById('pres-split-solution').value = splitSlide.solution;
+      if (splitSlide?.solution) {
+        document.getElementById('pres-split-solution').value = splitSlide.solution;
+        if (splitSlide.label) { const el = document.getElementById('pres-split-label'); if (el) el.value = splitSlide.label; }
+      }
     }
   } else {
     document.getElementById('bilan-date').value = new Date().toISOString().slice(0,10);
