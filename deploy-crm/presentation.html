@@ -77,11 +77,9 @@ tr.hl td{font-weight:700;color:var(--forest)}
 .foot{position:absolute;left:7vw;bottom:3.5vh;font-size:.78rem;color:var(--slate);font-style:italic}
 .dark .foot{color:#9CB2A4}
 .intro{margin-bottom:24px;max-width:80ch}
-/* Loading */
 #loading{position:fixed;inset:0;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ivory)}
 #loading .spinner{width:40px;height:40px;border:3px solid rgba(196,151,58,.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
 @keyframes spin{to{transform:rotate(360deg)}}
-#loading p{color:var(--gold-light);font-family:'DM Mono',monospace;font-size:.9rem;letter-spacing:.1em}
 #error{position:fixed;inset:0;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ivory);text-align:center;padding:40px}
 #error h2{color:var(--gold-light);font-family:'Fraunces',serif;font-size:2rem;margin-bottom:16px}
 #error p{color:#CFE0D5;font-size:1.1rem;max-width:500px}
@@ -110,480 +108,253 @@ tr.hl td{font-weight:700;color:var(--forest)}
 </div>
 
 <script>
-/* =====================================================================
-   CATALOGUE DE BLOCS-SOLUTIONS (enrichi au fil des clients)
-   ===================================================================== */
 const CATALOG = {
-  /* — RETRAITE — */
-  per_retraite:{
-    titre:"PER — réactiver le plafond",
-    texte:"Versements déductibles du revenu imposable à la TMI du foyer. Sortie en capital ou en rente à la retraite. Double effet : retraite + réduction d'impôt immédiate."
-  },
-  per_retraite_couple:{
-    titre:"PER — compléter le plafond couple",
-    texte:"Chacun dispose d'un plafond épargne retraite propre. Des versements volontaires sur PER individuel restent déductibles à 30 % — fenêtre à saisir avant les départs."
-  },
-  loyers_liberes_dumaire:{
-    titre:"Crédit RS libéré — nov. 2026",
-    texte:"La fin du crédit de Villeneuve-sur-Yonne (650 €/mois) libère un flux régulier dès ce trimestre. Ce surplus peut abonder le PER ou alimenter une assurance-vie directement."
-  },
-  perco_pilotage:{
-    titre:"Piloter la sortie du PERCO",
-    texte:"Les PERCO totalisent 139 000 €. Sortie en capital ou en rente à la retraite — le mode de sortie conditionne fortement la fiscalité, surtout si loyers, pension et PERCO se cumulent la même année."
-  },
-  /* — IMMOBILIER / STRUCTURE — */
-  obo:{
-    titre:"OBO — Owner Buy Out",
-    texte:"Vendre ses biens à une SCI que vous créez, financée par un crédit. La SCI rachète, le crédit est remboursé par les loyers, et vous disposez d'un capital net d'impôt immédiat (abattement sur la plus-value)."
-  },
-  sci:{
-    titre:"SCI à l'IS — amortir, optimiser",
-    texte:"En passant à l'IS, la SCI amortit les biens (réduction fiscale) et ouvre la possibilité de reverser des dividendes à terme. Compatible avec une structuration OBO."
-  },
-  deficit_foncier:{
-    titre:"Déficit foncier — travaux déductibles",
-    texte:"Les travaux réalisés sur les biens locatifs créent un déficit foncier déductible des revenus globaux (dans la limite de 10 750 €/an). Un levier puissant à la TMI 30 % ou plus."
-  },
-  scpi:{
-    titre:"SCPI — diversification pilotée",
-    texte:"Immobilier mutualisé et géré : pas de gestion locative, mutualisation du risque locatif, ticket d'entrée faible. Complément idéal pour diversifier sans alourdir la gestion."
-  },
-  /* — TRANSMISSION — */
-  demembrement:{
-    titre:"Donation en démembrement",
-    texte:"Donner la nue-propriété aux enfants (valeur fiscale réduite selon l'âge des donateurs) tout en conservant l'usufruit. Transmission à moindre coût fiscal, sans perdre la jouissance du bien."
-  },
-  assurance_vie_transmission:{
-    titre:"Assurance-vie : l'abattement des 152 500 €",
-    texte:"Chaque bénéficiaire est exonéré à hauteur de 152 500 € (primes versées avant 70 ans). Avec 2 contrats et 2 enfants bénéficiaires, l'enveloppe exonérée peut atteindre 610 000 € en capital décès.",
-    highlight:{big:"610 000 €",sub:"de capital transmissible exonéré de droits via les contrats d'assurance-vie, en désignant les enfants bénéficiaires (plafond primes avant 70 ans)."}
-  },
-  assurance_vie:{
-    titre:"Assurance-vie",
-    texte:"Alimentée par le surplus de trésorerie : capital disponible, peu fiscalisé après 8 ans, et levier de transmission (abattement 152 500 €/bénéficiaire avant 70 ans)."
-  },
-  /* — FISCALITE — */
-  per_couple_chiffrage:{
-    titre:"PER couple — estimation d'économie",
-    table:{
-      head:["Estimation versements (ex. 2026)","Montant"],
-      rows:[
-        ["Plafond Anne-Marie — reliquat estimé","~5 500 €"],
-        ["Plafond Frédéric — reliquat estimé","~3 000 €"],
-        ["Total versements déductibles envisageables","~8 500 €",true],
-        ["Économie d'impôt (TMI 30 %)","~2 550 €",true],
-        ["Capital retraite supplémentaire","~8 500 € + intérêts"]
-      ],
-      note:"Reliquat exact sur l'avis d'imposition (pages 4-5). PERCO et PERP déjà alimentés viennent en déduction du plafond."
-    },
-    effects:[
-      {titre:"Déductibilité immédiate", texte:"Les versements PER réduisent le revenu imposable de l'année de versement."},
-      {titre:"Urgence avant retraite", texte:"Alimenter le PER cette année encore pour profiter de la TMI 30 % avant le départ."},
-      {titre:"Sortie en capital", texte:"Plus souple qu'une rente quand les revenus locatifs couvrent déjà le budget."}
-    ]
-  },
-  per_fiscal:{
-    titre:"PER — impact fiscal immédiat",
-    table:{
-      head:["Scenario","Montant"],
-      rows:[
-        ["Plafond estimé disponible","À calculer"],
-        ["Économie d'impôt (TMI 30 %)","30 % du versement",true],
-        ["Capital constitué","Versement + intérêts"]
-      ],
-      note:"Reliquat exact à lire sur l'avis d'imposition N-1."
-    },
-    effects:[
-      {titre:"Déduction immédiate", texte:"Versements déductibles du revenu global de l'année."},
-      {titre:"Sortie flexible", texte:"Capital ou rente à la retraite — au choix."},
-      {titre:"Transmissible", texte:"Capital décès au conjoint ou bénéficiaires désignés."}
-    ]
-  },
-  /* — EPARGNE — */
-  pea:{
-    titre:"PEA",
-    texte:"Enveloppe actions : exonération d'impôt sur les gains après 5 ans. Complément de diversification pour préparer la retraite ou financer un projet à moyen terme."
-  },
-  /* — IMMOBILIER INVESTISSEMENT — */
-  locatif_nu:{
-    titre:"Investissement locatif nu",
-    texte:"Acquisition d'un bien mis en location nue. Les revenus fonciers sont imposables, mais les charges et intérêts d'emprunt sont déductibles. Adapté à une stratégie patrimoniale long terme."
-  },
-  lmnp:{
-    titre:"LMNP — Loueur meublé non professionnel",
-    texte:"Régime au réel : amortissement du bien et du mobilier vient en déduction des loyers, souvent jusqu'à zéro fiscalité pendant 10–15 ans. Idéal pour les investisseurs en TMI 30 % ou plus."
-  },
-  de_normandie:{
-    titre:"Dispositif De Normandie",
-    texte:"Réduction d'impôt sur acquisition de logements anciens réhabilités en zone tendue. Engagement locatif 6 à 12 ans. Avantage fiscal annuel jusqu'à 21 % du prix de revient."
-  },
-  malraux:{
-    titre:"Malraux — rénovation patrimoine",
-    texte:"Réduction d'impôt de 22 à 30 % des travaux (hors plafonnement global). Réservé aux immeubles en secteur sauvegardé ou PSMV. Enveloppe annuelle de travaux jusqu'à 400 000 €."
-  },
-  monuments_historiques:{
-    titre:"Monuments historiques",
-    texte:"Déduction totale des travaux du revenu global, sans plafond, hors plafonnement global des niches. Stratégie de défiscalisation puissante pour les contribuables fortement imposés."
-  },
-  immo_autre:{
-    titre:"Investissement immobilier",
-    texte:"Stratégie immobilière complémentaire adaptée à votre situation et à vos objectifs patrimoniaux."
-  }
+  per_retraite:{titre:"PER — réactiver le plafond",texte:"Versements déductibles du revenu imposable à la TMI du foyer. Sortie en capital ou en rente à la retraite. Double effet : retraite + réduction d'impôt immédiate."},
+  per_retraite_couple:{titre:"PER — compléter le plafond couple",texte:"Chacun dispose d'un plafond épargne retraite propre. Des versements volontaires sur PER individuel restent déductibles à 30 % — fenêtre à saisir avant les départs."},
+  loyers_liberes_dumaire:{titre:"Crédit RS libéré — nov. 2026",texte:"La fin du crédit de la résidence secondaire libère un flux régulier. Ce surplus peut abonder le PER ou alimenter une assurance-vie directement."},
+  perco_pilotage:{titre:"Piloter la sortie du PERCO",texte:"Sortie en capital ou en rente à la retraite — le mode de sortie conditionne fortement la fiscalité, surtout si loyers, pension et PERCO se cumulent la même année."},
+  obo:{titre:"OBO — Owner Buy Out",texte:"Vendre ses biens à une SCI que vous créez, financée par un crédit. La SCI rachète, le crédit est remboursé par les loyers, et vous disposez d'un capital net d'impôt immédiat."},
+  sci:{titre:"SCI à l'IS — amortir, optimiser",texte:"En passant à l'IS, la SCI amortit les biens (réduction fiscale) et ouvre la possibilité de reverser des dividendes à terme."},
+  deficit_foncier:{titre:"Déficit foncier — travaux déductibles",texte:"Les travaux réalisés sur les biens locatifs créent un déficit foncier déductible des revenus globaux (dans la limite de 10 750 €/an)."},
+  scpi:{titre:"SCPI — diversification pilotée",texte:"Immobilier mutualisé et géré : pas de gestion locative, mutualisation du risque locatif, ticket d'entrée faible."},
+  demembrement:{titre:"Donation en démembrement",texte:"Donner la nue-propriété aux enfants (valeur fiscale réduite selon l'âge des donateurs) tout en conservant l'usufruit."},
+  assurance_vie_transmission:{titre:"Assurance-vie : l'abattement des 152 500 €",texte:"Chaque bénéficiaire est exonéré à hauteur de 152 500 € (primes versées avant 70 ans). Avec 2 contrats et 2 bénéficiaires, l'enveloppe exonérée peut atteindre 610 000 €.",highlight:{big:"610 000 €",sub:"de capital transmissible exonéré de droits via les contrats d'assurance-vie (plafond primes avant 70 ans)."}},
+  assurance_vie:{titre:"Assurance-vie",texte:"Capital disponible, peu fiscalisé après 8 ans, et levier de transmission (abattement 152 500 €/bénéficiaire avant 70 ans)."},
+  per_fiscal:{titre:"PER — impact fiscal immédiat",table:{head:["Scénario","Montant"],rows:[["Économie d'impôt (TMI 30 %)","30 % du versement",true],["Capital constitué","Versement + intérêts"]],note:"Reliquat exact à lire sur l'avis d'imposition N-1."},effects:[{titre:"Déduction immédiate",texte:"Versements déductibles du revenu global de l'année."},{titre:"Sortie flexible",texte:"Capital ou rente à la retraite."},{titre:"Transmissible",texte:"Capital décès aux bénéficiaires désignés."}]},
+  pea:{titre:"PEA",texte:"Enveloppe actions : exonération d'impôt sur les gains après 5 ans."},
+  locatif_nu:{titre:"Investissement locatif nu",texte:"Acquisition d'un bien mis en location nue. Les charges et intérêts d'emprunt sont déductibles. Adapté à une stratégie patrimoniale long terme."},
+  lmnp:{titre:"LMNP — Loueur meublé non professionnel",texte:"Régime au réel : amortissement du bien et du mobilier vient en déduction des loyers, souvent jusqu'à zéro fiscalité pendant 10–15 ans."},
+  de_normandie:{titre:"Dispositif De Normandie",texte:"Réduction d'impôt sur acquisition de logements anciens réhabilités en zone tendue. Avantage fiscal annuel jusqu'à 21 % du prix de revient."},
+  malraux:{titre:"Malraux — rénovation patrimoine",texte:"Réduction d'impôt de 22 à 30 % des travaux (hors plafonnement global). Réservé aux immeubles en secteur sauvegardé."},
+  monuments_historiques:{titre:"Monuments historiques",texte:"Déduction totale des travaux du revenu global, sans plafond. Stratégie de défiscalisation pour les contribuables fortement imposés."},
+  immo_autre:{titre:"Investissement immobilier",texte:"Stratégie immobilière complémentaire adaptée à votre situation et à vos objectifs patrimoniaux."}
 };
 
-/* =====================================================================
-   RENDERERS
-   ===================================================================== */
 const fmt = n => new Intl.NumberFormat('fr-FR').format(Math.round(n));
-const esc = s => (s == null ? "" : String(s));
-const liList = arr => "<ul>" + arr.map(t => `<li>${esc(t)}</li>`).join("") + "</ul>";
+const esc = s => (s == null ? '' : String(s));
+const liList = arr => '<ul>' + arr.map(t => `<li>${esc(t)}</li>`).join('') + '</ul>';
 
 const R = {
-  cover(s, d) {
-    const meta = [];
+  cover(s,d){
+    const meta=[];
     meta.push(`<div><span>Client(s)</span><strong>${esc(d.client.nom)}</strong></div>`);
-    if (d.client.situation) meta.push(`<div><span>Situation</span><strong>${esc(d.client.situation)}</strong></div>`);
-    if (d.client.retraite) meta.push(`<div><span>Retraite visée</span><strong>${esc(d.client.retraite)}</strong></div>`);
+    if(d.client.situation) meta.push(`<div><span>Situation</span><strong>${esc(d.client.situation)}</strong></div>`);
+    if(d.client.retraite) meta.push(`<div><span>Retraite visée</span><strong>${esc(d.client.retraite)}</strong></div>`);
     meta.push(`<div><span>Date</span><strong>${esc(d.client.date)}</strong></div>`);
-    return `<section class="slide dark cover">
-      <div class="brand">${esc(d.cabinet)} · Gestion de patrimoine</div>
-      <h1>Bilan patrimonial <em>&amp; propositions</em></h1>
-      <div class="sub">Synthèse de votre situation et axes de travail — Rendez-vous n°2</div>
-      <div class="metarow">${meta.join("")}</div></section>`;
+    return `<section class="slide dark cover"><div class="brand">${esc(d.cabinet)} · Gestion de patrimoine</div><h1>Bilan patrimonial <em>&amp; propositions</em></h1><div class="sub">Synthèse de votre situation et axes de travail</div><div class="metarow">${meta.join('')}</div></section>`;
   },
-
-  situation(s, d) {
-    const kpis = (d.revenus || []).map(r =>
-      `<div class="kpi ${r.hl ? 'hl' : ''}"><div class="v">${esc(r.v)}</div><div class="k">${esc(r.k)}</div></div>`
-    ).join("");
-    return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
-    <div class="row">
-      <div class="col card"><div class="ctitle">Profil</div>${liList(d.profil || [])}</div>
-      <div class="col">
-        <div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-bottom:0">${kpis}</div>
-        ${d.revenus_note ? `<p class="muted small" style="margin-top:14px">${esc(d.revenus_note)}</p>` : ""}
-      </div>
-    </div></section>`;
+  situation(s,d){
+    const kpis=(d.revenus||[]).map(r=>`<div class="kpi ${r.hl?'hl':''}"><div class="v">${esc(r.v)}</div><div class="k">${esc(r.k)}</div></div>`).join('');
+    return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2><div class="row"><div class="col card"><div class="ctitle">Profil</div>${liList(d.profil||[])}</div><div class="col"><div class="kpis" style="grid-template-columns:repeat(2,1fr);margin-bottom:0">${kpis}</div>${d.revenus_note?`<p class="muted small" style="margin-top:14px">${esc(d.revenus_note)}</p>`:''}</div></div></section>`;
   },
-
-  objectifs(s, d) {
-    const items = (d.objectifs || []).map((o, k) =>
-      `<div class="obj"><div class="n">${k + 1}</div><div><h3>${esc(o.titre)}</h3><p>${esc(o.desc)}</p></div></div>`
-    ).join("");
+  objectifs(s,d){
+    const items=(d.objectifs||[]).map((o,k)=>`<div class="obj"><div class="n">${k+1}</div><div><h3>${esc(o.titre)}</h3><p>${esc(o.desc)}</p></div></div>`).join('');
     return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>${items}</section>`;
   },
-
-  patrimoine(s, d) {
-    const p = d.patrimoine || {};
-    const biens = p.biens || [];
-    const brut = biens.reduce((a, b) => a + (b.valeur || 0), 0);
-    const loy = biens.reduce((a, b) => a + (b.loyers || 0), 0);
-    const crd = p.crd || 0;
-    const net = brut - crd;
-    const rdt = brut ? (loy / brut * 100) : 0;
-    const hasEstimees = biens.some(b => b.valeur_estimee || b.valeur === 0);
-    const rows = biens.map(b => {
-      const v = (b.valeur === null || b.valeur_estimee) ? '<span style="color:var(--slate);font-style:italic">N/C</span>'
-        : (b.valeur > 0 ? fmt(b.valeur / 1000) + ' k€' : '—');
+  patrimoine(s,d){
+    const p=d.patrimoine||{},biens=p.biens||[];
+    const brut=biens.reduce((a,b)=>a+(b.valeur||0),0);
+    const loy=biens.reduce((a,b)=>a+(b.loyers||0),0);
+    const crd=p.crd||0,net=brut-crd,rdt=brut?(loy/brut*100):0;
+    const hasEst=biens.some(b=>b.valeur_estimee||b.valeur===0);
+    const rows=biens.map(b=>{
+      const v=(b.valeur===null||b.valeur_estimee)?'<span style="color:var(--slate);font-style:italic">N/C</span>':(b.valeur>0?fmt(b.valeur/1000)+' k€':'—');
       return `<tr><td>${esc(b.label)}</td><td class="num">${v}</td></tr>`;
-    }).join("");
-    const tableLabel = p.biens_label || (biens.length + " biens immobiliers");
-    const alerte = p.alerte || (hasEstimees ? {
-      titre: "⚠ Valeurs à confirmer",
-      texte: "Certains biens n'ont pas de valeur actualisée. Un avis de valeur est recommandé avant présentation au client."
-    } : null);
-    return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
-    <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
-      <div class="kpi"><div class="v">~${fmt(brut / 1000)} k€</div><div class="k">Valeur brute estimée</div></div>
-      <div class="kpi"><div class="v">~${fmt(crd / 1000)} k€</div><div class="k">Dette résiduelle (CRD)</div></div>
-      <div class="kpi hl"><div class="v">~${fmt(net / 1000)} k€</div><div class="k">Patrimoine net immo</div></div>
-      <div class="kpi"><div class="v">~${rdt.toFixed(1).replace('.', ',')} %</div><div class="k">Rendement locatif brut</div></div>
-    </div>
-    <div class="row">
-      <div class="col"><table><thead><tr><th>${tableLabel}</th><th class="num">Valeur est.</th></tr></thead><tbody>${rows}</tbody></table></div>
-      ${alerte ? `<div class="col alert"><h3>${esc(alerte.titre)}</h3><p>${esc(alerte.texte)}</p></div>` : ''}
-    </div></section>`;
+    }).join('');
+    const tableLabel=p.biens_label||(biens.length+' biens immobiliers');
+    const alerte=p.alerte||(hasEst?{titre:'⚠ Valeurs à confirmer',texte:'Certains biens n\'ont pas de valeur actualisée. Un avis de valeur est recommandé.'}:null);
+    return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2><div class="kpis" style="grid-template-columns:repeat(4,1fr)"><div class="kpi"><div class="v">~${fmt(brut/1000)} k€</div><div class="k">Valeur brute estimée</div></div><div class="kpi"><div class="v">~${fmt(crd/1000)} k€</div><div class="k">Dette résiduelle (CRD)</div></div><div class="kpi hl"><div class="v">~${fmt(net/1000)} k€</div><div class="k">Patrimoine net immo</div></div><div class="kpi"><div class="v">~${rdt.toFixed(1).replace('.',',')} %</div><div class="k">Rendement locatif brut</div></div></div><div class="row"><div class="col"><table><thead><tr><th>${tableLabel}</th><th class="num">Valeur est.</th></tr></thead><tbody>${rows}</tbody></table></div>${alerte?`<div class="col alert"><h3>${esc(alerte.titre)}</h3><p>${esc(alerte.texte)}</p></div>`:''}</div></section>`;
   },
-
-  diagnostic(s, d) {
-    const dg = d.diagnostic || {};
-    return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
-    <div class="row" style="margin-bottom:22px">
-      <div class="col card"><div class="ctitle">Forces</div>${liList(dg.forces || [])}</div>
-      <div class="col card gold"><div class="ctitle">Points de vigilance</div>${liList(dg.vigilance || [])}</div>
-    </div>
-    ${dg.band ? `<div class="band"><h3>${esc(dg.band.titre)}</h3><p>${esc(dg.band.texte)}</p></div>` : ""}</section>`;
+  diagnostic(s,d){
+    const dg=d.diagnostic||{};
+    return `<section class="slide"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2><div class="row" style="margin-bottom:22px"><div class="col card"><div class="ctitle">Forces</div>${liList(dg.forces||[])}</div><div class="col card gold"><div class="ctitle">Points de vigilance</div>${liList(dg.vigilance||[])}</div></div>${dg.band?`<div class="band"><h3>${esc(dg.band.titre)}</h3><p>${esc(dg.band.texte)}</p></div>`:''}</section>`;
   },
-
-  cards(s, d) {
-    const cards = (s.cards || []).map((card, k) => {
-      const id         = typeof card === 'string' ? card : card.id;
-      const chiffrage  = typeof card === 'object'  ? (card.chiffrage   || '') : '';
-      const customLabel= typeof card === 'object'  ? (card.custom_label || '') : '';
-      const b = CATALOG[id] || {};
-      const titre = customLabel || b.titre || id;
-      let inner = `${s.numbered ? `<div class="n">${k + 1}</div>` : ""}<h3>${esc(titre)}</h3>`;
-      if (chiffrage) inner += `<div class="chiffrage-badge">${esc(chiffrage)}</div>`;
-      if (b.texte)   inner += `<p>${esc(b.texte)}</p>`;
-      if (b.list)    inner += liList(b.list);
-      if (b.highlight) inner += `<div class="stat-box"><div class="big">${esc(b.highlight.big)}</div><p>${esc(b.highlight.sub)}</p></div>`;
-      return `<div class="col card ${s.numbered ? 'lev' : ''}">${inner}</div>`;
-    }).join("");
-    return `<section class="slide"><div class="label gold">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
-    ${s.intro ? `<p class="intro">${esc(s.intro)}</p>` : ""}<div class="row">${cards}</div></section>`;
+  cards(s,d){
+    const cards=(s.cards||[]).map((card,k)=>{
+      const id=typeof card==='string'?card:card.id;
+      const chiffrage=typeof card==='object'?(card.chiffrage||''):'';
+      const customLabel=typeof card==='object'?(card.custom_label||''):'';
+      const b=CATALOG[id]||{};
+      const titre=customLabel||b.titre||id;
+      let inner=`${s.numbered?`<div class="n">${k+1}</div>`:''}<h3>${esc(titre)}</h3>`;
+      if(chiffrage) inner+=`<div class="chiffrage-badge">${esc(chiffrage)}</div>`;
+      if(b.texte) inner+=`<p>${esc(b.texte)}</p>`;
+      if(b.list) inner+=liList(b.list);
+      if(b.highlight) inner+=`<div class="stat-box"><div class="big">${esc(b.highlight.big)}</div><p>${esc(b.highlight.sub)}</p></div>`;
+      return `<div class="col card ${s.numbered?'lev':''}"> ${inner}</div>`;
+    }).join('');
+    return `<section class="slide"><div class="label gold">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>${s.intro?`<p class="intro">${esc(s.intro)}</p>`:''}<div class="row">${cards}</div></section>`;
   },
-
-  split(s, d) {
-    const b = CATALOG[s.solution]; if (!b) return "";
-    const t = b.table || {};
-    const rows = (t.rows || []).map(r =>
-      `<tr class="${r[2] ? 'hl' : ''}"><td>${esc(r[0])}</td><td class="num">${esc(r[1])}</td></tr>`
-    ).join("");
-    const effs = (b.effects || []).map(e =>
-      `<div class="eff"><h3>${esc(e.titre)}</h3><p>${esc(e.texte)}</p></div>`
-    ).join("");
-    return `<section class="slide"><div class="label gold">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
-    ${s.intro ? `<p class="intro">${esc(s.intro)}</p>` : ""}
-    <div class="row">
-      <div class="col" style="flex:1.15">
-        <table><thead><tr><th>${esc(t.head?.[0] || '')}</th><th class="num">${esc(t.head?.[1] || '')}</th></tr></thead><tbody>${rows}</tbody></table>
-        ${t.note ? `<p class="muted small" style="margin-top:14px">${esc(t.note)}</p>` : ""}
-      </div>
-      <div class="col">${effs}</div>
-    </div></section>`;
+  split(s,d){
+    const b=CATALOG[s.solution];if(!b) return '';
+    const t=b.table||{};
+    const rows=(t.rows||[]).map(r=>`<tr class="${r[2]?'hl':''}"><td>${esc(r[0])}</td><td class="num">${esc(r[1])}</td></tr>`).join('');
+    const effs=(b.effects||[]).map(e=>`<div class="eff"><h3>${esc(e.titre)}</h3><p>${esc(e.texte)}</p></div>`).join('');
+    return `<section class="slide"><div class="label gold">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>${s.intro?`<p class="intro">${esc(s.intro)}</p>`:''}<div class="row"><div class="col" style="flex:1.15"><table><thead><tr><th>${esc(t.head?.[0]||'')}</th><th class="num">${esc(t.head?.[1]||'')}</th></tr></thead><tbody>${rows}</tbody></table>${t.note?`<p class="muted small" style="margin-top:14px">${esc(t.note)}</p>`:''}</div><div class="col">${effs}</div></div></section>`;
   },
-
-  roadmap(s, d) {
-    const steps = (d.feuille_route || []).map(st =>
-      `<div class="step"><div class="when">${esc(st.when)}</div><p>${esc(st.texte)}</p></div>`
-    ).join("");
-    const pcs = liList(d.pieces || []);
-    return `<section class="slide dark"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
-    <div class="row">
-      <div class="col steps" style="flex:1.4">${steps}</div>
-      <div class="col piecebox"><div class="ctitle">Pièces à fournir</div>${pcs}</div>
-    </div>
-    <div class="foot">${esc(d.cabinet)} · ${esc(d.lieu)} — Document de travail, ${esc(d.client.date)}.</div></section>`;
+  roadmap(s,d){
+    const steps=(d.feuille_route||[]).map(st=>`<div class="step"><div class="when">${esc(st.when)}</div><p>${esc(st.texte)}</p></div>`).join('');
+    const pcs=liList(d.pieces||[]);
+    return `<section class="slide dark"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2><div class="row"><div class="col steps" style="flex:1.4">${steps}</div><div class="col piecebox"><div class="ctitle">Pièces à fournir</div>${pcs}</div></div><div class="foot">${esc(d.cabinet)} · ${esc(d.lieu)} — Document de travail, ${esc(d.client.date)}.</div></section>`;
   }
 };
 
 /* =====================================================================
    MAP SUPABASE → DOSSIER
    ===================================================================== */
-const SLOT_LABELS = { rp:'Résidence principale', rs:'Résidence secondaire', loc1:'Locatif', loc2:'Locatif 2' };
+const SLOT_LABELS={rp:'Résidence principale',rs:'Résidence secondaire',loc1:'Locatif',loc2:'Locatif 2'};
 
-function buildNom(c) {
-  let nom = [c.prenom_c1, c.nom_c1].filter(Boolean).join(' ');
-  if (c.prenom_c2 && c.nom_c2) nom += ` & ${c.prenom_c2} ${c.nom_c2}`;
-  return nom || '—';
+function buildNom(c){
+  let nom=[c.prenom_c1,c.nom_c1].filter(Boolean).join(' ');
+  if(c.prenom_c2&&c.nom_c2) nom+=` & ${c.prenom_c2} ${c.nom_c2}`;
+  return nom||'—';
 }
 
-function buildSituationStr(c) {
-  const parts = [];
-  if (c.statut_marital) parts.push(c.statut_marital);
-  if (c.regime) parts.push(c.regime);
-  if (c.enfants_noms) {
-    const nb = c.enfants_noms.split(',').filter(s => s.trim()).length;
-    if (nb > 0) parts.push(nb + ' enfant' + (nb > 1 ? 's' : ''));
+function buildSituationStr(c){
+  const parts=[];
+  if(c.statut_marital) parts.push(c.statut_marital);
+  if(c.regime) parts.push(c.regime);
+  if(c.enfants_noms){
+    const nb=c.enfants_noms.split(',').filter(s=>s.trim()).length;
+    if(nb>0) parts.push(nb+' enfant'+(nb>1?'s':''));
   }
-  return parts.join(' · ') || '—';
+  return parts.join(' · ')||'—';
 }
 
-function mapBiens(immo) {
-  const biens = [];
-  if (!immo) return biens;
-  const active = immo.active || [];
-
-  for (const key of active) {
-    if (key === 'locataire') continue;
-    const b = immo[key];
-    if (!b || (!b.valeur && !b.adresse && !b.achat)) continue;
-    const base = SLOT_LABELS[key] || 'Locatif';
-    const suffix = b.adresse ? ` — ${b.adresse}` : '';
-    const year = b.date_achat ? ` (${String(b.date_achat).slice(0, 4)})` : '';
-    biens.push({
-      label: base + suffix + year,
-      valeur: b.valeur || 0,
-      loyers: b.loyers || 0,
-      valeur_estimee: b.valeur === null
-    });
+function mapBiens(immo){
+  const biens=[];
+  if(!immo) return biens;
+  const active=immo.active||[];
+  for(const key of active){
+    if(key==='locataire') continue;
+    const b=immo[key];
+    if(!b||(!b.valeur&&!b.adresse&&!b.achat)) continue;
+    const base=SLOT_LABELS[key]||'Locatif';
+    const suffix=b.adresse?` — ${b.adresse}`:'';
+    const year=b.date_achat?` (${String(b.date_achat).slice(0,4)})`:''
+    biens.push({label:base+suffix+year,valeur:b.valeur||0,loyers:b.loyers||0,valeur_estimee:b.valeur===null});
   }
-
-  for (const b of (immo.extras || [])) {
-    if (!b) continue;
-    const base = b.label || (b.type ? b.type : 'Bien immobilier');
-    const suffix = (!b.label && b.adresse) ? ` — ${b.adresse}` : '';
-    const year = (!b.label && b.date_achat) ? ` (${String(b.date_achat).slice(0, 4)})` : '';
-    biens.push({
-      label: base + suffix + year,
-      valeur: b.valeur || 0,
-      loyers: b.loyers || 0,
-      valeur_estimee: b.valeur === null
-    });
+  for(const b of (immo.extras||[])){
+    if(!b) continue;
+    const base=b.label||(b.type?b.type:'Bien immobilier');
+    const suffix=(!b.label&&b.adresse)?` — ${b.adresse}`:'';
+    const year=(!b.label&&b.date_achat)?` (${String(b.date_achat).slice(0,4)})`:''
+    biens.push({label:base+suffix+year,valeur:b.valeur||0,loyers:b.loyers||0,valeur_estimee:b.valeur===null});
   }
   return biens;
 }
 
-function mapCRD(credits) {
-  if (!credits) return 0;
-  let crd = 0;
-  const active = credits.active || [];
-  for (const key of active) {
-    const c = credits[key];
-    if (c && c.restant) crd += Number(c.restant) || 0;
+function mapCRD(credits){
+  if(!credits) return 0;
+  let crd=0;
+  const active=credits.active||[];
+  for(const key of active){
+    const c=credits[key];
+    if(c&&c.restant) crd+=Number(c.restant)||0;
   }
   return crd;
 }
 
-function mapRevenus(c) {
-  const rev = [];
-  const s1 = Number(c.salaire_c1) || 0;
-  const s2 = Number(c.salaire_c2) || 0;
-  if (s1 > 0) {
-    const lbl = c.nom_c2 ? `Revenu ${c.prenom_c1 || 'C1'} / an` : 'Revenu annuel';
-    rev.push({ v: fmt(s1) + ' €', k: lbl });
-  }
-  if (s2 > 0) rev.push({ v: fmt(s2) + ' €', k: `Revenu ${c.prenom_c2 || 'C2'} / an` });
-  const biens = mapBiens(c.immobilier || {});
-  const loyers = biens.reduce((a, b) => a + (b.loyers || 0), 0);
-  if (loyers > 0) rev.push({ v: fmt(loyers) + ' €', k: 'Loyers bruts / an' });
-  if (c.tmi) rev.push({ v: c.tmi + ' %', k: 'Tranche marginale (TMI)', hl: true });
+function mapRevenus(c){
+  const rev=[];
+  const s1=Number(c.salaire_c1)||0,s2=Number(c.salaire_c2)||0;
+  if(s1>0){const lbl=c.nom_c2?`Revenu ${c.prenom_c1||'C1'} / an`:'Revenu annuel';rev.push({v:fmt(s1)+' €',k:lbl});}
+  if(s2>0) rev.push({v:fmt(s2)+' €',k:`Revenu ${c.prenom_c2||'C2'} / an`});
+  const biens=mapBiens(c.immobilier||{});
+  const loyers=biens.reduce((a,b)=>a+(b.loyers||0),0);
+  if(loyers>0) rev.push({v:fmt(loyers)+' €',k:'Loyers bruts / an'});
+  if(c.tmi) rev.push({v:c.tmi+' %',k:'Tranche marginale (TMI)',hl:true});
   return rev;
 }
 
-/* ─── Correspondance mots-clés → IDs catalogue (auto-matching précos) ─── */
-const _KMAP = [
-  ['per_retraite_couple',        ['per couple']],
-  ['per_retraite',               ['per retraite','per individuel','épargne retraite','per —']],
-  ['perco_pilotage',             ['perco']],
-  ['loyers_liberes_dumaire',     ['crédit rs libéré','crédit libéré','loyers libérés','flux libéré']],
-  ['obo',                        ['obo','owner buy']],
-  ['sci',                        ['sci à l','sci is','sci à']],
-  ['deficit_foncier',            ['déficit foncier','deficit foncier']],
-  ['scpi',                       ['scpi']],
-  ['demembrement',               ['démembrement','demembrement','nue-propriété','nue propriété']],
-  ['assurance_vie_transmission', ['transmission','152 500','av transmission','assurance-vie transmission']],
-  ['assurance_vie',              ['assurance-vie','assurance vie']],
-  ['per_fiscal',                 ['per fiscal','impact fiscal','per — impact']],
-  ['pea',                        ['pea']],
-  ['locatif_nu',                 ['locatif nu','location nue','investissement locatif nu']],
-  ['lmnp',                       ['lmnp','meublé non professionnel','loueur meublé']],
-  ['de_normandie',               ['normandie','pinel de normandie','pinel']],
-  ['malraux',                    ['malraux']],
-  ['monuments_historiques',      ['monuments historiques','monument historique']],
+const _KMAP=[
+  ['per_retraite_couple',['per couple']],
+  ['per_retraite',['per retraite','per individuel','épargne retraite','per —']],
+  ['perco_pilotage',['perco']],
+  ['loyers_liberes_dumaire',['crédit rs libéré','crédit libéré','loyers libérés','flux libéré']],
+  ['obo',['obo','owner buy']],
+  ['sci',['sci à l','sci is','sci à']],
+  ['deficit_foncier',['déficit foncier','deficit foncier']],
+  ['scpi',['scpi']],
+  ['demembrement',['démembrement','demembrement','nue-propriété','nue propriété']],
+  ['assurance_vie_transmission',['transmission','152 500','av transmission','assurance-vie transmission']],
+  ['assurance_vie',['assurance-vie','assurance vie']],
+  ['per_fiscal',['per fiscal','impact fiscal','per — impact']],
+  ['pea',['pea']],
+  ['locatif_nu',['locatif nu','location nue','investissement locatif nu']],
+  ['lmnp',['lmnp','meublé non professionnel','loueur meublé']],
+  ['de_normandie',['normandie','pinel de normandie','pinel']],
+  ['malraux',['malraux']],
+  ['monuments_historiques',['monuments historiques','monument historique']],
 ];
 
-function _autoMatchCatalog(items) {
-  const matched = [], seen = new Set();
-  (items || []).forEach(item => {
-    const lower = (typeof item === 'string' ? item : (item.id || '')).toLowerCase();
-    for (const [id, keywords] of _KMAP) {
-      if (!seen.has(id) && keywords.some(kw => lower.includes(kw))) {
-        matched.push({ id });
-        seen.add(id);
-        break;
+function _autoMatchCatalog(items){
+  const matched=[],seen=new Set();
+  (items||[]).forEach(item=>{
+    const lower=(typeof item==='string'?item:(item.id||'')).toLowerCase();
+    for(const [id,keywords] of _KMAP){
+      if(!seen.has(id)&&keywords.some(kw=>lower.includes(kw))){
+        matched.push({id});seen.add(id);break;
       }
     }
   });
   return matched;
 }
 
-function mapToDossier(c, bil) {
-  const raw = bil?.preconisations;
-  const preco = (raw && !Array.isArray(raw) && typeof raw === 'object') ? raw : {};
+function mapToDossier(c,bil){
+  const raw=bil?.preconisations;
+  const preco=(raw&&!Array.isArray(raw)&&typeof raw==='object')?raw:{};
+  const biens=mapBiens(c.immobilier||{});
+  const crd=mapCRD(c.credits||{});
+  const revenus=mapRevenus(c);
 
-  const biens = mapBiens(c.immobilier || {});
-  const crd = mapCRD(c.credits || {});
-  const revenus = mapRevenus(c);
+  const objectifs=(preco.objectifs&&preco.objectifs.length)
+    ?preco.objectifs
+    :(bil?.objectifs_client||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({titre:l,desc:''}));
 
-  /* ── Auto-dérivation depuis les champs bilan quand le form pres n'est pas rempli ── */
+  const retraiteLabel=preco.retraite_label||bil?.horizon||'';
 
-  // Objectifs : preco.objectifs en priorité, sinon parse de bil.objectifs_client (1 ligne = 1 objectif)
-  const objectifs = (preco.objectifs && preco.objectifs.length)
-    ? preco.objectifs
-    : (bil?.objectifs_client || '')
-        .split('\n').map(l => l.trim()).filter(Boolean)
-        .map(l => ({ titre: l, desc: '' }));
-
-  // Retraite visée : preco.retraite_label → bil.horizon
-  const retraiteLabel = preco.retraite_label || bil?.horizon || '';
-
-  // Diagnostic : preco.diagnostic → ou bil.analyse_conseiller comme band narrative
-  let diagnostic = preco.diagnostic || null;
-  if (!diagnostic && bil?.analyse_conseiller) {
-    diagnostic = {
-      forces: [], vigilance: [],
-      band: { titre: 'Notre lecture', texte: bil.analyse_conseiller }
-    };
+  let diagnostic=preco.diagnostic||null;
+  if(!diagnostic&&bil?.analyse_conseiller){
+    diagnostic={forces:[],vigilance:[],band:{titre:'Notre lecture',texte:bil.analyse_conseiller}};
   }
 
-  // Auto-cards : preco.deck_extra → ou matching depuis preconisations.items / ancien tableau
-  let deck_extra = (preco.deck_extra && preco.deck_extra.length) ? preco.deck_extra : [];
-  if (!deck_extra.length) {
-    const items = preco.items || (Array.isArray(raw) ? raw : []);
-    if (items.length) {
-      const cards = _autoMatchCatalog(items);
-      if (cards.length) {
-        deck_extra = [{
-          layout: 'cards',
-          label: '05 — Solutions',
-          titre: 'Nos axes de travail',
-          numbered: true,
-          intro: `${cards.length} levier${cards.length > 1 ? 's' : ''} prioritaire${cards.length > 1 ? 's' : ''} pour votre situation.`,
-          cards
-        }];
+  let deck_extra=(preco.deck_extra&&preco.deck_extra.length)?preco.deck_extra:[];
+  if(!deck_extra.length){
+    const items=preco.items||(Array.isArray(raw)?raw:[]);
+    if(items.length){
+      const cards=_autoMatchCatalog(items);
+      if(cards.length){
+        deck_extra=[{layout:'cards',label:'05 — Solutions',titre:'Nos axes de travail',numbered:true,
+          intro:`${cards.length} levier${cards.length>1?'s':''} prioritaire${cards.length>1?'s':''} pour votre situation.`,cards}];
       }
     }
   }
 
-  // Deck déclaratif — auto-construit selon les données disponibles
-  let slideNum = 1;
-  const deck = [
-    { layout: 'cover' },
-    { layout: 'situation', label: `0${slideNum++} — Votre situation`, titre: 'Qui vous êtes aujourd\'hui' }
-  ];
-  if (objectifs.length) {
-    deck.push({ layout: 'objectifs', label: `0${slideNum++} — Vos objectifs`, titre: 'Ce que vous nous avez confié' });
-  }
-  deck.push({ layout: 'patrimoine', label: `0${slideNum++} — Patrimoine immobilier`, titre: 'Votre patrimoine immobilier' });
-  if (diagnostic) {
-    deck.push({ layout: 'diagnostic', label: `0${slideNum++} — Diagnostic`, titre: 'Notre lecture de votre situation' });
-  }
-  for (const slide of deck_extra) {
-    deck.push(slide);
-  }
-  if ((preco.feuille_route || []).length) {
-    deck.push({ layout: 'roadmap', label: `0${slideNum++} — Prochaines étapes`, titre: 'Notre feuille de route' });
-  }
+  let slideNum=1;
+  const deck=[{layout:'cover'},{layout:'situation',label:`0${slideNum++} — Votre situation`,titre:'Qui vous êtes aujourd\'hui'}];
+  if(objectifs.length) deck.push({layout:'objectifs',label:`0${slideNum++} — Vos objectifs`,titre:'Ce que vous nous avez confié'});
+  deck.push({layout:'patrimoine',label:`0${slideNum++} — Patrimoine immobilier`,titre:'Votre patrimoine immobilier'});
+  if(diagnostic) deck.push({layout:'diagnostic',label:`0${slideNum++} — Diagnostic`,titre:'Notre lecture de votre situation'});
+  for(const slide of deck_extra) deck.push(slide);
+  if((preco.feuille_route||[]).length) deck.push({layout:'roadmap',label:`0${slideNum++} — Prochaines étapes`,titre:'Notre feuille de route'});
 
-  return {
-    cabinet: 'Proactifs Conseils',
-    lieu: 'Colombes (92)',
-    client: {
-      nom: buildNom(c),
-      situation: preco.situation_label || buildSituationStr(c),
-      retraite: retraiteLabel,
-      date: preco.presentation_date || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
-    },
-    profil: preco.profil || [
-      c.statut_marital && c.regime ? `${c.statut_marital} — régime ${c.regime}` : c.statut_marital,
-      (c.prenom_c1 && c.statut_pro_c1) ? `${c.prenom_c1} : ${c.statut_pro_c1}` : null,
-      (c.prenom_c2 && c.statut_pro_c2) ? `${c.prenom_c2} : ${c.statut_pro_c2}` : null,
-      c.tmi ? `TMI ${c.tmi} %` : null,
-      c.enfants_noms ? `Enfants : ${c.enfants_noms}` : null
+  return{
+    cabinet:'Proactifs Conseils',lieu:'Colombes (92)',
+    client:{nom:buildNom(c),situation:preco.situation_label||buildSituationStr(c),retraite:retraiteLabel,
+      date:preco.presentation_date||new Date().toLocaleDateString('fr-FR',{month:'long',year:'numeric'})},
+    profil:preco.profil||[
+      c.statut_marital&&c.regime?`${c.statut_marital} — régime ${c.regime}`:c.statut_marital,
+      (c.prenom_c1&&c.statut_pro_c1)?`${c.prenom_c1} : ${c.statut_pro_c1}`:null,
+      (c.prenom_c2&&c.statut_pro_c2)?`${c.prenom_c2} : ${c.statut_pro_c2}`:null,
+      c.tmi?`TMI ${c.tmi} %`:null,
+      c.enfants_noms?`Enfants : ${c.enfants_noms}`:null
     ].filter(Boolean),
-    revenus,
-    revenus_note: c.rfr ? `RFR déclaré : ${fmt(Number(c.rfr))} €` : '',
-    patrimoine: {
-      biens,
-      crd,
-      biens_label: preco.biens_label || null,
-      alerte: preco.patrimoine_alerte || null
-    },
-    objectifs,
-    diagnostic,
-    feuille_route: preco.feuille_route || [],
-    pieces: preco.pieces || [],
+    revenus,revenus_note:c.rfr?`RFR déclaré : ${fmt(Number(c.rfr))} €`:'',
+    patrimoine:{biens,crd,biens_label:preco.biens_label||null,alerte:preco.patrimoine_alerte||null},
+    objectifs,diagnostic,
+    feuille_route:preco.feuille_route||[],
+    pieces:preco.pieces||[],
     deck
   };
 }
@@ -591,77 +362,74 @@ function mapToDossier(c, bil) {
 /* =====================================================================
    MOTEUR DE RENDU & NAVIGATION
    ===================================================================== */
-function build(d) {
-  document.getElementById('deck').innerHTML = d.deck.map(s => {
-    if (!R[s.layout]) return '';
-    return R[s.layout](s, d);
+function build(d){
+  document.getElementById('deck').innerHTML=d.deck.map(s=>{
+    if(!R[s.layout]) return '';
+    return R[s.layout](s,d);
   }).join('');
 }
 
-let slides = [], idx = 0;
-function show(n) {
-  idx = Math.max(0, Math.min(slides.length - 1, n));
-  slides.forEach((s, k) => s.classList.toggle('active', k === idx));
-  document.getElementById('count').textContent = (idx + 1) + ' / ' + slides.length;
+let slides=[],idx=0;
+function show(n){
+  idx=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===idx));
+  document.getElementById('count').textContent=(idx+1)+' / '+slides.length;
 }
 
-function startDeck() {
-  slides = [...document.querySelectorAll('.slide')];
-  idx = 0;
-  document.getElementById('loading').style.display = 'none';
-  document.getElementById('deck').style.display = '';
-  document.getElementById('nav').style.display = '';
+function startDeck(){
+  slides=[...document.querySelectorAll('.slide')];
+  document.getElementById('loading').style.display='none';
+  document.getElementById('deck').style.display='';
+  document.getElementById('nav').style.display='';
   show(0);
 }
 
 /* =====================================================================
    CHARGEMENT
    ===================================================================== */
-async function loadClient(clientId, bilanId) {
-  const SUPA_URL = 'https://bbgjlfjvnsvplgpkgudt.supabase.co';
-  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiZ2psZmp2bnN2cGxncGtndWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ1NTAyMjYsImV4cCI6MjA2MDEyNjIyNn0.Ar7Z1Wgk1h0zQsL6JYifGZoSZsUQGxoJI4G7yp7ItaI';
-  const headers = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY };
-
-  const [cr, br] = await Promise.all([
-    fetch(`${SUPA_URL}/rest/v1/clients?id=eq.${clientId}&select=*`, { headers }),
-    fetch(`${SUPA_URL}/rest/v1/bilans?${bilanId ? 'id=eq.' + bilanId : 'client_id=eq.' + clientId}&select=*&order=created_at.desc&limit=1`, { headers })
+async function loadClient(clientId,bilanId){
+  const SUPA_URL='https://ullnkylrixdvormohryl.supabase.co';
+  const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbG5reWxyaXhkdm9ybW9ocnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NjUzNDgsImV4cCI6MjA5NDE0MTM0OH0.Fu5xc-VVA49qp1-WHgve8ZYpOB-QrciHzVeZx0GXmKk';
+  const headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+  const [cr,br]=await Promise.all([
+    fetch(`${SUPA_URL}/rest/v1/clients?id=eq.${clientId}&select=*`,{headers}),
+    fetch(`${SUPA_URL}/rest/v1/bilans?${bilanId?'id=eq.'+bilanId:'client_id=eq.'+clientId}&select=*&order=created_at.desc&limit=1`,{headers})
   ]);
-  const clients = await cr.json();
-  const bilans  = await br.json();
-  if (!clients.length) throw new Error('Client introuvable (id=' + clientId + ')');
-  return { client: clients[0], bilan: bilans[0] || null };
+  const clients=await cr.json();
+  const bilans=await br.json();
+  if(!clients.length) throw new Error('Client introuvable (id='+clientId+')');
+  return{client:clients[0],bilan:bilans[0]||null};
 }
 
-async function init() {
-  const params = new URLSearchParams(location.search);
-  const clientId = params.get('client');
-  const bilanId  = params.get('bilan');
-  if (!clientId) {
-    document.getElementById('error-msg').textContent = 'Paramètre client manquant dans l\'URL.';
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = '';
+async function init(){
+  const params=new URLSearchParams(location.search);
+  const clientId=params.get('client');
+  const bilanId=params.get('bilan');
+  if(!clientId){
+    document.getElementById('error-msg').textContent='Paramètre client manquant dans l\'URL.';
+    document.getElementById('loading').style.display='none';
+    document.getElementById('error').style.display='';
     return;
   }
-  try {
-    const { client, bilan } = await loadClient(clientId, bilanId);
-    const dossier = mapToDossier(client, bilan);
+  try{
+    const{client,bilan}=await loadClient(clientId,bilanId);
+    const dossier=mapToDossier(client,bilan);
     build(dossier);
     startDeck();
-  } catch(e) {
-    document.getElementById('error-msg').textContent = e.message;
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = '';
+  }catch(e){
+    document.getElementById('error-msg').textContent=e.message;
+    document.getElementById('loading').style.display='none';
+    document.getElementById('error').style.display='';
   }
 }
 
-/* Navigation clavier + boutons */
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === ' ') show(idx + 1);
-  if (e.key === 'ArrowLeft')  show(idx - 1);
-  if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key===' ') show(idx+1);
+  if(e.key==='ArrowLeft') show(idx-1);
+  if(e.key==='f'||e.key==='F') document.documentElement.requestFullscreen?.();
 });
-document.getElementById('next').onclick = () => show(idx + 1);
-document.getElementById('prev').onclick = () => show(idx - 1);
+document.getElementById('next').onclick=()=>show(idx+1);
+document.getElementById('prev').onclick=()=>show(idx-1);
 
 init();
 </script>
