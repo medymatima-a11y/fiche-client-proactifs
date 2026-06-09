@@ -958,6 +958,7 @@ table.crm-table{width:100%;border-collapse:collapse}
             <button class="btn btn-outline btn-sm" onclick="openEmailComposer()">✉️ Email</button>
             <button class="btn btn-primary btn-sm" onclick="openRdvModal()" title="Planifier un rendez-vous">📅 RDV</button>
             <button class="btn btn-outline btn-sm" onclick="openEditModal()">✏️ Modifier</button>
+            <button class="btn btn-gold btn-sm" onclick="openPresentation()" title="Générer la présentation patrimoniale">📊 Présentation</button>
             <button class="btn btn-outline btn-sm" id="btn-delete-client" style="color:var(--red);border-color:#f5c6cb" onclick="askDeleteFromDetail()">🗑️</button>
             <select class="statut-select" id="detail-type-dossier" onchange="updateTypeDossier()" title="Type de dossier" style="border-color:#c9a84c;color:#7d6608">
               <option value="">📁 Type…</option>
@@ -4051,6 +4052,23 @@ function downloadVCard() {
   a.download = `${prenom}-${nom}.vcf`.replace(/\s+/g,'-');
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// ── PRÉSENTATION PATRIMONIALE ───────────────────────────────
+async function openPresentation() {
+  const c = allClients.find(x => x.id === currentClientId);
+  if (!c) { alert('Aucun client sélectionné.'); return; }
+
+  let bilan = null;
+  try {
+    const bilans = await apiGet(`bilans?client_id=eq.${currentClientId}&order=created_at.desc&limit=1`);
+    bilan = (bilans && bilans.length > 0) ? bilans[0] : null;
+  } catch (e) {
+    console.warn('Impossible de charger le bilan — présentation partielle.', e);
+  }
+
+  localStorage.setItem('pres_' + currentClientId, JSON.stringify({ client: c, bilan }));
+  window.open('presentation.html?client=' + currentClientId, '_blank');
 }
 
 // ── EMAIL COMPOSER ──────────────────────────────────────────
