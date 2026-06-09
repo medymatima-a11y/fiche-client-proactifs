@@ -1273,7 +1273,92 @@ table.crm-table{width:100%;border-collapse:collapse}
                   <textarea id="bilan-preconisations" rows="5" placeholder="Ex : Versement PER 10 000 € avant 31/12&#10;Ex : Arbitrage AV Generali → UC diversifiée&#10;Ex : Étude donation-partage 2027"></textarea>
                 </div>
               </div>
+
+              <!-- ── Présentation client ─────────────────────── -->
+              <div class="add-form" id="pres-config-box" style="margin-top:16px">
+                <h3 style="display:flex;align-items:center;justify-content:space-between">
+                  📊 Présentation client
+                  <span style="font-size:10px;font-weight:400;color:var(--muted)">Alimente les slides de la présentation</span>
+                </h3>
+
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+                  <div class="form-field">
+                    <label>Situation (étiquette slide)</label>
+                    <input type="text" id="pres-situation" placeholder="Mariés, 2 enfants">
+                  </div>
+                  <div class="form-field">
+                    <label>Retraite visée</label>
+                    <input type="text" id="pres-retraite" placeholder="2027">
+                  </div>
+                </div>
+
+                <!-- Objectifs -->
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Objectifs clients</label>
+                    <button class="btn btn-sm" onclick="presAddObjectif()" style="font-size:11px;padding:3px 10px">+ Ajouter</button>
+                  </div>
+                  <div id="pres-objectifs"></div>
+                </div>
+
+                <!-- Diagnostic -->
+                <div style="margin-bottom:14px">
+                  <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);display:block;margin-bottom:8px">Diagnostic</label>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+                    <div class="form-field">
+                      <label>Forces (une par ligne)</label>
+                      <textarea id="pres-forces" rows="3" placeholder="Patrimoine immobilier solide&#10;PERCO bien alimenté"></textarea>
+                    </div>
+                    <div class="form-field">
+                      <label>Points de vigilance (une par ligne)</label>
+                      <textarea id="pres-vigilance" rows="3" placeholder="Plafonds PER à vérifier&#10;Sortie PERCO à coordonner"></textarea>
+                    </div>
+                  </div>
+                  <div style="display:grid;grid-template-columns:180px 1fr;gap:10px">
+                    <div class="form-field">
+                      <label>Titre synthèse</label>
+                      <input type="text" id="pres-band-titre" placeholder="Notre lecture">
+                    </div>
+                    <div class="form-field">
+                      <label>Texte</label>
+                      <input type="text" id="pres-band-texte" placeholder="Le foyer dispose d'atouts…">
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Solutions CATALOG -->
+                <div style="margin-bottom:14px">
+                  <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);display:block;margin-bottom:8px">Solutions à présenter</label>
+                  <div id="pres-catalog-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px"></div>
+                  <div class="form-field">
+                    <label>Slide détail (split layout)</label>
+                    <select id="pres-split-solution" style="margin-top:4px">
+                      <option value="">— Aucune —</option>
+                      <option value="per_couple_chiffrage">PER couple — chiffrage</option>
+                      <option value="per_fiscal">PER — impact fiscal</option>
+                      <option value="assurance_vie_transmission">AV — abattement 152 500 €</option>
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Feuille de route -->
+                <div style="margin-bottom:14px">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Feuille de route</label>
+                    <button class="btn btn-sm" onclick="presAddEtape()" style="font-size:11px;padding:3px 10px">+ Étape</button>
+                  </div>
+                  <div id="pres-etapes"></div>
+                </div>
+
+                <!-- Pièces -->
+                <div class="form-field">
+                  <label>Pièces à fournir (une par ligne)</label>
+                  <textarea id="pres-pieces" rows="3" placeholder="Avis d'imposition N-1 (pages 4-5)&#10;Relevés PERCO / PER existants&#10;Contrats assurance-vie en cours"></textarea>
+                </div>
+              </div>
+
             </div>
+          </div>
 
             <!-- Droite : profil + actions -->
             <div style="display:flex;flex-direction:column;gap:16px">
@@ -4754,10 +4839,137 @@ async function logManualEmail(subject, toEmail, bodyHtml) {
   });
 }
 
+// ── PRÉSENTATION CLIENT ─────────────────────────────────────
+const PRES_CATALOG = [
+  {id:'per_retraite',            label:'PER — réactiver le plafond'},
+  {id:'per_retraite_couple',     label:'PER couple — plafond'},
+  {id:'loyers_liberes_dumaire',  label:'Crédit RS libéré (flux)'},
+  {id:'perco_pilotage',          label:'PERCO — piloter la sortie'},
+  {id:'obo',                     label:'OBO'},
+  {id:'sci',                     label:'SCI à l\'IS'},
+  {id:'deficit_foncier',         label:'Déficit foncier'},
+  {id:'scpi',                    label:'SCPI'},
+  {id:'demembrement',            label:'Donation en démembrement'},
+  {id:'assurance_vie_transmission', label:'AV — transmission'},
+  {id:'assurance_vie',           label:'Assurance-vie'},
+  {id:'per_fiscal',              label:'PER — impact fiscal'},
+  {id:'pea',                     label:'PEA'},
+];
+
+function initPresConfig() {
+  const list = document.getElementById('pres-catalog-list');
+  if (!list || list.dataset.init) return;
+  list.dataset.init = '1';
+  list.innerHTML = PRES_CATALOG.map(item => `
+    <label style="display:flex;align-items:center;gap:6px;background:#f8f9fc;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;white-space:nowrap">
+      <input type="checkbox" class="pres-catalog-cb" data-id="${item.id}" style="margin:0">
+      ${item.label}
+    </label>`).join('');
+}
+
+function _escHtml(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function presAddObjectif(obj = null) {
+  const container = document.getElementById('pres-objectifs');
+  const div = document.createElement('div');
+  div.className = 'pres-obj-row';
+  div.style.cssText = 'display:grid;grid-template-columns:1fr 1.5fr auto;gap:8px;margin-bottom:8px;align-items:start';
+  div.innerHTML = `
+    <input type="text" placeholder="Titre (ex : Préparer la retraite)" value="${_escHtml(obj?.titre)}"
+      style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;width:100%">
+    <input type="text" placeholder="Description courte" value="${_escHtml(obj?.desc)}"
+      style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;width:100%">
+    <button onclick="this.closest('.pres-obj-row').remove()"
+      style="border:1px solid #e5e7eb;background:white;border-radius:6px;padding:5px 8px;cursor:pointer;color:#ef4444;font-size:14px;line-height:1">✕</button>`;
+  container.appendChild(div);
+}
+
+function presAddEtape(etape = null) {
+  const container = document.getElementById('pres-etapes');
+  const div = document.createElement('div');
+  div.className = 'pres-etape-row';
+  div.style.cssText = 'display:grid;grid-template-columns:170px 1fr auto;gap:8px;margin-bottom:8px;align-items:start';
+  div.innerHTML = `
+    <input type="text" placeholder="Quand (ex : Juin 2026)" value="${_escHtml(etape?.when)}"
+      style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;width:100%">
+    <input type="text" placeholder="Action à réaliser" value="${_escHtml(etape?.texte)}"
+      style="border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;width:100%">
+    <button onclick="this.closest('.pres-etape-row').remove()"
+      style="border:1px solid #e5e7eb;background:white;border-radius:6px;padding:5px 8px;cursor:pointer;color:#ef4444;font-size:14px;line-height:1">✕</button>`;
+  container.appendChild(div);
+}
+
+function collectPresConfig() {
+  const situation_label = (document.getElementById('pres-situation')?.value || '').trim();
+  const retraite_label  = (document.getElementById('pres-retraite')?.value  || '').trim();
+
+  // Objectifs
+  const objectifs = [...document.querySelectorAll('.pres-obj-row')].map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { titre: inputs[0].value.trim(), desc: inputs[1].value.trim() };
+  }).filter(o => o.titre);
+
+  // Diagnostic
+  const forces    = (document.getElementById('pres-forces')?.value    || '').split('\n').map(s=>s.trim()).filter(Boolean);
+  const vigilance = (document.getElementById('pres-vigilance')?.value || '').split('\n').map(s=>s.trim()).filter(Boolean);
+  const band_titre = (document.getElementById('pres-band-titre')?.value || '').trim();
+  const band_texte = (document.getElementById('pres-band-texte')?.value || '').trim();
+  const diagnostic = (forces.length || vigilance.length || band_titre) ? {
+    forces, vigilance,
+    ...(band_titre || band_texte ? { band: { titre: band_titre, texte: band_texte } } : {})
+  } : null;
+
+  // Deck extra
+  const deck_extra = [];
+  const selectedCards = [...document.querySelectorAll('.pres-catalog-cb:checked')].map(cb => cb.dataset.id);
+  if (selectedCards.length) {
+    deck_extra.push({
+      layout: 'cards',
+      label: '05 — Solutions',
+      titre: 'Nos axes de travail',
+      numbered: true,
+      intro: `${selectedCards.length} levier${selectedCards.length > 1 ? 's' : ''} prioritaire${selectedCards.length > 1 ? 's' : ''} pour votre situation.`,
+      cards: selectedCards
+    });
+  }
+  const splitSol = document.getElementById('pres-split-solution')?.value || '';
+  if (splitSol) {
+    const splitTitles = {
+      per_couple_chiffrage:       'PER couple — estimation d\'économie',
+      per_fiscal:                 'PER — impact fiscal immédiat',
+      assurance_vie_transmission: 'AV — capital transmissible'
+    };
+    deck_extra.push({
+      layout: 'split',
+      label: '06 — Chiffrage',
+      titre: splitTitles[splitSol] || 'Détail solution',
+      solution: splitSol
+    });
+  }
+
+  // Feuille de route
+  const feuille_route = [...document.querySelectorAll('.pres-etape-row')].map(row => {
+    const inputs = row.querySelectorAll('input');
+    return { when: inputs[0].value.trim(), texte: inputs[1].value.trim() };
+  }).filter(e => e.when || e.texte);
+
+  // Pièces
+  const pieces = (document.getElementById('pres-pieces')?.value || '').split('\n').map(s=>s.trim()).filter(Boolean);
+
+  // Items (simple textarea, backward compat)
+  const items = (document.getElementById('bilan-preconisations')?.value || '')
+    .split('\n').map(l => l.trim()).filter(Boolean);
+
+  return { items, situation_label, retraite_label, objectifs, diagnostic, deck_extra, feuille_route, pieces };
+}
+
 // ── BILAN PATRIMONIAL ───────────────────────────────────────
 async function loadBilan() {
   const c = allClients.find(x => x.id === currentClientId);
   if (!c) return;
+  initPresConfig();
 
   // Calcul auto patrimoine
   const ep    = c.epargne || {};
@@ -4794,8 +5006,46 @@ async function loadBilan() {
     document.getElementById('bilan-objectif').value       = b.objectif      || '';
     document.getElementById('bilan-analyse').value        = b.analyse_conseiller || '';
     document.getElementById('bilan-objectifs').value      = b.objectifs_client  || '';
-    document.getElementById('bilan-preconisations').value = Array.isArray(b.preconisations) ? b.preconisations.join('\n') : (b.preconisations||'');
-    document.getElementById('bilan-date').value           = b.date_bilan    || '';
+    const bp = b.preconisations;
+    document.getElementById('bilan-preconisations').value =
+      Array.isArray(bp) ? bp.join('\n') :
+      (bp?.items ? bp.items.join('\n') : (typeof bp === 'string' ? bp : ''));
+    document.getElementById('bilan-date').value = b.date_bilan || '';
+    // ── Charger config présentation ──
+    // Reset tous les champs pres avant rechargement
+    document.getElementById('pres-situation').value   = '';
+    document.getElementById('pres-retraite').value    = '';
+    document.getElementById('pres-forces').value      = '';
+    document.getElementById('pres-vigilance').value   = '';
+    document.getElementById('pres-band-titre').value  = '';
+    document.getElementById('pres-band-texte').value  = '';
+    document.getElementById('pres-pieces').value      = '';
+    document.getElementById('pres-objectifs').innerHTML = '';
+    document.getElementById('pres-etapes').innerHTML    = '';
+    document.querySelectorAll('.pres-catalog-cb').forEach(cb => cb.checked = false);
+    const presSelect = document.getElementById('pres-split-solution');
+    if (presSelect) presSelect.value = '';
+
+    if (bp && !Array.isArray(bp) && typeof bp === 'object') {
+      document.getElementById('pres-situation').value  = bp.situation_label || '';
+      document.getElementById('pres-retraite').value   = bp.retraite_label  || '';
+      document.getElementById('pres-forces').value     = (bp.diagnostic?.forces    || []).join('\n');
+      document.getElementById('pres-vigilance').value  = (bp.diagnostic?.vigilance || []).join('\n');
+      document.getElementById('pres-band-titre').value = bp.diagnostic?.band?.titre || '';
+      document.getElementById('pres-band-texte').value = bp.diagnostic?.band?.texte || '';
+      (bp.objectifs     || []).forEach(o  => presAddObjectif(o));
+      (bp.feuille_route || []).forEach(e  => presAddEtape(e));
+      document.getElementById('pres-pieces').value = (bp.pieces || []).join('\n');
+      const cardsSlide = (bp.deck_extra || []).find(s => s.layout === 'cards');
+      if (cardsSlide?.cards) {
+        cardsSlide.cards.forEach(id => {
+          const cb = document.querySelector(`.pres-catalog-cb[data-id="${id}"]`);
+          if (cb) cb.checked = true;
+        });
+      }
+      const splitSlide = (bp.deck_extra || []).find(s => s.layout === 'split');
+      if (splitSlide?.solution) document.getElementById('pres-split-solution').value = splitSlide.solution;
+    }
   } else {
     document.getElementById('bilan-date').value = new Date().toISOString().slice(0,10);
   }
@@ -4809,8 +5059,6 @@ function bilanRow(label, val, color, bold=false) {
 }
 
 async function saveBilan() {
-  const precos = document.getElementById('bilan-preconisations').value
-    .split('\n').map(l => l.trim()).filter(Boolean);
   const payload = {
     client_id:          currentClientId,
     profil_risque:      document.getElementById('bilan-risque').value      || null,
@@ -4818,7 +5066,7 @@ async function saveBilan() {
     objectif:           document.getElementById('bilan-objectif').value    || null,
     analyse_conseiller: document.getElementById('bilan-analyse').value     || null,
     objectifs_client:   document.getElementById('bilan-objectifs').value   || null,
-    preconisations:     precos,
+    preconisations:     collectPresConfig(),
     date_bilan:         document.getElementById('bilan-date').value        || null,
   };
   // Upsert : si bilan existant, on le met à jour
