@@ -565,15 +565,15 @@ function mapToDossier(c, bil) {
       retraite: retraiteLabel,
       date: preco.presentation_date || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     },
-    profil: preco.profil || [
+    profil: preco.situation_profil || preco.profil || [
       c.statut_marital && c.regime ? `${c.statut_marital} — régime ${c.regime}` : c.statut_marital,
       (c.prenom_c1 && c.statut_pro_c1) ? `${c.prenom_c1} : ${c.statut_pro_c1}` : null,
       (c.prenom_c2 && c.statut_pro_c2) ? `${c.prenom_c2} : ${c.statut_pro_c2}` : null,
       c.tmi ? `TMI ${c.tmi} %` : null,
       c.enfants_noms ? `Enfants : ${c.enfants_noms}` : null
     ].filter(Boolean),
-    revenus,
-    revenus_note: c.rfr ? `RFR déclaré : ${fmt(Number(c.rfr))} €` : '',
+    revenus: preco.situation_revenus || revenus,
+    revenus_note: preco.situation_note || (c.rfr ? `RFR déclaré : ${fmt(Number(c.rfr))} €` : ''),
     patrimoine: {
       biens,
       crd,
