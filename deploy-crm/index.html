@@ -4854,6 +4854,13 @@ const PRES_CATALOG = [
   {id:'assurance_vie',           label:'Assurance-vie'},
   {id:'per_fiscal',              label:'PER — impact fiscal'},
   {id:'pea',                     label:'PEA'},
+  /* — IMMOBILIER — */
+  {id:'locatif_nu',              label:'Locatif nu'},
+  {id:'lmnp',                    label:'LMNP'},
+  {id:'de_normandie',            label:'Pinel De Normandie'},
+  {id:'malraux',                 label:'Malraux'},
+  {id:'monuments_historiques',   label:'Monuments historiques'},
+  {id:'immo_autre',              label:'Immo — autre', libre: true},
 ];
 
 function initPresConfig() {
@@ -4861,10 +4868,26 @@ function initPresConfig() {
   if (!list || list.dataset.init) return;
   list.dataset.init = '1';
   list.innerHTML = PRES_CATALOG.map(item => `
-    <label style="display:flex;align-items:center;gap:6px;background:#f8f9fc;border:1px solid var(--border);border-radius:6px;padding:5px 10px;cursor:pointer;font-size:12px;white-space:nowrap">
-      <input type="checkbox" class="pres-catalog-cb" data-id="${item.id}" style="margin:0">
-      ${item.label}
-    </label>`).join('');
+    <div class="pres-cat-item" style="display:flex;flex-direction:column;gap:4px;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-width:155px;max-width:220px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap">
+        <input type="checkbox" class="pres-catalog-cb" data-id="${item.id}" style="margin:0" onchange="presToggleChiffrage(this)">
+        ${item.label}
+      </label>
+      ${item.libre ? `<input type="text" class="pres-cat-custom-label" placeholder="Préciser le type immo…" style="display:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;width:100%;box-sizing:border-box">` : ''}
+      <input type="text" class="pres-cat-chiffrage" placeholder="Chiffrage (ex : 3 200 €/an)" style="display:none;border:1px solid #cbd5e1;border-radius:5px;padding:3px 8px;font-size:11px;color:#475569;width:100%;box-sizing:border-box">
+    </div>`).join('');
+}
+
+function presToggleChiffrage(cb) {
+  const item = cb.closest('.pres-cat-item');
+  const chiffrage   = item?.querySelector('.pres-cat-chiffrage');
+  const customLabel = item?.querySelector('.pres-cat-custom-label');
+  if (chiffrage)   chiffrage.style.display   = cb.checked ? 'block' : 'none';
+  if (customLabel) customLabel.style.display = cb.checked ? 'block' : 'none';
+  if (!cb.checked) {
+    if (chiffrage)   chiffrage.value   = '';
+    if (customLabel) customLabel.value = '';
+  }
 }
 
 function _escHtml(s) {
@@ -4923,7 +4946,15 @@ function collectPresConfig() {
 
   // Deck extra
   const deck_extra = [];
-  const selectedCards = [...document.querySelectorAll('.pres-catalog-cb:checked')].map(cb => cb.dataset.id);
+  const selectedCards = [...document.querySelectorAll('.pres-catalog-cb:checked')].map(cb => {
+    const item = cb.closest('.pres-cat-item');
+    const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
+    const customLabel = (item?.querySelector('.pres-cat-custom-label')?.value || '').trim();
+    const obj = { id: cb.dataset.id };
+    if (chiffrage)   obj.chiffrage    = chiffrage;
+    if (customLabel) obj.custom_label = customLabel;
+    return obj;
+  });
   if (selectedCards.length) {
     deck_extra.push({
       layout: 'cards',
@@ -5023,6 +5054,8 @@ async function loadBilan() {
     document.getElementById('pres-objectifs').innerHTML = '';
     document.getElementById('pres-etapes').innerHTML    = '';
     document.querySelectorAll('.pres-catalog-cb').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.pres-cat-chiffrage').forEach(el => { el.style.display = 'none'; el.value = ''; });
+    document.querySelectorAll('.pres-cat-custom-label').forEach(el => { el.style.display = 'none'; el.value = ''; });
     const presSelect = document.getElementById('pres-split-solution');
     if (presSelect) presSelect.value = '';
 
@@ -5038,9 +5071,23 @@ async function loadBilan() {
       document.getElementById('pres-pieces').value = (bp.pieces || []).join('\n');
       const cardsSlide = (bp.deck_extra || []).find(s => s.layout === 'cards');
       if (cardsSlide?.cards) {
-        cardsSlide.cards.forEach(id => {
+        cardsSlide.cards.forEach(card => {
+          const id = typeof card === 'string' ? card : card.id;
           const cb = document.querySelector(`.pres-catalog-cb[data-id="${id}"]`);
-          if (cb) cb.checked = true;
+          if (!cb) return;
+          cb.checked = true;
+          presToggleChiffrage(cb); // affiche les inputs
+          if (typeof card === 'object') {
+            const item = cb.closest('.pres-cat-item');
+            if (card.chiffrage) {
+              const el = item?.querySelector('.pres-cat-chiffrage');
+              if (el) el.value = card.chiffrage;
+            }
+            if (card.custom_label) {
+              const el = item?.querySelector('.pres-cat-custom-label');
+              if (el) el.value = card.custom_label;
+            }
+          }
         });
       }
       const splitSlide = (bp.deck_extra || []).find(s => s.layout === 'split');
