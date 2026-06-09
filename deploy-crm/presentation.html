@@ -56,7 +56,6 @@ li::before{content:'';position:absolute;left:2px;top:9px;width:7px;height:7px;bo
 .alert h3{color:var(--red);font-size:1.35rem;margin-bottom:12px}
 .band{border-radius:16px;padding:26px 30px;background:var(--forest);margin-top:8px}
 .band h3{color:var(--gold-light);font-size:1.45rem;margin-bottom:12px}
-.chiffrage-badge{display:inline-block;background:var(--gold-pale);color:var(--gold);border:1.5px solid var(--gold);border-radius:20px;padding:3px 12px;font-size:.82rem;font-weight:600;margin:6px 0 10px;letter-spacing:.01em}
 .stat-box{background:var(--gold-pale);border-radius:14px;padding:24px;margin-top:18px}
 .stat-box .big{font-family:'Fraunces',serif;font-size:clamp(2.2rem,4vw,3rem);font-weight:600;color:var(--gold);line-height:1}
 .stat-box p{margin-top:12px}
@@ -77,6 +76,7 @@ tr.hl td{font-weight:700;color:var(--forest)}
 .foot{position:absolute;left:7vw;bottom:3.5vh;font-size:.78rem;color:var(--slate);font-style:italic}
 .dark .foot{color:#9CB2A4}
 .intro{margin-bottom:24px;max-width:80ch}
+.chiffrage-tag{display:inline-block;margin-top:10px;font-size:.82rem;font-weight:600;color:var(--teal);background:var(--teal-pale);border-radius:6px;padding:3px 10px}
 /* Loading */
 #loading{position:fixed;inset:0;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ivory)}
 #loading .spinner{width:40px;height:40px;border:3px solid rgba(196,151,58,.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
@@ -146,7 +146,8 @@ const CATALOG = {
   },
   scpi:{
     titre:"SCPI — diversification pilotée",
-    texte:"Immobilier mutualisé et géré : pas de gestion locative, mutualisation du risque locatif, ticket d'entrée faible. Complément idéal pour diversifier sans alourdir la gestion."
+    texte:"Immobilier mutualisé et géré : pas de gestion locative, mutualisation du risque locatif, ticket d'entrée faible. Complément idéal pour diversifier sans alourdir la gestion.",
+    libre:true
   },
   /* — TRANSMISSION — */
   demembrement:{
@@ -199,35 +200,27 @@ const CATALOG = {
       {titre:"Transmissible", texte:"Capital décès au conjoint ou bénéficiaires désignés."}
     ]
   },
+  assurance_vie_transmission_split:{
+    titre:"AV — abattement 152 500 €",
+    table:{
+      head:["Scénario","Montant"],
+      rows:[
+        ["Abattement par bénéficiaire (primes avant 70 ans)","152 500 €"],
+        ["Avec 2 enfants bénéficiaires × 2 contrats","610 000 €",true],
+        ["Fiscalité au-delà","20 % jusqu'à 700 k€ puis 31,25 %"]
+      ],
+      note:"Les primes versées après 70 ans ne bénéficient pas de cet abattement (abattement global de 30 500 € pour l'ensemble des bénéficiaires)."
+    },
+    effects:[
+      {titre:"Hors succession", texte:"L'assurance-vie n'entre pas dans l'actif successoral — pas de droits de succession classiques."},
+      {titre:"Clause bénéficiaire", texte:"La rédaction de la clause conditionne l'efficacité totale du dispositif."},
+      {titre:"Cumul possible", texte:"Chaque souscripteur a ses propres plafonds — couple = double enveloppe."}
+    ]
+  },
   /* — EPARGNE — */
   pea:{
     titre:"PEA",
     texte:"Enveloppe actions : exonération d'impôt sur les gains après 5 ans. Complément de diversification pour préparer la retraite ou financer un projet à moyen terme."
-  },
-  /* — IMMOBILIER INVESTISSEMENT — */
-  locatif_nu:{
-    titre:"Investissement locatif nu",
-    texte:"Acquisition d'un bien mis en location nue. Les revenus fonciers sont imposables, mais les charges et intérêts d'emprunt sont déductibles. Adapté à une stratégie patrimoniale long terme."
-  },
-  lmnp:{
-    titre:"LMNP — Loueur meublé non professionnel",
-    texte:"Régime au réel : amortissement du bien et du mobilier vient en déduction des loyers, souvent jusqu'à zéro fiscalité pendant 10–15 ans. Idéal pour les investisseurs en TMI 30 % ou plus."
-  },
-  de_normandie:{
-    titre:"Dispositif De Normandie",
-    texte:"Réduction d'impôt sur acquisition de logements anciens réhabilités en zone tendue. Engagement locatif 6 à 12 ans. Avantage fiscal annuel jusqu'à 21 % du prix de revient."
-  },
-  malraux:{
-    titre:"Malraux — rénovation patrimoine",
-    texte:"Réduction d'impôt de 22 à 30 % des travaux (hors plafonnement global). Réservé aux immeubles en secteur sauvegardé ou PSMV. Enveloppe annuelle de travaux jusqu'à 400 000 €."
-  },
-  monuments_historiques:{
-    titre:"Monuments historiques",
-    texte:"Déduction totale des travaux du revenu global, sans plafond, hors plafonnement global des niches. Stratégie de défiscalisation puissante pour les contribuables fortement imposés."
-  },
-  immo_autre:{
-    titre:"Investissement immobilier",
-    texte:"Stratégie immobilière complémentaire adaptée à votre situation et à vos objectifs patrimoniaux."
   }
 };
 
@@ -317,16 +310,15 @@ const R = {
 
   cards(s, d) {
     const cards = (s.cards || []).map((card, k) => {
-      const id         = typeof card === 'string' ? card : card.id;
-      const chiffrage  = typeof card === 'object'  ? (card.chiffrage   || '') : '';
-      const customLabel= typeof card === 'object'  ? (card.custom_label || '') : '';
-      const b = CATALOG[id] || {};
-      const titre = customLabel || b.titre || id;
-      let inner = `${s.numbered ? `<div class="n">${k + 1}</div>` : ""}<h3>${esc(titre)}</h3>`;
-      if (chiffrage) inner += `<div class="chiffrage-badge">${esc(chiffrage)}</div>`;
-      if (b.texte)   inner += `<p>${esc(b.texte)}</p>`;
-      if (b.list)    inner += liList(b.list);
+      // Supporte les deux formats : string "per_retraite" ou objet {id:"per_retraite", chiffrage:"..."}
+      const cardId = (typeof card === 'object' && card !== null) ? card.id : card;
+      const cardChiffrage = (typeof card === 'object' && card !== null) ? (card.chiffrage || null) : null;
+      const b = CATALOG[cardId]; if (!b) return "";
+      let inner = `${s.numbered ? `<div class="n">${k + 1}</div>` : ""}<h3>${esc(b.titre)}</h3>`;
+      if (b.texte) inner += `<p>${esc(b.texte)}</p>`;
+      if (b.list) inner += liList(b.list);
       if (b.highlight) inner += `<div class="stat-box"><div class="big">${esc(b.highlight.big)}</div><p>${esc(b.highlight.sub)}</p></div>`;
+      if (cardChiffrage) inner += `<span class="chiffrage-tag">${esc(cardChiffrage)}</span>`;
       return `<div class="col card ${s.numbered ? 'lev' : ''}">${inner}</div>`;
     }).join("");
     return `<section class="slide"><div class="label gold">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
@@ -451,43 +443,6 @@ function mapRevenus(c) {
   return rev;
 }
 
-/* ─── Correspondance mots-clés → IDs catalogue (auto-matching précos) ─── */
-const _KMAP = [
-  ['per_retraite_couple',        ['per couple']],
-  ['per_retraite',               ['per retraite','per individuel','épargne retraite','per —']],
-  ['perco_pilotage',             ['perco']],
-  ['loyers_liberes_dumaire',     ['crédit rs libéré','crédit libéré','loyers libérés','flux libéré']],
-  ['obo',                        ['obo','owner buy']],
-  ['sci',                        ['sci à l','sci is','sci à']],
-  ['deficit_foncier',            ['déficit foncier','deficit foncier']],
-  ['scpi',                       ['scpi']],
-  ['demembrement',               ['démembrement','demembrement','nue-propriété','nue propriété']],
-  ['assurance_vie_transmission', ['transmission','152 500','av transmission','assurance-vie transmission']],
-  ['assurance_vie',              ['assurance-vie','assurance vie']],
-  ['per_fiscal',                 ['per fiscal','impact fiscal','per — impact']],
-  ['pea',                        ['pea']],
-  ['locatif_nu',                 ['locatif nu','location nue','investissement locatif nu']],
-  ['lmnp',                       ['lmnp','meublé non professionnel','loueur meublé']],
-  ['de_normandie',               ['normandie','pinel de normandie','pinel']],
-  ['malraux',                    ['malraux']],
-  ['monuments_historiques',      ['monuments historiques','monument historique']],
-];
-
-function _autoMatchCatalog(items) {
-  const matched = [], seen = new Set();
-  (items || []).forEach(item => {
-    const lower = (typeof item === 'string' ? item : (item.id || '')).toLowerCase();
-    for (const [id, keywords] of _KMAP) {
-      if (!seen.has(id) && keywords.some(kw => lower.includes(kw))) {
-        matched.push({ id });
-        seen.add(id);
-        break;
-      }
-    }
-  });
-  return matched;
-}
-
 function mapToDossier(c, bil) {
   const raw = bil?.preconisations;
   const preco = (raw && !Array.isArray(raw) && typeof raw === 'object') ? raw : {};
@@ -496,64 +451,23 @@ function mapToDossier(c, bil) {
   const crd = mapCRD(c.credits || {});
   const revenus = mapRevenus(c);
 
-  /* ── Auto-dérivation depuis les champs bilan quand le form pres n'est pas rempli ── */
-
-  // Objectifs : preco.objectifs en priorité, sinon parse de bil.objectifs_client (1 ligne = 1 objectif)
-  const objectifs = (preco.objectifs && preco.objectifs.length)
-    ? preco.objectifs
-    : (bil?.objectifs_client || '')
-        .split('\n').map(l => l.trim()).filter(Boolean)
-        .map(l => ({ titre: l, desc: '' }));
-
-  // Retraite visée : preco.retraite_label → bil.horizon
-  const retraiteLabel = preco.retraite_label || bil?.horizon || '';
-
-  // Diagnostic : preco.diagnostic → ou bil.analyse_conseiller comme band narrative
-  let diagnostic = preco.diagnostic || null;
-  if (!diagnostic && bil?.analyse_conseiller) {
-    diagnostic = {
-      forces: [], vigilance: [],
-      band: { titre: 'Notre lecture', texte: bil.analyse_conseiller }
-    };
-  }
-
-  // Auto-cards : preco.deck_extra → ou matching depuis preconisations.items / ancien tableau
-  let deck_extra = (preco.deck_extra && preco.deck_extra.length) ? preco.deck_extra : [];
-  if (!deck_extra.length) {
-    const items = preco.items || (Array.isArray(raw) ? raw : []);
-    if (items.length) {
-      const cards = _autoMatchCatalog(items);
-      if (cards.length) {
-        deck_extra = [{
-          layout: 'cards',
-          label: '05 — Solutions',
-          titre: 'Nos axes de travail',
-          numbered: true,
-          intro: `${cards.length} levier${cards.length > 1 ? 's' : ''} prioritaire${cards.length > 1 ? 's' : ''} pour votre situation.`,
-          cards
-        }];
-      }
-    }
-  }
-
-  // Deck déclaratif — auto-construit selon les données disponibles
-  let slideNum = 1;
   const deck = [
     { layout: 'cover' },
-    { layout: 'situation', label: `0${slideNum++} — Votre situation`, titre: 'Qui vous êtes aujourd\'hui' }
+    { layout: 'situation', label: '01 — Votre situation', titre: 'Qui vous êtes aujourd\'hui' }
   ];
-  if (objectifs.length) {
-    deck.push({ layout: 'objectifs', label: `0${slideNum++} — Vos objectifs`, titre: 'Ce que vous nous avez confié' });
+  if (preco.objectifs?.length) {
+    deck.push({ layout: 'objectifs', label: '02 — Vos objectifs', titre: 'Ce que vous nous avez confié' });
   }
-  deck.push({ layout: 'patrimoine', label: `0${slideNum++} — Patrimoine immobilier`, titre: 'Votre patrimoine immobilier' });
-  if (diagnostic) {
-    deck.push({ layout: 'diagnostic', label: `0${slideNum++} — Diagnostic`, titre: 'Notre lecture de votre situation' });
+  deck.push({ layout: 'patrimoine', label: '03 — Patrimoine immobilier', titre: 'Votre patrimoine immobilier' });
+  if (preco.diagnostic) {
+    deck.push({ layout: 'diagnostic', label: '04 — Diagnostic', titre: 'Notre lecture de votre situation' });
   }
-  for (const slide of deck_extra) {
+  // Auto-cards : preco.deck_extra
+  for (const slide of (preco.deck_extra || [])) {
     deck.push(slide);
   }
-  if ((preco.feuille_route || []).length) {
-    deck.push({ layout: 'roadmap', label: `0${slideNum++} — Prochaines étapes`, titre: 'Notre feuille de route' });
+  if (preco.feuille_route?.length) {
+    deck.push({ layout: 'roadmap', label: '05 — Prochaines étapes', titre: 'Notre feuille de route' });
   }
 
   return {
@@ -562,26 +476,26 @@ function mapToDossier(c, bil) {
     client: {
       nom: buildNom(c),
       situation: preco.situation_label || buildSituationStr(c),
-      retraite: retraiteLabel,
+      retraite: preco.retraite_label || '',
       date: preco.presentation_date || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     },
-    profil: preco.situation_profil || preco.profil || [
+    profil: preco.profil || [
       c.statut_marital && c.regime ? `${c.statut_marital} — régime ${c.regime}` : c.statut_marital,
       (c.prenom_c1 && c.statut_pro_c1) ? `${c.prenom_c1} : ${c.statut_pro_c1}` : null,
       (c.prenom_c2 && c.statut_pro_c2) ? `${c.prenom_c2} : ${c.statut_pro_c2}` : null,
       c.tmi ? `TMI ${c.tmi} %` : null,
       c.enfants_noms ? `Enfants : ${c.enfants_noms}` : null
     ].filter(Boolean),
-    revenus: preco.situation_revenus || revenus,
-    revenus_note: preco.situation_note || (c.rfr ? `RFR déclaré : ${fmt(Number(c.rfr))} €` : ''),
+    revenus,
+    revenus_note: c.rfr ? `RFR déclaré : ${fmt(Number(c.rfr))} €` : '',
     patrimoine: {
       biens,
       crd,
       biens_label: preco.biens_label || null,
       alerte: preco.patrimoine_alerte || null
     },
-    objectifs,
-    diagnostic,
+    objectifs: preco.objectifs || [],
+    diagnostic: preco.diagnostic || null,
     feuille_route: preco.feuille_route || [],
     pieces: preco.pieces || [],
     deck
@@ -611,59 +525,63 @@ function startDeck() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('deck').style.display = '';
   document.getElementById('nav').style.display = '';
+  document.getElementById('next').onclick = () => show(idx + 1);
+  document.getElementById('prev').onclick = () => show(idx - 1);
+  document.addEventListener('keydown', e => {
+    if (['ArrowRight', ' ', 'PageDown'].includes(e.key)) { e.preventDefault(); show(idx + 1); }
+    else if (['ArrowLeft', 'PageUp'].includes(e.key)) { e.preventDefault(); show(idx - 1); }
+    else if (e.key === 'Home') show(0);
+    else if (e.key === 'End') show(slides.length - 1);
+    else if (e.key.toLowerCase() === 'f') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    }
+  });
   show(0);
 }
 
-/* =====================================================================
-   CHARGEMENT — projet actif : ullnkylrixdvormohryl
-   ===================================================================== */
-async function loadClient(clientId, bilanId) {
-  const SUPA_URL = 'https://ullnkylrixdvormohryl.supabase.co';
-  const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbG5reWxyaXhkdm9ybW9ocnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NjUzNDgsImV4cCI6MjA5NDE0MTM0OH0.Fu5xc-VVA49qp1-WHgve8ZYpOB-QrciHzVeZx0GXmKk';
-  const headers = { 'apikey': SUPA_KEY, 'Authorization': 'Bearer ' + SUPA_KEY };
-
-  const [cr, br] = await Promise.all([
-    fetch(`${SUPA_URL}/rest/v1/clients?id=eq.${clientId}&select=*`, { headers }),
-    fetch(`${SUPA_URL}/rest/v1/bilans?${bilanId ? 'id=eq.' + bilanId : 'client_id=eq.' + clientId}&select=*&order=created_at.desc&limit=1`, { headers })
-  ]);
-  const clients = await cr.json();
-  const bilans  = await br.json();
-  if (!clients.length) throw new Error('Client introuvable (id=' + clientId + ')');
-  return { client: clients[0], bilan: bilans[0] || null };
+function showError(msg) {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('error').style.display = 'flex';
+  document.getElementById('error-msg').textContent = msg;
 }
 
-async function init() {
-  const params = new URLSearchParams(location.search);
-  const clientId = params.get('client');
-  const bilanId  = params.get('bilan');
-  if (!clientId) {
-    document.getElementById('error-msg').textContent = 'Paramètre client manquant dans l\'URL.';
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = '';
-    return;
-  }
+function render(client, bilan) {
   try {
-    const { client, bilan } = await loadClient(clientId, bilanId);
     const dossier = mapToDossier(client, bilan);
     build(dossier);
     startDeck();
-  } catch(e) {
-    document.getElementById('error-msg').textContent = e.message;
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('error').style.display = '';
+  } catch (err) {
+    showError('Erreur lors de la génération : ' + err.message);
+    console.error(err);
   }
 }
 
-/* Navigation clavier + boutons */
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === ' ') show(idx + 1);
-  if (e.key === 'ArrowLeft')  show(idx - 1);
-  if (e.key === 'f' || e.key === 'F') document.documentElement.requestFullscreen?.();
-});
-document.getElementById('next').onclick = () => show(idx + 1);
-document.getElementById('prev').onclick = () => show(idx - 1);
+/* =====================================================================
+   INITIALISATION — lit depuis localStorage (passé par le CRM)
+   ===================================================================== */
+(function init() {
+  const params = new URLSearchParams(location.search);
+  const clientId = params.get('client');
 
-init();
+  if (!clientId) {
+    showError('Aucun client spécifié — utilisez le bouton "Présentation" depuis la fiche client du CRM.');
+    return;
+  }
+
+  const cached = localStorage.getItem('pres_' + clientId);
+  if (!cached) {
+    showError('Données non trouvées pour ce client. Retournez sur la fiche client et cliquez à nouveau sur "Présentation".');
+    return;
+  }
+
+  try {
+    const { client, bilan } = JSON.parse(cached);
+    document.title = `Présentation — ${client.prenom_c1 || ''} ${client.nom_c1 || ''} | Proactifs Conseils`;
+    render(client, bilan);
+  } catch (e) {
+    showError('Données corrompues — relancez depuis le CRM.');
+  }
+})();
 </script>
 </body>
 </html>
