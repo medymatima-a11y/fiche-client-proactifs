@@ -1280,6 +1280,20 @@ table.crm-table{width:100%;border-collapse:collapse}
                   📊 Présentation client
                   <span style="font-size:10px;font-weight:400;color:var(--muted)">Alimente les slides de la présentation</span>
                 </h3>
+                <!-- Bouton IA -->
+                <div style="margin-bottom:16px;padding:12px 14px;background:linear-gradient(135deg,#f0f4ff 0%,#faf5ff 100%);border:1px solid #c7d2fe;border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                  <div style="flex:1;min-width:180px">
+                    <div style="font-size:12px;font-weight:600;color:#4338ca;margin-bottom:2px">✨ Génération IA</div>
+                    <div style="font-size:11px;color:#6366f1">Pré-remplit tous les champs à partir du profil client</div>
+                  </div>
+                  <button id="btn-ia-generate" class="btn" onclick="generatePreconisationsIA()" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;padding:8px 18px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;white-space:nowrap">
+                    ✨ Générer avec l'IA
+                  </button>
+                  <div id="ia-loading" style="display:none;font-size:11px;color:#6366f1;align-items:center;gap:6px">
+                    <span style="display:inline-block;width:12px;height:12px;border:2px solid #c7d2fe;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite"></span>
+                    Génération en cours…
+                  </div>
+                </div>
 
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
                   <div class="form-field">
@@ -4169,6 +4183,110 @@ async function openPresentation() {
 
   localStorage.setItem('pres_' + currentClientId, JSON.stringify({ client: c, bilan }));
   window.open('presentation.html?client=' + currentClientId, '_blank');
+}
+
+// ── GÉNÉRATION IA PRÉCONISATIONS ────────────────────────────
+async function generatePreconisationsIA() {
+  if (!currentClientId) { alert('Aucun client sélectionné.'); return; }
+
+  const client = allClients.find(x => x.id === currentClientId);
+  if (!client) { alert('Client introuvable.'); return; }
+
+  // Récupérer le bilan en cours (si existant)
+  let bilan = null;
+  try {
+    const bilans = await apiGet(`bilans?client_id=eq.${currentClientId}&order=created_at.desc&limit=1`);
+    bilan = (bilans && bilans.length > 0) ? bilans[0] : null;
+  } catch(e) { /* pas de bilan existant, on continue */ }
+
+  // Enrichir le bilan avec les champs actuellement saisis dans le formulaire
+  const bilanFormData = {
+    profil_risque: document.getElementById('bilan-risque')?.value || bilan?.profil_risque || '',
+    horizon:       document.getElementById('bilan-horizon')?.value || bilan?.horizon || '',
+    objectif:      document.getElementById('bilan-objectif')?.value || bilan?.objectif || '',
+    analyse_conseiller: document.getElementById('bilan-analyse')?.value || bilan?.analyse_conseiller || '',
+    objectifs_client:   document.getElementById('bilan-objectifs')?.value || bilan?.objectifs_client || '',
+  };
+  const bilanPayload = Object.assign({}, bilan, bilanFormData);
+
+  // UI — état chargement
+  const btn = document.getElementById('btn-ia-generate');
+  const loading = document.getElementById('ia-loading');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  loading.style.display = 'flex';
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-preconisations`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_KEY,
+      },
+      body: JSON.stringify({ client, bilan: bilanPayload }),
+    });
+
+    const result = await response.json();
+    if (!result.success) throw new Error(result.error || 'Erreur inconnue');
+
+    const p = result.preconisations;
+
+    // ── Remplir les champs pres-* ────────────────────────────
+    if (p.situation_label) document.getElementById('pres-situation').value = p.situation_label;
+    if (p.retraite_label)  document.getElementById('pres-retraite').value  = p.retraite_label;
+
+    // Diagnostic
+    if (p.diagnostic) {
+      if (p.diagnostic.forces)    document.getElementById('pres-forces').value    = p.diagnostic.forces;
+      if (p.diagnostic.vigilance) document.getElementById('pres-vigilance').value = p.diagnostic.vigilance;
+      if (p.diagnostic.band) {
+        if (p.diagnostic.band.titre) document.getElementById('pres-band-titre').value = p.diagnostic.band.titre;
+        if (p.diagnostic.band.texte) document.getElementById('pres-band-texte').value = p.diagnostic.band.texte;
+      }
+    }
+
+    // Objectifs — presAddObjectif() attend {titre, desc}
+    if (Array.isArray(p.objectifs) && p.objectifs.length > 0) {
+      document.getElementById('pres-objectifs').innerHTML = '';
+      p.objectifs.forEach(obj => {
+        presAddObjectif({ titre: obj.titre || '', desc: obj.detail || obj.desc || '' });
+      });
+    }
+
+    // Feuille de route — presAddEtape() attend {when, texte}
+    if (Array.isArray(p.feuille_route) && p.feuille_route.length > 0) {
+      document.getElementById('pres-etapes').innerHTML = '';
+      p.feuille_route.forEach(e => {
+        presAddEtape({ when: e.when || e.delai || e.etape || '', texte: e.texte || e.action || '' });
+      });
+    }
+
+    // Pièces
+    if (Array.isArray(p.pieces) && p.pieces.length > 0) {
+      document.getElementById('pres-pieces').value = p.pieces.join('\n');
+    }
+
+    // Préconisations texte simple (textarea conseiller)
+    if (Array.isArray(p.items) && p.items.length > 0) {
+      document.getElementById('bilan-preconisations').value = p.items.join('\n');
+    }
+
+    // Feedback visuel succès
+    btn.textContent = '✅ Généré !';
+    btn.style.background = 'linear-gradient(135deg,#059669,#10b981)';
+    setTimeout(() => {
+      btn.textContent = '✨ Générer avec l\'IA';
+      btn.style.background = 'linear-gradient(135deg,#4f46e5,#7c3aed)';
+    }, 3000);
+
+  } catch(err) {
+    console.error('Erreur génération IA:', err);
+    alert('Erreur lors de la génération IA : ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    loading.style.display = 'none';
+  }
 }
 
 // ── EMAIL COMPOSER ──────────────────────────────────────────
