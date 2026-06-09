@@ -39,7 +39,10 @@ li::before{content:'';position:absolute;left:2px;top:9px;width:7px;height:7px;bo
 .brand{font-family:'DM Mono',monospace;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-light);font-size:.92rem;margin-bottom:30px}
 .cover h1{color:var(--ivory);font-size:clamp(2.6rem,6vw,5rem);line-height:1.05;margin-bottom:18px}
 .cover .sub{color:#CFE0D5;font-size:clamp(1rem,1.7vw,1.4rem)}
-.metarow{display:flex;gap:5vw;margin-top:7vh;padding-top:28px;border-top:1px solid rgba(232,201,122,.25);flex-wrap:wrap}
+.metarow{display:flex;gap:12px 5vw;margin-top:5vh;padding-top:22px;border-top:1px solid rgba(232,201,122,.25);flex-wrap:wrap}
+.cover-ctx{display:grid;grid-template-columns:1fr 1fr;gap:18px 5vw;margin-top:3vh}
+.cover-ctx p{color:#DDE7E0;font-size:.95rem;line-height:1.58;margin-top:6px}
+.cover-ctx .label{margin-bottom:6px}
 .metarow span{display:block;font-family:'DM Mono',monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold-light);margin-bottom:6px}
 .metarow strong{font-weight:500;color:var(--ivory);font-size:1.05rem}
 .kpis{display:grid;gap:18px;margin-bottom:26px}
@@ -491,16 +494,22 @@ function mapToDossier(c, bil) {
     { layout: 'cover' },
     { layout: 'situation', label: '01 — Votre situation', titre: 'Qui vous êtes aujourd\'hui' }
   ];
-  if (preco.objectifs?.length) {
-    deck.push({ layout: 'objectifs', label: '02 — Vos objectifs', titre: 'Ce que vous nous avez confié' });
-  }
   deck.push({ layout: 'patrimoine', label: '03 — Patrimoine immobilier', titre: 'Votre patrimoine immobilier' });
   if (preco.diagnostic) {
     deck.push({ layout: 'diagnostic', label: '04 — Diagnostic', titre: 'Notre lecture de votre situation' });
   }
-  // Auto-cards : preco.deck_extra
+  // Auto-cards : preco.deck_extra — objectifs inséré juste après le 1er slide section
+  let _objInserted = false;
   for (const slide of (preco.deck_extra || [])) {
     deck.push(slide);
+    if (!_objInserted && slide.layout === 'section' && preco.objectifs?.length) {
+      deck.push({ layout: 'objectifs', label: '02 — Vos objectifs', titre: 'Ce que vous nous avez confié' });
+      _objInserted = true;
+    }
+  }
+  // Fallback : pas de section dans deck_extra
+  if (!_objInserted && preco.objectifs?.length) {
+    deck.push({ layout: 'objectifs', label: '02 — Vos objectifs', titre: 'Ce que vous nous avez confié' });
   }
   if (preco.feuille_route?.length) {
     deck.push({ layout: 'roadmap', label: '05 — Prochaines étapes', titre: 'Notre feuille de route' });
@@ -511,8 +520,8 @@ function mapToDossier(c, bil) {
     lieu: 'Colombes (92)',
     client: {
       nom: buildNom(c),
-      situation: preco.situation_label || buildSituationStr(c),
-      retraite: preco.retraite_label || '',
+      situation: buildSituationStr(c),
+      retraite: '',
       date: preco.presentation_date || new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
     },
     profil: preco.profil || [
