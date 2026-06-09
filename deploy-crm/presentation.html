@@ -77,6 +77,17 @@ tr.hl td{font-weight:700;color:var(--forest)}
 .dark .foot{color:#9CB2A4}
 .intro{margin-bottom:24px;max-width:80ch}
 .chiffrage-tag{display:inline-block;margin-top:10px;font-size:.82rem;font-weight:600;color:var(--teal);background:var(--teal-pale);border-radius:6px;padding:3px 10px}
+/* card_solo — 1 solution par slide */
+.solo-card{max-width:700px}
+.section-sub{color:var(--gold);font-family:'DM Mono',monospace;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:24px}
+.solo-texte{font-size:1.12rem;line-height:1.68;margin:22px 0;max-width:65ch;color:var(--ink-soft)}
+.solo-chiffrage{display:inline-flex;align-items:center;gap:16px;margin-top:30px;background:var(--teal-pale);border-radius:14px;padding:16px 26px}
+.solo-chiffrage .sc-label{font-size:.78rem;color:var(--teal);font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase}
+.solo-chiffrage .sc-val{font-family:'Fraunces',serif;font-size:1.8rem;color:var(--teal);font-weight:600}
+/* section — slide séparateur de chapitre */
+.sec-items{display:flex;flex-direction:column;gap:14px;margin-top:10px}
+.sec-item{display:flex;align-items:center;gap:22px;padding:18px 26px;background:rgba(255,255,255,.09);border-radius:14px;font-size:1.1rem;color:var(--ivory)}
+.sec-n{flex:none;width:44px;height:44px;border-radius:50%;background:var(--gold);color:var(--forest);display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-weight:600;font-size:1.25rem}
 /* Loading */
 #loading{position:fixed;inset:0;background:var(--forest);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ivory)}
 #loading .spinner{width:40px;height:40px;border:3px solid rgba(196,151,58,.3);border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:24px}
@@ -342,6 +353,31 @@ const R = {
         ${t.note ? `<p class="muted small" style="margin-top:14px">${esc(t.note)}</p>` : ""}
       </div>
       <div class="col">${effs}</div>
+    </div></section>`;
+  },
+
+  section(s, d) {
+    const items = (s.items || []).map((item, k) =>
+      `<div class="sec-item"><div class="sec-n">${k + 1}</div><span>${esc(item)}</span></div>`
+    ).join("");
+    return `<section class="slide dark"><div class="label">${esc(s.label)}</div><h2>${esc(s.titre)}</h2>
+    ${s.sub ? `<p style="color:#CFE0D5;margin-bottom:36px;font-size:1.1rem">${esc(s.sub)}</p>` : ""}
+    <div class="sec-items">${items}</div></section>`;
+  },
+
+  card_solo(s, d) {
+    const cardData = s.card;
+    const cardId = (typeof cardData === 'object' && cardData !== null) ? cardData.id : cardData;
+    const cardChiffrage = (typeof cardData === 'object' && cardData !== null) ? (cardData.chiffrage || null) : null;
+    const b = CATALOG[cardId]; if (!b) return "";
+    return `<section class="slide"><div class="label gold">${esc(s.label)}</div>
+    ${s.section_titre ? `<p class="section-sub">${esc(s.section_titre)}</p>` : ""}
+    <div class="solo-card">
+      <h2>${esc(b.titre)}</h2>
+      ${b.texte ? `<p class="solo-texte">${esc(b.texte)}</p>` : ""}
+      ${b.list ? liList(b.list) : ""}
+      ${b.highlight ? `<div class="stat-box"><div class="big">${esc(b.highlight.big)}</div><p>${esc(b.highlight.sub)}</p></div>` : ""}
+      ${cardChiffrage ? `<div class="solo-chiffrage"><span class="sc-label">Versement mensuel envisagé</span><span class="sc-val">${esc(cardChiffrage)} €</span></div>` : ""}
     </div></section>`;
   },
 
