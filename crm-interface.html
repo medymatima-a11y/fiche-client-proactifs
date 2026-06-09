@@ -981,6 +981,7 @@ table.crm-table{width:100%;border-collapse:collapse}
           <div class="tab" onclick="showTab('emails')">📧 Emails</div>
           <div class="tab" onclick="showTab('budget')">💰 Budget</div>
           <div class="tab" onclick="showTab('bilan')">📋 Bilan patrimonial</div>
+          <div class="tab" onclick="showTab('presentation')">📊 Présentation / Préconisation</div>
           <div class="tab" onclick="showTab('investissements')">💼 Investissements</div>
           <div class="tab" onclick="showTab('conformite')">🛡️ Conformité</div>
         </div>
@@ -1274,117 +1275,7 @@ table.crm-table{width:100%;border-collapse:collapse}
                 </div>
               </div>
 
-              <!-- ── Présentation client ─────────────────────── -->
-              <div class="add-form" id="pres-config-box" style="margin-top:16px">
-                <h3 style="display:flex;align-items:center;justify-content:space-between">
-                  📊 Présentation client
-                  <span style="font-size:10px;font-weight:400;color:var(--muted)">Alimente les slides de la présentation</span>
-                </h3>
-                <!-- Bouton IA -->
-                <div style="margin-bottom:16px;padding:12px 14px;background:linear-gradient(135deg,#f0f4ff 0%,#faf5ff 100%);border:1px solid #c7d2fe;border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-                  <div style="flex:1;min-width:180px">
-                    <div style="font-size:12px;font-weight:600;color:#4338ca;margin-bottom:2px">✨ Génération IA</div>
-                    <div style="font-size:11px;color:#6366f1">Pré-remplit tous les champs à partir du profil client</div>
-                  </div>
-                  <button id="btn-ia-generate" class="btn" onclick="generatePreconisationsIA()" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;padding:8px 18px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;white-space:nowrap">
-                    ✨ Générer avec l'IA
-                  </button>
-                  <div id="ia-loading" style="display:none;font-size:11px;color:#6366f1;align-items:center;gap:6px">
-                    <span style="display:inline-block;width:12px;height:12px;border:2px solid #c7d2fe;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite"></span>
-                    Génération en cours…
-                  </div>
-                </div>
 
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-                  <div class="form-field">
-                    <label>Situation (étiquette slide)</label>
-                    <input type="text" id="pres-situation" placeholder="Mariés, 2 enfants">
-                  </div>
-                  <div class="form-field">
-                    <label>Retraite visée</label>
-                    <input type="text" id="pres-retraite" placeholder="2027">
-                  </div>
-                </div>
-
-                <!-- Objectifs -->
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Objectifs clients</label>
-                    <button class="btn btn-sm" onclick="presAddObjectif()" style="font-size:11px;padding:3px 10px">+ Ajouter</button>
-                  </div>
-                  <div id="pres-objectifs"></div>
-                </div>
-
-                <!-- Diagnostic -->
-                <div style="margin-bottom:14px">
-                  <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);display:block;margin-bottom:8px">Diagnostic</label>
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
-                    <div class="form-field">
-                      <label>Forces (une par ligne)</label>
-                      <textarea id="pres-forces" rows="3" placeholder="Patrimoine immobilier solide&#10;PERCO bien alimenté"></textarea>
-                    </div>
-                    <div class="form-field">
-                      <label>Points de vigilance (une par ligne)</label>
-                      <textarea id="pres-vigilance" rows="3" placeholder="Plafonds PER à vérifier&#10;Sortie PERCO à coordonner"></textarea>
-                    </div>
-                  </div>
-                  <div style="display:grid;grid-template-columns:180px 1fr;gap:10px">
-                    <div class="form-field">
-                      <label>Titre synthèse</label>
-                      <input type="text" id="pres-band-titre" placeholder="Notre lecture">
-                    </div>
-                    <div class="form-field">
-                      <label>Texte</label>
-                      <input type="text" id="pres-band-texte" placeholder="Le foyer dispose d'atouts…">
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Solutions CATALOG -->
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 1</label>
-                    <input type="text" id="pres-cat1-label" placeholder="05 — Solutions" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
-                    <input type="text" id="pres-cat1-titre" placeholder="Nos axes de travail" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
-                  </div>
-                  <div id="pres-catalog-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
-
-                  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 2 <span style="font-weight:400;color:#94a3b8;text-transform:none;font-size:10px">(optionnel)</span></label>
-                    <input type="text" id="pres-cat2-label" placeholder="05 — Objectif 2" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
-                    <input type="text" id="pres-cat2-titre" placeholder="Titre du slide…" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
-                  </div>
-                  <div id="pres-catalog-list-2" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
-
-                  <div class="form-field">
-                    <label>Slide détail (split layout)</label>
-                    <div style="display:flex;gap:6px;margin-top:4px">
-                      <input type="text" id="pres-split-label" placeholder="06 — Chiffrage" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
-                      <select id="pres-split-solution" style="flex:1">
-                        <option value="">— Aucune —</option>
-                        <option value="per_couple_chiffrage">PER couple — chiffrage</option>
-                        <option value="per_fiscal">PER — impact fiscal</option>
-                        <option value="assurance_vie_transmission">AV — abattement 152 500 €</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Feuille de route -->
-                <div style="margin-bottom:14px">
-                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                    <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Feuille de route</label>
-                    <button class="btn btn-sm" onclick="presAddEtape()" style="font-size:11px;padding:3px 10px">+ Étape</button>
-                  </div>
-                  <div id="pres-etapes"></div>
-                </div>
-
-                <!-- Pièces -->
-                <div class="form-field">
-                  <label>Pièces à fournir (une par ligne)</label>
-                  <textarea id="pres-pieces" rows="3" placeholder="Avis d'imposition N-1 (pages 4-5)&#10;Relevés PERCO / PER existants&#10;Contrats assurance-vie en cours"></textarea>
-                </div>
-              </div>
 
             </div>
           </div>
@@ -1442,6 +1333,125 @@ table.crm-table{width:100%;border-collapse:collapse}
               <button class="btn btn-primary" style="width:100%;padding:10px" onclick="saveBilan()">💾 Enregistrer le bilan</button>
               <button class="btn btn-gold" style="width:100%;padding:10px" onclick="generateBilanPDF()">📄 Générer PDF</button>
               <div id="bilan-saved" style="display:none;text-align:center;font-size:11px;color:var(--green)">✅ Bilan enregistré</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Présentation / Préconisation -->
+        <div class="tab-pane" id="tab-presentation">
+          <div class="add-form" id="pres-config-box">
+            <h3 style="display:flex;align-items:center;justify-content:space-between">
+              📊 Présentation client
+              <span style="font-size:10px;font-weight:400;color:var(--muted)">Alimente les slides de la présentation</span>
+            </h3>
+            <!-- Bouton IA -->
+            <div style="margin-bottom:16px;padding:12px 14px;background:linear-gradient(135deg,#f0f4ff 0%,#faf5ff 100%);border:1px solid #c7d2fe;border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="flex:1;min-width:180px">
+                <div style="font-size:12px;font-weight:600;color:#4338ca;margin-bottom:2px">✨ Génération IA</div>
+                <div style="font-size:11px;color:#6366f1">Pré-remplit tous les champs à partir du profil client</div>
+              </div>
+              <button id="btn-ia-generate" class="btn" onclick="generatePreconisationsIA()" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;padding:8px 18px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;white-space:nowrap">
+                ✨ Générer avec l'IA
+              </button>
+              <div id="ia-loading" style="display:none;font-size:11px;color:#6366f1;align-items:center;gap:6px">
+                <span style="display:inline-block;width:12px;height:12px;border:2px solid #c7d2fe;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite"></span>
+                Génération en cours…
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+              <div class="form-field">
+                <label>Situation (étiquette slide)</label>
+                <input type="text" id="pres-situation" placeholder="Mariés, 2 enfants">
+              </div>
+              <div class="form-field">
+                <label>Retraite visée</label>
+                <input type="text" id="pres-retraite" placeholder="2027">
+              </div>
+            </div>
+
+            <!-- Objectifs -->
+            <div style="margin-bottom:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Objectifs clients</label>
+                <button class="btn btn-sm" onclick="presAddObjectif()" style="font-size:11px;padding:3px 10px">+ Ajouter</button>
+              </div>
+              <div id="pres-objectifs"></div>
+            </div>
+
+            <!-- Diagnostic -->
+            <div style="margin-bottom:14px">
+              <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);display:block;margin-bottom:8px">Diagnostic</label>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+                <div class="form-field">
+                  <label>Forces (une par ligne)</label>
+                  <textarea id="pres-forces" rows="3" placeholder="Patrimoine immobilier solide&#10;PERCO bien alimenté"></textarea>
+                </div>
+                <div class="form-field">
+                  <label>Points de vigilance (une par ligne)</label>
+                  <textarea id="pres-vigilance" rows="3" placeholder="Plafonds PER à vérifier&#10;Sortie PERCO à coordonner"></textarea>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:180px 1fr;gap:10px">
+                <div class="form-field">
+                  <label>Titre synthèse</label>
+                  <input type="text" id="pres-band-titre" placeholder="Notre lecture">
+                </div>
+                <div class="form-field">
+                  <label>Texte</label>
+                  <input type="text" id="pres-band-texte" placeholder="Le foyer dispose d'atouts…">
+                </div>
+              </div>
+            </div>
+
+            <!-- Solutions CATALOG -->
+            <div style="margin-bottom:14px">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 1</label>
+                <input type="text" id="pres-cat1-label" placeholder="05 — Solutions" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+                <input type="text" id="pres-cat1-titre" placeholder="Nos axes de travail" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
+              </div>
+              <div id="pres-catalog-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 2 <span style="font-weight:400;color:#94a3b8;text-transform:none;font-size:10px">(optionnel)</span></label>
+                <input type="text" id="pres-cat2-label" placeholder="05 — Objectif 2" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+                <input type="text" id="pres-cat2-titre" placeholder="Titre du slide…" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
+              </div>
+              <div id="pres-catalog-list-2" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+
+              <div class="form-field">
+                <label>Slide détail (split layout)</label>
+                <div style="display:flex;gap:6px;margin-top:4px">
+                  <input type="text" id="pres-split-label" placeholder="06 — Chiffrage" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+                  <select id="pres-split-solution" style="flex:1">
+                    <option value="">— Aucune —</option>
+                    <option value="per_couple_chiffrage">PER couple — chiffrage</option>
+                    <option value="per_fiscal">PER — impact fiscal</option>
+                    <option value="assurance_vie_transmission">AV — abattement 152 500 €</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Feuille de route -->
+            <div style="margin-bottom:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Feuille de route</label>
+                <button class="btn btn-sm" onclick="presAddEtape()" style="font-size:11px;padding:3px 10px">+ Étape</button>
+              </div>
+              <div id="pres-etapes"></div>
+            </div>
+
+            <!-- Pièces -->
+            <div class="form-field">
+              <label>Pièces à fournir (une par ligne)</label>
+              <textarea id="pres-pieces" rows="3" placeholder="Avis d'imposition N-1 (pages 4-5)&#10;Relevés PERCO / PER existants&#10;Contrats assurance-vie en cours"></textarea>
+            </div>
+
+            <div style="margin-top:20px;display:flex;gap:10px">
+              <button class="btn btn-primary" style="flex:1;padding:10px" onclick="saveBilan()">💾 Enregistrer la présentation</button>
+              <button class="btn btn-gold" style="flex:1;padding:10px" onclick="openPresentation()">📊 Générer les slides</button>
             </div>
           </div>
         </div>
