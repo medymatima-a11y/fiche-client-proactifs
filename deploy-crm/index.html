@@ -157,6 +157,10 @@ table.crm-table{width:100%;border-collapse:collapse}
 /* INTERACTION / ECHEANCE FORMS */
 .add-form{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px}
 .add-form h3{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.pres-card-title{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px}
+.pres-sol-group{background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative}
+.pres-sol-group-header{display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.pres-cat-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .form-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
 .form-grid.two{grid-template-columns:repeat(2,1fr)}
 .form-field label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
@@ -1339,16 +1343,13 @@ table.crm-table{width:100%;border-collapse:collapse}
 
         <!-- Présentation / Préconisation -->
         <div class="tab-pane" id="tab-presentation">
-          <div class="add-form" id="pres-config-box">
-            <h3 style="display:flex;align-items:center;justify-content:space-between">
-              📊 Présentation client
-              <span style="font-size:10px;font-weight:400;color:var(--muted)">Alimente les slides de la présentation</span>
-            </h3>
-            <!-- Bouton IA -->
-            <div style="margin-bottom:16px;padding:12px 14px;background:linear-gradient(135deg,#f0f4ff 0%,#faf5ff 100%);border:1px solid #c7d2fe;border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div id="pres-config-box" style="display:flex;flex-direction:column;gap:14px;padding:0">
+
+            <!-- ── Bannière IA ─────────────────────────────── -->
+            <div style="padding:12px 16px;background:linear-gradient(135deg,#f0f4ff 0%,#faf5ff 100%);border:1px solid #c7d2fe;border-radius:10px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
               <div style="flex:1;min-width:180px">
                 <div style="font-size:12px;font-weight:600;color:#4338ca;margin-bottom:2px">✨ Génération IA</div>
-                <div style="font-size:11px;color:#6366f1">Pré-remplit tous les champs à partir du profil client</div>
+                <div style="font-size:11px;color:#6366f1">Pré-remplit situation, objectifs, diagnostic, solutions et feuille de route</div>
               </div>
               <button id="btn-ia-generate" class="btn" onclick="generatePreconisationsIA()" style="background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;padding:8px 18px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;white-space:nowrap">
                 ✨ Générer avec l'IA
@@ -1359,36 +1360,41 @@ table.crm-table{width:100%;border-collapse:collapse}
               </div>
             </div>
 
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-              <div class="form-field">
-                <label>Situation (étiquette slide)</label>
-                <input type="text" id="pres-situation" placeholder="Mariés, 2 enfants">
-              </div>
-              <div class="form-field">
-                <label>Retraite visée</label>
-                <input type="text" id="pres-retraite" placeholder="2027">
+            <!-- ── Contexte client ─────────────────────────── -->
+            <div class="add-form" style="margin:0">
+              <div class="pres-card-title">👤 Contexte client</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+                <div class="form-field">
+                  <label>Situation (étiquette slide)</label>
+                  <input type="text" id="pres-situation" placeholder="Mariés, 2 enfants · Colombes 92">
+                </div>
+                <div class="form-field">
+                  <label>Retraite visée</label>
+                  <input type="text" id="pres-retraite" placeholder="2030">
+                </div>
               </div>
             </div>
 
-            <!-- Objectifs -->
-            <div style="margin-bottom:14px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Objectifs clients</label>
+            <!-- ── Objectifs ───────────────────────────────── -->
+            <div class="add-form" style="margin:0">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="pres-card-title">🎯 Objectifs clients</div>
                 <button class="btn btn-sm" onclick="presAddObjectif()" style="font-size:11px;padding:3px 10px">+ Ajouter</button>
               </div>
+              <div style="font-size:11px;color:var(--muted);margin:4px 0 10px">Un intitulé court + description par objectif.</div>
               <div id="pres-objectifs"></div>
             </div>
 
-            <!-- Diagnostic -->
-            <div style="margin-bottom:14px">
-              <label style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);display:block;margin-bottom:8px">Diagnostic</label>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
-                <div class="form-field">
-                  <label>Forces (une par ligne)</label>
+            <!-- ── Diagnostic ─────────────────────────────── -->
+            <div class="add-form" style="margin:0">
+              <div class="pres-card-title">🩺 Diagnostic</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 10px">
+                <div class="form-field" style="border-left:3px solid #1D9E75;padding-left:10px">
+                  <label style="color:#0F6E56;font-weight:600">Forces</label>
                   <textarea id="pres-forces" rows="3" placeholder="Patrimoine immobilier solide&#10;PERCO bien alimenté"></textarea>
                 </div>
-                <div class="form-field">
-                  <label>Points de vigilance (une par ligne)</label>
+                <div class="form-field" style="border-left:3px solid #D85A30;padding-left:10px">
+                  <label style="color:#993C1D;font-weight:600">Points de vigilance</label>
                   <textarea id="pres-vigilance" rows="3" placeholder="Plafonds PER à vérifier&#10;Sortie PERCO à coordonner"></textarea>
                 </div>
               </div>
@@ -1404,23 +1410,17 @@ table.crm-table{width:100%;border-collapse:collapse}
               </div>
             </div>
 
-            <!-- Solutions CATALOG -->
-            <div style="margin-bottom:14px">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 1</label>
-                <input type="text" id="pres-cat1-label" placeholder="05 — Solutions" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
-                <input type="text" id="pres-cat1-titre" placeholder="Nos axes de travail" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
+            <!-- ── Solutions dynamiques ───────────────────── -->
+            <div class="add-form" style="margin:0">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+                <div class="pres-card-title">💡 Solutions et préconisations</div>
+                <span style="font-size:11px;color:var(--muted)">autant de groupes que nécessaire</span>
               </div>
-              <div id="pres-catalog-list" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
-
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy);flex-shrink:0">Solutions Obj. 2 <span style="font-weight:400;color:#94a3b8;text-transform:none;font-size:10px">(optionnel)</span></label>
-                <input type="text" id="pres-cat2-label" placeholder="05 — Objectif 2" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
-                <input type="text" id="pres-cat2-titre" placeholder="Titre du slide…" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
-              </div>
-              <div id="pres-catalog-list-2" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
-
-              <div class="form-field">
+              <!-- Groupes dynamiques -->
+              <div id="pres-solutions-container" style="display:flex;flex-direction:column;gap:10px;margin-top:10px"></div>
+              <button class="btn btn-sm" onclick="presAddSolutionGroup()" style="margin-top:10px;width:100%;border-style:dashed;font-size:12px;padding:7px">+ Ajouter un groupe de solutions</button>
+              <!-- Slide split (conservé) -->
+              <div class="form-field" style="margin-top:12px">
                 <label>Slide détail (split layout)</label>
                 <div style="display:flex;gap:6px;margin-top:4px">
                   <input type="text" id="pres-split-label" placeholder="06 — Chiffrage" style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
@@ -1434,25 +1434,30 @@ table.crm-table{width:100%;border-collapse:collapse}
               </div>
             </div>
 
-            <!-- Feuille de route -->
-            <div style="margin-bottom:14px">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-                <label style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--navy)">Feuille de route</label>
+            <!-- ── Feuille de route ────────────────────────── -->
+            <div class="add-form" style="margin:0">
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <div class="pres-card-title">🗺️ Feuille de route</div>
                 <button class="btn btn-sm" onclick="presAddEtape()" style="font-size:11px;padding:3px 10px">+ Étape</button>
               </div>
-              <div id="pres-etapes"></div>
+              <div id="pres-etapes" style="margin-top:10px"></div>
             </div>
 
-            <!-- Pièces -->
-            <div class="form-field">
-              <label>Pièces à fournir (une par ligne)</label>
-              <textarea id="pres-pieces" rows="3" placeholder="Avis d'imposition N-1 (pages 4-5)&#10;Relevés PERCO / PER existants&#10;Contrats assurance-vie en cours"></textarea>
+            <!-- ── Pièces à fournir ────────────────────────── -->
+            <div class="add-form" style="margin:0">
+              <div class="pres-card-title">📎 Pièces à fournir</div>
+              <div class="form-field" style="margin-top:10px">
+                <textarea id="pres-pieces" rows="3" placeholder="Avis d'imposition N-1 (pages 4-5)&#10;Relevés PERCO / PER existants&#10;Contrats assurance-vie en cours"></textarea>
+              </div>
             </div>
 
-            <div style="margin-top:20px;display:flex;gap:10px">
-              <button class="btn btn-primary" style="flex:1;padding:10px" onclick="saveBilan()">💾 Enregistrer la présentation</button>
-              <button class="btn btn-gold" style="flex:1;padding:10px" onclick="openPresentation()">📊 Générer les slides</button>
+            <!-- ── Actions ─────────────────────────────────── -->
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-primary" style="flex:1;padding:10px" onclick="saveBilan()">💾 Enregistrer</button>
+              <button class="btn btn-gold" style="flex:1;padding:10px" onclick="generateClientReport()">📄 Rapport client</button>
+              <button class="btn" style="padding:10px;background:var(--bg-light);color:var(--navy);font-size:12px" onclick="openPresentation()" title="Générer les slides">📊 Slides</button>
             </div>
+
           </div>
         </div>
 
@@ -4195,6 +4200,159 @@ async function openPresentation() {
   window.open('presentation.html?client=' + currentClientId, '_blank');
 }
 
+// ── RAPPORT CLIENT HTML ─────────────────────────────────────
+function generateClientReport() {
+  const c = allClients.find(x => x.id === currentClientId);
+  if (!c) { alert('Aucun client sélectionné.'); return; }
+  const pres = collectPresConfig();
+  const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
+  const nomClient = [c.prenom_c1, c.nom_c1, c.prenom_c2 ? '& ' + c.prenom_c2 : '', c.nom_c2 || ''].filter(Boolean).join(' ');
+
+  // Helpers HTML
+  const esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const badge = txt => `<span style="display:inline-block;background:#e8f0fe;color:#3b4fa8;border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;margin:2px 4px 2px 0">${esc(txt)}</span>`;
+
+  // Section solutions
+  const solGroups = pres.deck_extra.filter(d => d.layout === 'cards');
+  const CATALOG_MAP = Object.fromEntries(PRES_CATALOG.map(x => [x.id, x.label]));
+  const solHtml = solGroups.map(g => `
+    <div class="r-card" style="margin-bottom:20px">
+      <div class="r-card-head">${esc(g.titre || g.label)}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px">
+        ${(g.cards||[]).map(card => {
+          const id = typeof card==='string' ? card : card.id;
+          const lbl = CATALOG_MAP[id] || id;
+          const chiffrage = typeof card==='object' && card.chiffrage ? ` <span style="color:#6b7280;font-size:11px">— ${esc(card.chiffrage)}</span>` : '';
+          return `<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:7px 12px;font-size:13px;font-weight:500;color:#15803d">✓ ${esc(lbl)}${chiffrage}</div>`;
+        }).join('')}
+      </div>
+    </div>`).join('');
+
+  // Section objectifs
+  const objHtml = (pres.objectifs||[]).map((o,i) => `
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
+      <div style="min-width:28px;height:28px;background:#1D4E8A;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <div><div style="font-weight:600;font-size:13px;color:#1a2e4a">${esc(o.titre)}</div>${o.desc?`<div style="font-size:12px;color:#6b7280;margin-top:2px">${esc(o.desc)}</div>`:''}</div>
+    </div>`).join('');
+
+  // Section diagnostic
+  const diagHtml = pres.diagnostic ? `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:${pres.diagnostic.band?'16px':'0'}">
+      <div style="border-left:3px solid #1D9E75;padding-left:12px">
+        <div style="font-size:11px;font-weight:700;color:#0F6E56;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✅ Forces</div>
+        ${(pres.diagnostic.forces||[]).map(f=>`<div style="font-size:13px;color:#374151;margin-bottom:4px">• ${esc(f)}</div>`).join('')}
+      </div>
+      <div style="border-left:3px solid #D85A30;padding-left:12px">
+        <div style="font-size:11px;font-weight:700;color:#993C1D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">⚠️ Points de vigilance</div>
+        ${(pres.diagnostic.vigilance||[]).map(v=>`<div style="font-size:13px;color:#374151;margin-bottom:4px">• ${esc(v)}</div>`).join('')}
+      </div>
+    </div>
+    ${pres.diagnostic.band ? `<div style="background:#1a2e4a;color:#fff;border-radius:8px;padding:12px 16px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;opacity:.7;margin-bottom:4px">${esc(pres.diagnostic.band.titre)}</div>
+      <div style="font-size:13px;line-height:1.5">${esc(pres.diagnostic.band.texte)}</div>
+    </div>` : ''}` : '';
+
+  // Section feuille de route
+  const roadmapHtml = (pres.feuille_route||[]).map((e,i) => `
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:10px">
+      <div style="min-width:22px;height:22px;background:#C9A84C;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <div><span style="background:#fef3c7;color:#92400e;border-radius:4px;padding:1px 7px;font-size:11px;font-weight:600;margin-right:8px">${esc(e.when)}</span><span style="font-size:13px;color:#374151">${esc(e.texte)}</span></div>
+    </div>`).join('');
+
+  // Pièces
+  const piecesHtml = (pres.pieces||[]).map(p => `<div style="font-size:13px;color:#374151;margin-bottom:4px">📎 ${esc(p)}</div>`).join('');
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Présentation patrimoniale — ${esc(nomClient)}</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0 }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background:#f5f6fa; color:#1a2e4a; }
+  .page { max-width:820px; margin:0 auto; padding:32px 24px; }
+  .r-header { background: linear-gradient(135deg, #1a2e4a 0%, #2a4a7a 100%); color:#fff; border-radius:12px; padding:28px 32px; margin-bottom:24px; display:flex; align-items:center; justify-content:space-between; }
+  .r-logo { font-size:22px; font-weight:800; letter-spacing:-0.5px }
+  .r-logo span { color:#C9A84C }
+  .r-header-right { text-align:right; font-size:12px; opacity:.8 }
+  .r-section { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:20px 24px; margin-bottom:20px }
+  .r-section-title { font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.6px; color:#1a2e4a; border-bottom:2px solid #C9A84C; padding-bottom:8px; margin-bottom:16px }
+  .r-card { border:1px solid #e5e7eb; border-radius:10px; overflow:hidden }
+  .r-card-head { background:#1a2e4a; color:#fff; font-size:13px; font-weight:600; padding:10px 16px }
+  .r-footer { text-align:center; font-size:11px; color:#9ca3af; margin-top:32px; padding-bottom:20px }
+  @media print {
+    body { background:#fff }
+    .page { padding:16px }
+    .no-print { display:none }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- En-tête -->
+  <div class="r-header">
+    <div>
+      <div class="r-logo">Proactifs<span>Conseils</span></div>
+      <div style="font-size:13px;opacity:.8;margin-top:4px">Cabinet de gestion de patrimoine indépendant</div>
+    </div>
+    <div class="r-header-right">
+      <div style="font-size:15px;font-weight:600">${esc(nomClient)}</div>
+      ${pres.situation_label ? `<div style="margin-top:2px">${esc(pres.situation_label)}</div>` : ''}
+      ${pres.retraite_label ? `<div>Retraite visée : <strong>${esc(pres.retraite_label)}</strong></div>` : ''}
+      <div style="margin-top:6px;opacity:.6">Document préparé le ${today}</div>
+    </div>
+  </div>
+
+  ${objHtml ? `<!-- Objectifs -->
+  <div class="r-section">
+    <div class="r-section-title">🎯 Vos objectifs patrimoniaux</div>
+    ${objHtml}
+  </div>` : ''}
+
+  ${pres.diagnostic ? `<!-- Diagnostic -->
+  <div class="r-section">
+    <div class="r-section-title">🩺 Notre diagnostic</div>
+    ${diagHtml}
+  </div>` : ''}
+
+  ${solGroups.length ? `<!-- Solutions -->
+  <div class="r-section">
+    <div class="r-section-title">💡 Nos préconisations</div>
+    ${solHtml}
+  </div>` : ''}
+
+  ${pres.feuille_route?.length ? `<!-- Feuille de route -->
+  <div class="r-section">
+    <div class="r-section-title">🗺️ Feuille de route</div>
+    ${roadmapHtml}
+  </div>` : ''}
+
+  ${pres.pieces?.length ? `<!-- Pièces -->
+  <div class="r-section">
+    <div class="r-section-title">📎 Pièces à nous transmettre</div>
+    ${piecesHtml}
+  </div>` : ''}
+
+  <div class="r-footer">
+    Proactifs Conseils · Cabinet de gestion de patrimoine · Colombes (92) · contact@proactifsconseils.fr<br>
+    Document confidentiel préparé pour ${esc(nomClient)} · ${today}
+  </div>
+
+  <div class="no-print" style="text-align:center;margin-top:16px">
+    <button onclick="window.print()" style="background:#1a2e4a;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">🖨️ Imprimer / Enregistrer en PDF</button>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url  = URL.createObjectURL(blob);
+  window.open(url, '_blank');
+}
+
 // ── GÉNÉRATION IA PRÉCONISATIONS ────────────────────────────
 async function generatePreconisationsIA() {
   if (!currentClientId) { alert('Aucun client sélectionné.'); return; }
@@ -4279,6 +4437,19 @@ async function generatePreconisationsIA() {
     // Préconisations texte simple (textarea conseiller)
     if (Array.isArray(p.items) && p.items.length > 0) {
       document.getElementById('bilan-preconisations').value = p.items.join('\n');
+    }
+
+    // Solutions pré-remplies (groupes dynamiques)
+    if (Array.isArray(p.solutions) && p.solutions.length > 0) {
+      const cont = document.getElementById('pres-solutions-container');
+      if (cont) { cont.innerHTML = ''; _presSolGroupIdx = 0; }
+      p.solutions.forEach(sol => {
+        presAddSolutionGroup({
+          label: sol.label || '',
+          titre: sol.titre || '',
+          cards: (sol.cards || []).map(c => typeof c === 'string' ? c : c)
+        });
+      });
     }
 
     // Feedback visuel succès
@@ -5006,27 +5177,62 @@ const PRES_CATALOG = [
   {id:'immo_autre',              label:'Immo — autre', libre: true},
 ];
 
+let _presSolGroupIdx = 0;
+
 function initPresConfig() {
+  const container = document.getElementById('pres-solutions-container');
+  if (container && !container.dataset.init) {
+    container.dataset.init = '1';
+    presAddSolutionGroup(); // un groupe par défaut
+  }
+}
+
+function presAddSolutionGroup(opts = {}) {
+  const container = document.getElementById('pres-solutions-container');
+  if (!container) return;
+  const idx = ++_presSolGroupIdx;
+  const cbClass = `pres-sol-cb-${idx}`;
   const catHtml = PRES_CATALOG.map(item => `
-    <div class="pres-cat-item" style="display:flex;flex-direction:column;gap:4px;background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-width:155px;max-width:220px">
+    <div class="pres-cat-item" data-group="${idx}" style="display:flex;flex-direction:column;gap:4px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:7px 10px;min-width:155px;max-width:220px">
       <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;white-space:nowrap">
-        <input type="checkbox" class="__CB_CLASS__" data-id="${item.id}" style="margin:0" onchange="presToggleChiffrage(this)">
+        <input type="checkbox" class="${cbClass} pres-sol-cb" data-id="${item.id}" style="margin:0" onchange="presToggleChiffrage(this)">
         ${item.label}
       </label>
       ${item.libre ? `<input type="text" class="pres-cat-custom-label" placeholder="Préciser le type immo…" style="display:none;border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:11px;width:100%;box-sizing:border-box">` : ''}
       <input type="text" class="pres-cat-chiffrage" placeholder="Chiffrage (ex : 3 200 €/an)" style="display:none;border:1px solid #cbd5e1;border-radius:5px;padding:3px 8px;font-size:11px;color:#475569;width:100%;box-sizing:border-box">
     </div>`).join('');
 
-  const list = document.getElementById('pres-catalog-list');
-  if (list && !list.dataset.init) {
-    list.dataset.init = '1';
-    list.innerHTML = catHtml.replaceAll('__CB_CLASS__', 'pres-catalog-cb');
+  const grp = document.createElement('div');
+  grp.className = 'pres-sol-group';
+  grp.dataset.gidx = idx;
+  grp.innerHTML = `
+    <div class="pres-sol-group-header">
+      <input type="text" class="pres-sol-label" placeholder="05 — Solutions" value="${opts.label||''}"
+        style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;width:130px">
+      <input type="text" class="pres-sol-titre" placeholder="Nos axes de travail" value="${opts.titre||''}"
+        style="font-size:11px;border:1px solid var(--border);border-radius:5px;padding:3px 8px;flex:1;min-width:140px">
+      <button onclick="this.closest('.pres-sol-group').remove()"
+        style="border:1px solid #e5e7eb;background:white;border-radius:6px;padding:4px 8px;cursor:pointer;color:#ef4444;font-size:13px;line-height:1;margin-left:auto">✕</button>
+    </div>
+    <div class="pres-cat-chips">${catHtml}</div>`;
+  container.appendChild(grp);
+
+  // Pré-cocher si opts.cards fourni (restauration ou IA)
+  if (Array.isArray(opts.cards)) {
+    opts.cards.forEach(card => {
+      const id = typeof card === 'string' ? card : card.id;
+      const cb = grp.querySelector(`.${cbClass}[data-id="${id}"]`);
+      if (!cb) return;
+      cb.checked = true;
+      presToggleChiffrage(cb);
+      if (typeof card === 'object') {
+        const item = cb.closest('.pres-cat-item');
+        if (card.chiffrage)    { const el = item?.querySelector('.pres-cat-chiffrage');    if (el) el.value = card.chiffrage; }
+        if (card.custom_label) { const el = item?.querySelector('.pres-cat-custom-label'); if (el) el.value = card.custom_label; }
+      }
+    });
   }
-  const list2 = document.getElementById('pres-catalog-list-2');
-  if (list2 && !list2.dataset.init) {
-    list2.dataset.init = '1';
-    list2.innerHTML = catHtml.replaceAll('__CB_CLASS__', 'pres-catalog-cb-2');
-  }
+  return grp;
 }
 
 function presToggleChiffrage(cb) {
@@ -5095,53 +5301,34 @@ function collectPresConfig() {
     ...(band_titre || band_texte ? { band: { titre: band_titre, texte: band_texte } } : {})
   } : null;
 
-  // Deck extra
+  // Deck extra — groupes dynamiques
   const deck_extra = [];
-
-  // Slide 1 (Objectif 1 / Solutions)
-  const selectedCards = [...document.querySelectorAll('.pres-catalog-cb:checked')].map(cb => {
-    const item = cb.closest('.pres-cat-item');
-    const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
-    const customLabel = (item?.querySelector('.pres-cat-custom-label')?.value || '').trim();
-    const obj = { id: cb.dataset.id };
-    if (chiffrage)   obj.chiffrage    = chiffrage;
-    if (customLabel) obj.custom_label = customLabel;
-    return obj;
-  });
-  if (selectedCards.length) {
-    const cat1label = (document.getElementById('pres-cat1-label')?.value || '').trim() || '05 — Solutions';
-    const cat1titre = (document.getElementById('pres-cat1-titre')?.value || '').trim() || 'Nos axes de travail';
+  document.querySelectorAll('#pres-solutions-container .pres-sol-group').forEach(grp => {
+    const idx = grp.dataset.gidx;
+    const cbClass = `pres-sol-cb-${idx}`;
+    const selectedCards = [...grp.querySelectorAll(`.${cbClass}:checked`)].map(cb => {
+      const item = cb.closest('.pres-cat-item');
+      const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
+      const customLabel = (item?.querySelector('.pres-cat-custom-label')?.value || '').trim();
+      const obj = { id: cb.dataset.id };
+      if (chiffrage)   obj.chiffrage    = chiffrage;
+      if (customLabel) obj.custom_label = customLabel;
+      return obj;
+    });
+    if (!selectedCards.length) return; // groupe vide ignoré
+    const label = (grp.querySelector('.pres-sol-label')?.value || '').trim() || '05 — Solutions';
+    const titre = (grp.querySelector('.pres-sol-titre')?.value || '').trim() || 'Nos axes de travail';
     deck_extra.push({
       layout: 'cards',
-      label: cat1label,
-      titre: cat1titre,
+      label,
+      titre,
       numbered: true,
       intro: `${selectedCards.length} levier${selectedCards.length > 1 ? 's' : ''} prioritaire${selectedCards.length > 1 ? 's' : ''} pour votre situation.`,
       cards: selectedCards
     });
-  }
-
-  // Slide 2 (Objectif 2, optionnel)
-  const selectedCards2 = [...document.querySelectorAll('.pres-catalog-cb-2:checked')].map(cb => {
-    const item = cb.closest('.pres-cat-item');
-    const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
-    const customLabel = (item?.querySelector('.pres-cat-custom-label')?.value || '').trim();
-    const obj = { id: cb.dataset.id };
-    if (chiffrage)   obj.chiffrage    = chiffrage;
-    if (customLabel) obj.custom_label = customLabel;
-    return obj;
   });
-  if (selectedCards2.length) {
-    const cat2label = (document.getElementById('pres-cat2-label')?.value || '').trim() || '05 — Objectif 2';
-    const cat2titre = (document.getElementById('pres-cat2-titre')?.value || '').trim() || 'Nos solutions complémentaires';
-    deck_extra.push({
-      layout: 'cards',
-      label: cat2label,
-      titre: cat2titre,
-      cards: selectedCards2
-    });
-  }
 
+  // Slide split (layout conservé)
   const splitSol = document.getElementById('pres-split-solution')?.value || '';
   if (splitSol) {
     const splitTitles = {
@@ -5221,7 +5408,7 @@ async function loadBilan() {
       (bp?.items ? bp.items.join('\n') : (typeof bp === 'string' ? bp : ''));
     document.getElementById('bilan-date').value = b.date_bilan || '';
     // ── Charger config présentation ──
-    // Reset tous les champs pres avant rechargement
+    // Reset champs et groupes dynamiques
     document.getElementById('pres-situation').value   = '';
     document.getElementById('pres-retraite').value    = '';
     document.getElementById('pres-forces').value      = '';
@@ -5231,14 +5418,12 @@ async function loadBilan() {
     document.getElementById('pres-pieces').value      = '';
     document.getElementById('pres-objectifs').innerHTML = '';
     document.getElementById('pres-etapes').innerHTML    = '';
-    document.querySelectorAll('.pres-catalog-cb,.pres-catalog-cb-2').forEach(cb => cb.checked = false);
-    document.querySelectorAll('.pres-cat-chiffrage').forEach(el => { el.style.display = 'none'; el.value = ''; });
-    document.querySelectorAll('.pres-cat-custom-label').forEach(el => { el.style.display = 'none'; el.value = ''; });
+    const presContainer = document.getElementById('pres-solutions-container');
+    if (presContainer) { presContainer.innerHTML = ''; presContainer.dataset.init = '1'; _presSolGroupIdx = 0; }
     const presSelect = document.getElementById('pres-split-solution');
     if (presSelect) presSelect.value = '';
-    ['pres-cat1-label','pres-cat1-titre','pres-cat2-label','pres-cat2-titre','pres-split-label'].forEach(id => {
-      const el = document.getElementById(id); if (el) el.value = '';
-    });
+    const presSpLbl = document.getElementById('pres-split-label');
+    if (presSpLbl) presSpLbl.value = '';
 
     if (bp && !Array.isArray(bp) && typeof bp === 'object') {
       document.getElementById('pres-situation').value  = bp.situation_label || '';
@@ -5247,57 +5432,36 @@ async function loadBilan() {
       document.getElementById('pres-vigilance').value  = (bp.diagnostic?.vigilance || []).join('\n');
       document.getElementById('pres-band-titre').value = bp.diagnostic?.band?.titre || '';
       document.getElementById('pres-band-texte').value = bp.diagnostic?.band?.texte || '';
-      (bp.objectifs     || []).forEach(o  => presAddObjectif(o));
-      (bp.feuille_route || []).forEach(e  => presAddEtape(e));
+      (bp.objectifs     || []).forEach(o => presAddObjectif(o));
+      (bp.feuille_route || []).forEach(e => presAddEtape(e));
       document.getElementById('pres-pieces').value = (bp.pieces || []).join('\n');
+
+      // Restaurer groupes cards dynamiques (N groupes)
       const cardSlides = (bp.deck_extra || []).filter(s => s.layout === 'cards');
-
-      // Slide cards 1
-      const cardsSlide = cardSlides[0];
-      if (cardsSlide) {
-        if (cardsSlide.label) { const el = document.getElementById('pres-cat1-label'); if (el) el.value = cardsSlide.label; }
-        if (cardsSlide.titre) { const el = document.getElementById('pres-cat1-titre'); if (el) el.value = cardsSlide.titre; }
-        (cardsSlide.cards || []).forEach(card => {
-          const id = typeof card === 'string' ? card : card.id;
-          const cb = document.querySelector(`.pres-catalog-cb[data-id="${id}"]`);
-          if (!cb) return;
-          cb.checked = true;
-          presToggleChiffrage(cb);
-          if (typeof card === 'object') {
-            const item = cb.closest('.pres-cat-item');
-            if (card.chiffrage)    { const el = item?.querySelector('.pres-cat-chiffrage');    if (el) el.value = card.chiffrage; }
-            if (card.custom_label) { const el = item?.querySelector('.pres-cat-custom-label'); if (el) el.value = card.custom_label; }
-          }
-        });
+      if (cardSlides.length > 0) {
+        cardSlides.forEach(slide => presAddSolutionGroup({ label: slide.label, titre: slide.titre, cards: slide.cards || [] }));
+      } else {
+        presAddSolutionGroup(); // groupe vide par défaut
       }
 
-      // Slide cards 2 (optionnel)
-      const cardsSlide2 = cardSlides[1];
-      if (cardsSlide2) {
-        if (cardsSlide2.label) { const el = document.getElementById('pres-cat2-label'); if (el) el.value = cardsSlide2.label; }
-        if (cardsSlide2.titre) { const el = document.getElementById('pres-cat2-titre'); if (el) el.value = cardsSlide2.titre; }
-        (cardsSlide2.cards || []).forEach(card => {
-          const id = typeof card === 'string' ? card : card.id;
-          const cb = document.querySelector(`.pres-catalog-cb-2[data-id="${id}"]`);
-          if (!cb) return;
-          cb.checked = true;
-          presToggleChiffrage(cb);
-          if (typeof card === 'object') {
-            const item = cb.closest('.pres-cat-item');
-            if (card.chiffrage)    { const el = item?.querySelector('.pres-cat-chiffrage');    if (el) el.value = card.chiffrage; }
-            if (card.custom_label) { const el = item?.querySelector('.pres-cat-custom-label'); if (el) el.value = card.custom_label; }
-          }
-        });
-      }
-
+      // Restaurer slide split
       const splitSlide = (bp.deck_extra || []).find(s => s.layout === 'split');
       if (splitSlide?.solution) {
         document.getElementById('pres-split-solution').value = splitSlide.solution;
         if (splitSlide.label) { const el = document.getElementById('pres-split-label'); if (el) el.value = splitSlide.label; }
       }
+    } else {
+      // Pas de bilan existant : un groupe vide par défaut
+      presAddSolutionGroup();
     }
   } else {
     document.getElementById('bilan-date').value = new Date().toISOString().slice(0,10);
+    // Nouveau client sans bilan : initialiser un groupe solutions vide
+    const presContainerNew = document.getElementById('pres-solutions-container');
+    if (presContainerNew && !presContainerNew.dataset.init) {
+      presContainerNew.dataset.init = '1'; _presSolGroupIdx = 0;
+      presAddSolutionGroup();
+    }
   }
 }
 
