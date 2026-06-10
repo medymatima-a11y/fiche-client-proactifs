@@ -616,7 +616,7 @@ table.crm-table{width:100%;border-collapse:collapse}
       <div class="nav-section">Outils</div>
       <div class="nav-item" onclick="showImport()"><span class="icon">📥</span>Importer clients</div>
       <div class="nav-item" onclick="openQuickProspect()"><span class="icon">⚡</span>Nouveau prospect</div>
-      <div class="nav-item" onclick="window.open('https://fiche-clients.proactifsconseils.fr','_blank')"><span class="icon">📋</span>Fiche complète</div>
+      <div class="nav-item" onclick="openFicheFromNav()"><span class="icon">📋</span>Fiche complète</div>
       <div class="nav-section">Paramètres</div>
       <div class="nav-item" onclick="openStatutsSettings()"><span class="icon">⚙️</span>Statuts clients</div>
       <div class="nav-item" onclick="openProduitsSettings()"><span class="icon">📦</span>Produits & Solutions</div>
@@ -958,6 +958,7 @@ table.crm-table{width:100%;border-collapse:collapse}
           </div>
           <div class="client-actions">
             <button class="btn btn-outline btn-sm" onclick="copyFicheLink()" id="btn-copy-link" title="Copier le lien fiche personnalisé">🔗 Lien fiche</button>
+            <button class="btn btn-outline btn-sm" onclick="openFicheClient()" id="btn-open-fiche" title="Ouvrir la fiche client dans un nouvel onglet">📋 Ouvrir fiche</button>
             <button class="btn btn-outline btn-sm" onclick="downloadVCard()" title="Ajouter à Google Contacts">👤+ Contacts</button>
             <button class="btn btn-outline btn-sm" onclick="openEmailComposer()">✉️ Email</button>
             <button class="btn btn-primary btn-sm" onclick="openRdvModal()" title="Planifier un rendez-vous">📅 RDV</button>
@@ -2009,6 +2010,7 @@ function showApp(session) {
   initStatuts();
   loadAll();
   initLeadsModule();
+  subscribeClientsRealtime();
 }
 
 // ── API ─────────────────────────────────────────────────────
@@ -4145,6 +4147,105 @@ async function copyFicheLink() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// ── OUVRIR FICHE CLIENT (générer token + ouvrir) ────────────
+async function openFicheClient() {
+  if (!currentClientId) {
+    window.open('https://fiche-clients.proactifsconseils.fr', '_blank');
+    return;
+  }
+  const btn = document.getElementById('btn-open-fiche');
+  btn.disabled = true;
+  btn.textContent = '⏳ Ouverture…';
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generate-fiche-link`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${authToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ clientId: currentClientId })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Erreur ${res.status}`);
+    }
+    const { url } = await res.json();
+    window.open(url, '_blank');
+    btn.textContent = '📋 Ouvrir fiche';
+  } catch (err) {
+    console.error('Erreur ouverture fiche:', err);
+    alert('Erreur : ' + err.message);
+    btn.textContent = '📋 Ouvrir fiche';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function openFicheFromNav() {
+  if (currentClientId) {
+    await openFicheClient();
+  } else {
+    window.open('https://fiche-clients.proactifsconseils.fr', '_blank');
+  }
+}
+
+// ── REALTIME : NOTIFICATIONS MISES À JOUR FICHES CLIENTS ────
+let clientsRealtimeChannel = null;
+function subscribeClientsRealtime() {
+  if (clientsRealtimeChannel) return;
+  clientsRealtimeChannel = db
+    .channel('clients-fiche-changes')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'clients' }, payload => {
+      const updated = payload.new;
+      // Mettre à jour le cache local
+      const idx = allClients.findIndex(x => x.id === updated.id);
+      if (idx >= 0) allClients[idx] = { ...allClients[idx], ...updated };
+      // Notification visuelle
+      const name = `${updated.prenom_c1 || ''} ${updated.nom_c1 || ''}`.trim() || 'Un client';
+      showClientUpdateNotif(name, updated.id);
+    })
+    .subscribe();
+}
+
+let clientNotifTimer = null;
+function showClientUpdateNotif(name, clientId) {
+  // Réutiliser le banner leads si pas de banner clients dédié
+  let banner = document.getElementById('clients-notif-banner');
+  if (!banner) {
+    // Créer le banner dynamiquement
+    banner = document.createElement('div');
+    banner.id = 'clients-notif-banner';
+    banner.className = 'leads-notif-banner';
+    banner.innerHTML = `
+      <div class="nlb-bar"><div class="nlb-bar-inner"></div></div>
+      <div class="nlb-body">
+        <div class="nlb-icon">📝</div>
+        <div class="nlb-content">
+          <div class="nlb-title" id="cnb-title"></div>
+          <div class="nlb-desc" id="cnb-desc"></div>
+        </div>
+        <div class="nlb-actions">
+          <button class="nlb-btn nlb-btn-primary" id="cnb-view-btn">Voir</button>
+          <button class="nlb-btn nlb-btn-ghost" onclick="dismissClientNotif()">Fermer</button>
+        </div>
+      </div>`;
+    document.body.appendChild(banner);
+  }
+  document.getElementById('cnb-title').textContent = `📝 Fiche mise à jour`;
+  document.getElementById('cnb-desc').textContent = `${name} a modifié sa fiche client`;
+  document.getElementById('cnb-view-btn').onclick = () => { dismissClientNotif(); openClient(clientId); };
+  const bar = banner.querySelector('.nlb-bar-inner');
+  if (bar) { bar.style.animation = 'none'; void bar.offsetWidth; bar.style.animation = 'nlbProgress 6s linear forwards'; }
+  banner.classList.add('show');
+  clearTimeout(clientNotifTimer);
+  clientNotifTimer = setTimeout(dismissClientNotif, 6000);
+}
+function dismissClientNotif() {
+  document.getElementById('clients-notif-banner')?.classList.remove('show');
+  clearTimeout(clientNotifTimer);
 }
 
 // ── VCARD GOOGLE CONTACTS ───────────────────────────────────
