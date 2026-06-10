@@ -4267,7 +4267,7 @@ function generateClientReport() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Présentation patrimoniale — ${esc(nomClient)}</title>
+<title>Présentation patrimoniale — ${esc(nomClient)} — Proactifs Conseils</title>
 <style>
   * { box-sizing:border-box; margin:0; padding:0 }
   body { font-family: 'Segoe UI', system-ui, sans-serif; background:#f5f6fa; color:#1a2e4a; }
@@ -4281,10 +4281,53 @@ function generateClientReport() {
   .r-card { border:1px solid #e5e7eb; border-radius:10px; overflow:hidden }
   .r-card-head { background:#1a2e4a; color:#fff; font-size:13px; font-weight:600; padding:10px 16px }
   .r-footer { text-align:center; font-size:11px; color:#9ca3af; margin-top:32px; padding-bottom:20px }
+
+  /* ── IMPRESSION / PDF ─────────────────────────────── */
   @media print {
-    body { background:#fff }
-    .page { padding:16px }
-    .no-print { display:none }
+    @page {
+      size: A4 portrait;
+      margin: 18mm 20mm 20mm 20mm;
+    }
+    /* Préserver les couleurs de fond */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+    body { background:#fff !important; }
+    .page { max-width:100%; padding:0; margin:0; }
+
+    /* Masquer le bouton d'action */
+    .no-print { display:none !important; }
+
+    /* Éviter les coupures à l'intérieur des blocs */
+    .r-section, .r-card, .r-header { break-inside: avoid; page-break-inside: avoid; }
+
+    /* Sections importantes : si la section ne tient pas, démarrer sur une nouvelle page */
+    .r-section { margin-bottom:14px; border-radius:8px; }
+
+    /* En-tête : toujours en haut, ne jamais couper */
+    .r-header { border-radius:8px; margin-bottom:16px; break-after: avoid; }
+
+    /* Titres de section : ne pas se retrouver seuls en bas de page */
+    .r-section-title { break-after: avoid; page-break-after: avoid; orphans:3; widows:3; }
+
+    /* Cards de solutions : pas de coupure */
+    .r-card { break-inside: avoid; margin-bottom:10px; }
+
+    /* Texte fluide */
+    p, div { orphans: 2; widows: 2; }
+
+    /* Footer : toujours en bas */
+    .r-footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 10px;
+    }
+
+    /* Numérotation des pages via compteur CSS */
+    .r-footer::after {
+      content: ' — Page ' counter(page) ' / ' counter(pages);
+      color: #9ca3af;
+    }
   }
 </style>
 </head>
@@ -4340,8 +4383,13 @@ function generateClientReport() {
     Document confidentiel préparé pour ${esc(nomClient)} · ${today}
   </div>
 
-  <div class="no-print" style="text-align:center;margin-top:16px">
-    <button onclick="window.print()" style="background:#1a2e4a;color:#fff;border:none;border-radius:8px;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer">🖨️ Imprimer / Enregistrer en PDF</button>
+  <div class="no-print" style="text-align:center;margin-top:24px;padding:20px;background:#f8f9fc;border-radius:12px;border:1px solid #e5e7eb">
+    <div style="font-size:13px;color:#6b7280;margin-bottom:12px">
+      💡 <strong>Pour enregistrer en PDF</strong> : cliquez sur le bouton ci-dessous, puis dans la boîte d'impression choisissez <em>« Enregistrer en PDF »</em> ou <em>« Microsoft Print to PDF »</em> comme imprimante.
+    </div>
+    <button onclick="window.print()" style="background:#1a2e4a;color:#fff;border:none;border-radius:8px;padding:12px 28px;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:.3px">
+      🖨️ Exporter en PDF
+    </button>
   </div>
 
 </div>
