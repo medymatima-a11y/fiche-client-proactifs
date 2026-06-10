@@ -12,10 +12,13 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --navy:#132D1E;--gold:#C4973A;--light:#FAFAF7;--border:#E5E2DA;
-  --text:#111827;--muted:#6B7280;--green:#1E7A6E;--orange:#e67e22;
-  --red:#e74c3c;--blue:#2A9D8F;--sidebar:220px;
-  --sand:#F3F1EB;--gold-light:#E8C97A;--gold-pale:#FBF4E3;--ink-soft:#374151;
+  --navy:#0f1b33;--gold:#c8a44e;--light:#f5f3ee;--border:#e0dbd0;
+  --text:#111827;--muted:#6B7280;--green:#1d9e75;--orange:#e67e22;
+  --red:#e24b4a;--blue:#378add;--sidebar:220px;
+  --sand:#ede8dc;--gold-light:#d4b96a;--gold-pale:#fbf4e3;--ink-soft:#374151;
+  --shadow-card:0 1px 3px rgba(0,0,0,.04),0 1px 2px rgba(0,0,0,.06);
+  --shadow-elevated:0 4px 12px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.06);
+  --radius:10px;
 }
 html,body{height:100%}
 body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);background:var(--light)}
@@ -38,7 +41,10 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);b
 .app{display:flex;height:100vh;display:none}
 
 /* SIDEBAR */
-.sidebar{width:var(--sidebar);flex-shrink:0;background:var(--navy);display:flex;flex-direction:column;height:100vh;position:sticky;top:0}
+.sidebar{width:var(--sidebar);flex-shrink:0;background:linear-gradient(180deg,#0f1b33 0%,#0a1225 100%);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;z-index:40;transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:39}
+.hamburger-btn{display:none;background:none;border:none;color:var(--navy);font-size:20px;cursor:pointer;padding:6px;line-height:1}
+.mobile-bottom-nav{display:none}
 .sidebar-brand{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sidebar-brand .name{color:#fff;font-size:13px;font-weight:700;line-height:1.3}
 .sidebar-brand .sub{color:rgba(255,255,255,.45);font-size:10px;margin-top:2px}
@@ -59,7 +65,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);b
 
 /* MAIN */
 .main{flex:1;display:flex;flex-direction:column;min-width:0;overflow-y:auto}
-.topbar{background:#fff;border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:16px;height:54px;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar{background:rgba(255,255,255,.85);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 28px;display:flex;align-items:center;gap:16px;height:54px;flex-shrink:0;position:sticky;top:0;z-index:10}
 .topbar-title{font-size:15px;font-weight:700;color:var(--navy);flex:1}
 .topbar-search{display:flex;align-items:center;gap:8px;background:var(--light);border:1px solid var(--border);border-radius:6px;padding:6px 12px;width:240px}
 .topbar-search input{border:none;background:transparent;outline:none;font-size:12px;width:100%;color:var(--text)}
@@ -78,7 +84,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);b
 
 /* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;position:relative;overflow:hidden;transition:transform .15s,box-shadow .15s;box-shadow:var(--shadow-card)}
 .stat-card::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%}
 .stat-card.green::before{background:var(--green)}
 .stat-card.gold::before{background:var(--gold)}
@@ -94,7 +100,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);b
 .stat-sub{font-size:10px;color:var(--muted);margin-top:4px}
 
 /* ECHÉANCES DASHBOARD */
-.echeances-widget{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:24px}
+.echeances-widget{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;box-shadow:var(--shadow-card)}
 .echeances-widget h3{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .ech-row{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
 .ech-row:last-child{border-bottom:none}
@@ -118,7 +124,7 @@ body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);b
 .filter-row{display:flex;gap:8px}
 .filter-btn{padding:4px 12px;border-radius:20px;border:1px solid var(--border);background:#fff;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted)}
 .filter-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.table-wrap{background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-card)}
 table.crm-table{width:100%;border-collapse:collapse}
 .crm-table thead tr{background:var(--light)}
 .crm-table th{padding:10px 14px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;text-align:left;border-bottom:1px solid var(--border)}
@@ -134,7 +140,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 /* CLIENT DETAIL */
 .back-btn{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;margin-bottom:16px;font-weight:600}
 .back-btn:hover{color:var(--navy)}
-.client-header{background:#fff;border:1px solid var(--border);border-radius:10px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:20px}
+.client-header{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:20px;box-shadow:var(--shadow-card)}
 .avatar-lg{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;color:#fff;flex-shrink:0}
 .client-meta h1{font-size:20px;font-weight:700;color:var(--navy)}
 .client-meta .meta-row{display:flex;gap:16px;margin-top:6px;font-size:11px;color:var(--muted);flex-wrap:wrap}
@@ -146,7 +152,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 .tab-pane{display:none}
 .tab-pane.active{display:block}
 .info-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
-.info-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px 18px}
+.info-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow-card)}
 .info-card h3{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .info-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid #f0f2f5}
 .info-row:last-child{border-bottom:none}
@@ -155,7 +161,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 .statut-select{border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:11px;cursor:pointer;outline:none}
 
 /* INTERACTION / ECHEANCE FORMS */
-.add-form{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin-bottom:20px}
+.add-form{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:20px;box-shadow:var(--shadow-card)}
 .add-form h3{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border)}
 .pres-card-title{font-size:12px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.5px}
 .pres-sol-group{background:#f8f9fc;border:1px solid var(--border);border-radius:8px;padding:12px 14px;position:relative}
@@ -175,7 +181,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 .timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--border)}
 .tl-item{position:relative;margin-bottom:14px}
 .tl-dot{position:absolute;left:-24px;top:4px;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px var(--border)}
-.tl-card{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.tl-card{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;box-shadow:var(--shadow-card)}
 .tl-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
 .tl-type{font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px}
 .tl-type.rdv{background:#eaf4fb;color:#1a5276}
@@ -229,7 +235,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 .mis-statut-livre{background:#e8f5e9;color:#1b5e20}
 .mis-statut-facture{background:#fdecea;color:#922b21}
 .mis-statut-paye{background:#1a2e4a;color:#fff}
-.mis-summary{background:#fff;border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center}
+.mis-summary{background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;text-align:center;box-shadow:var(--shadow-card)}
 .mis-kpi-val{font-size:20px;font-weight:700;color:var(--navy)}
 .mis-kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
 
@@ -369,7 +375,7 @@ table.crm-table{width:100%;border-collapse:collapse}
 .dup-card .dup-arrow{font-size:14px;color:var(--gold)}
 
 /* TACHES (TO-DO) */
-.todo-widget{background:#fff;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:10px;padding:16px 20px;margin-bottom:24px}
+.todo-widget{background:#fff;border:1px solid var(--border);border-left:3px solid var(--blue);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;box-shadow:var(--shadow-card)}
 .todo-widget h3{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}
 .todo-widget h3 .todo-count{background:var(--blue);color:#fff;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px}
 .todo-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
@@ -583,6 +589,131 @@ table.crm-table{width:100%;border-collapse:collapse}
 .leads-auto-block{background:#e6f5ee;border:1px solid #b7dfc8;border-radius:8px;padding:12px 14px;margin-top:4px}
 .leads-auto-block .lab-title{font-size:11px;color:var(--green);font-weight:700;margin-bottom:5px}
 .leads-auto-block .lab-list{font-size:11px;color:#374151;line-height:1.8}
+
+/* ══════════════════════════════════════════════════
+   RESPONSIVE — BREAKPOINTS 768px / 640px
+   ══════════════════════════════════════════════════ */
+
+/* ── TABLET & SMALL DESKTOP (≤ 1024px) ── */
+@media(max-width:1024px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .info-grid{grid-template-columns:repeat(2,1fr)}
+  .form-grid{grid-template-columns:repeat(2,1fr)}
+  .map-grid{grid-template-columns:repeat(2,1fr)}
+  .mis-summary{grid-template-columns:repeat(2,1fr)}
+  .content{padding:20px}
+  .topbar{padding:0 20px}
+}
+
+/* ── MOBILE (≤ 768px) ── */
+@media(max-width:768px){
+  /* Sidebar → drawer */
+  .sidebar{position:fixed;top:0;left:0;height:100vh;width:260px;transform:translateX(-100%);z-index:40}
+  .sidebar.open{transform:translateX(0)}
+  .sidebar-backdrop.open{display:block}
+  .hamburger-btn{display:flex;align-items:center}
+  .app{display:flex}
+  .main{margin-left:0}
+  .topbar{padding:0 14px;gap:10px}
+  .topbar-search{width:auto;flex:1;min-width:0}
+  .topbar-title{font-size:14px;white-space:nowrap;flex:none}
+  .content{padding:14px}
+
+  /* Stats → 2 cols */
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+
+  /* Info/Form grids → single col */
+  .info-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid.two{grid-template-columns:1fr}
+  .map-grid{grid-template-columns:repeat(2,1fr)}
+  .mis-summary{grid-template-columns:1fr}
+
+  /* Client header stack */
+  .client-header{flex-direction:column;align-items:flex-start;gap:12px;padding:16px}
+  .client-actions{margin-left:0;flex-wrap:wrap}
+  .client-meta h1{font-size:17px}
+
+  /* Tabs scroll */
+  .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;gap:0}
+  .tab{white-space:nowrap;padding:10px 14px;flex-shrink:0}
+
+  /* Pipeline kanban → horizontal scroll */
+  .pipeline-wrap{height:auto;min-height:calc(100vh - 130px);padding-bottom:20px}
+  .pipeline-col{min-width:260px;max-width:280px}
+
+  /* Table → card-based on mobile */
+  .table-wrap{border:none;background:transparent}
+  .crm-table thead{display:none}
+  .crm-table tbody tr{display:flex;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow-card);cursor:pointer}
+  .crm-table td{padding:4px 0;border-bottom:none;font-size:12px}
+  .crm-table td:first-child{font-weight:600;font-size:13px;margin-bottom:4px}
+  .crm-table td:empty{display:none}
+  .crm-table td::before{content:attr(data-label);font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:2px}
+  .crm-table td:first-child::before{display:none}
+
+  /* Modals → fluid width */
+  .email-card{width:min(95vw,560px)}
+  .qp-card{width:min(95vw,480px)}
+  .edit-modal{max-width:min(95vw,680px)}
+  .todo-modal{width:min(95vw,480px)}
+  .ech-modal{width:min(95vw,480px)}
+  .statuts-box{width:min(95vw,520px)}
+  .produits-box{width:min(95vw,540px)}
+  .rdv-box{width:min(95vw,440px)}
+  .leads-drawer{width:min(95vw,430px)}
+
+  /* Modal grids → single col */
+  .qp-grid{grid-template-columns:1fr}
+  .edit-grid{grid-template-columns:1fr}
+  .edit-grid.three{grid-template-columns:1fr}
+  .ech-modal-body{grid-template-columns:1fr}
+  .rdv-row{grid-template-columns:1fr}
+  .statuts-add-grid{grid-template-columns:1fr}
+  .lead-status-grid{grid-template-columns:1fr}
+
+  /* Touch targets */
+  .nav-item{padding:12px 18px;min-height:44px}
+  .btn{min-height:44px;padding:10px 16px}
+  .filter-btn,.fchip,.qp-chip{min-height:36px;padding:8px 14px}
+  .todo-check{width:22px;height:22px}
+  .tab{min-height:44px}
+
+  /* Echeances widget */
+  .ech-row{flex-wrap:wrap;gap:8px}
+  .ech-client{min-width:auto}
+
+  /* Todo widget */
+  .todo-row{flex-wrap:wrap;gap:6px}
+  .todo-add-inline{flex-direction:column;align-items:stretch}
+  .todo-filters{gap:6px}
+
+  /* Merge banner */
+  .merge-banner{flex-direction:column;align-items:flex-start;gap:10px}
+  .merge-banner .mb-actions{flex-wrap:wrap}
+
+  /* Mobile bottom navigation */
+  .mobile-bottom-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--navy);z-index:38;padding:6px 0 max(6px,env(safe-area-inset-bottom));justify-content:space-around;border-top:1px solid rgba(255,255,255,.08);box-shadow:0 -2px 10px rgba(0,0,0,.1)}
+  .mobile-bottom-nav .mbn-item{display:flex;flex-direction:column;align-items:center;gap:2px;color:rgba(255,255,255,.5);font-size:9px;font-weight:500;cursor:pointer;padding:4px 8px;border-radius:6px;transition:color .15s}
+  .mobile-bottom-nav .mbn-item.active{color:var(--gold)}
+  .mobile-bottom-nav .mbn-item .mbn-icon{font-size:18px}
+  .main{padding-bottom:64px}
+
+  /* Notification banner */
+  .notif-lead-banner{width:min(95vw,340px);right:10px;top:10px}
+}
+
+/* ── SMALL MOBILE (≤ 480px) ── */
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr;gap:8px}
+  .stat-value{font-size:20px}
+  .map-grid{grid-template-columns:1fr}
+  .email-templates{flex-direction:column}
+  .pipeline-col{min-width:240px}
+  .topbar-search{display:none}
+  .mis-card{grid-template-columns:1fr;gap:8px}
+  .login-card{width:min(95vw,360px);padding:28px 24px}
+}
 </style>
 </head>
 <body>
@@ -608,18 +739,18 @@ table.crm-table{width:100%;border-collapse:collapse}
     </div>
     <nav class="nav">
       <div class="nav-section">Principal</div>
-      <div class="nav-item active" onclick="showView('dashboard')"><span class="icon">📊</span>Dashboard</div>
-      <div class="nav-item" onclick="showView('clients')"><span class="icon">👥</span>Clients <span class="nav-badge" id="badge-count">—</span></div>
-      <div class="nav-item" onclick="showView('leads')"><span class="icon">🔥</span>Leads Quiz <span class="nav-badge" id="badge-leads" style="background:var(--orange);display:none">0</span></div>
-      <div class="nav-item" onclick="showPipeline()"><span class="icon">🎯</span>Pipeline</div>
-      <div class="nav-item" onclick="showView('taches')"><span class="icon">✅</span>Tâches <span class="nav-badge" id="badge-taches" style="background:var(--blue)">—</span></div>
+      <div class="nav-item active" onclick="navTo('dashboard')"><span class="icon">📊</span>Dashboard</div>
+      <div class="nav-item" onclick="navTo('clients')"><span class="icon">👥</span>Clients <span class="nav-badge" id="badge-count">—</span></div>
+      <div class="nav-item" onclick="navTo('leads')"><span class="icon">🔥</span>Leads Quiz <span class="nav-badge" id="badge-leads" style="background:var(--orange);display:none">0</span></div>
+      <div class="nav-item" onclick="closeMobileSidebar();showPipeline()"><span class="icon">🎯</span>Pipeline</div>
+      <div class="nav-item" onclick="navTo('taches')"><span class="icon">✅</span>Tâches <span class="nav-badge" id="badge-taches" style="background:var(--blue)">—</span></div>
       <div class="nav-section">Outils</div>
-      <div class="nav-item" onclick="showImport()"><span class="icon">📥</span>Importer clients</div>
-      <div class="nav-item" onclick="openQuickProspect()"><span class="icon">⚡</span>Nouveau prospect</div>
-      <div class="nav-item" onclick="openFicheFromNav()"><span class="icon">📋</span>Fiche complète</div>
+      <div class="nav-item" onclick="closeMobileSidebar();showImport()"><span class="icon">📥</span>Importer clients</div>
+      <div class="nav-item" onclick="closeMobileSidebar();openQuickProspect()"><span class="icon">⚡</span>Nouveau prospect</div>
+      <div class="nav-item" onclick="closeMobileSidebar();openFicheFromNav()"><span class="icon">📋</span>Fiche complète</div>
       <div class="nav-section">Paramètres</div>
-      <div class="nav-item" onclick="openStatutsSettings()"><span class="icon">⚙️</span>Statuts clients</div>
-      <div class="nav-item" onclick="openProduitsSettings()"><span class="icon">📦</span>Produits & Solutions</div>
+      <div class="nav-item" onclick="closeMobileSidebar();openStatutsSettings()"><span class="icon">⚙️</span>Statuts clients</div>
+      <div class="nav-item" onclick="closeMobileSidebar();openProduitsSettings()"><span class="icon">📦</span>Produits & Solutions</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-chip">
@@ -632,8 +763,10 @@ table.crm-table{width:100%;border-collapse:collapse}
 
   <div class="main">
     <div class="topbar">
+      <button class="hamburger-btn" onclick="document.querySelector('.sidebar').classList.toggle('open');document.querySelector('.sidebar-backdrop').classList.toggle('open')" aria-label="Menu">☰</button>
       <div class="topbar-title" id="topbar-title">Dashboard</div>
     </div>
+    <div class="sidebar-backdrop" onclick="document.querySelector('.sidebar').classList.remove('open');this.classList.remove('open')"></div>
 
     <div class="content">
 
@@ -1533,6 +1666,16 @@ table.crm-table{width:100%;border-collapse:collapse}
       </div>
 
     </div>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="mobile-bottom-nav">
+      <div class="mbn-item active" onclick="navTo('dashboard')"><span class="mbn-icon">📊</span>Accueil</div>
+      <div class="mbn-item" onclick="navTo('clients')"><span class="mbn-icon">👥</span>Clients</div>
+      <div class="mbn-item" onclick="navTo('pipeline')"><span class="mbn-icon">🎯</span>Pipeline</div>
+      <div class="mbn-item" onclick="navTo('taches')"><span class="mbn-icon">✅</span>Tâches</div>
+      <div class="mbn-item" onclick="document.querySelector('.sidebar').classList.add('open');document.querySelector('.sidebar-backdrop').classList.add('open')"><span class="mbn-icon">☰</span>Plus</div>
+    </nav>
+
   </div>
 </div>
 
@@ -4049,6 +4192,15 @@ async function checkAndNotify(echeances) {
 
 // ── NAV ─────────────────────────────────────────────────────
 let currentView = 'dashboard';
+function closeMobileSidebar(){document.querySelector('.sidebar')?.classList.remove('open');document.querySelector('.sidebar-backdrop')?.classList.remove('open')}
+function navTo(name) {
+  showView(name);
+  document.querySelector('.sidebar')?.classList.remove('open');
+  document.querySelector('.sidebar-backdrop')?.classList.remove('open');
+  document.querySelectorAll('.mbn-item').forEach(el => el.classList.remove('active'));
+  const mbnMap = { dashboard:0, clients:1, pipeline:2, taches:3 };
+  if (mbnMap[name] !== undefined) document.querySelectorAll('.mbn-item')[mbnMap[name]]?.classList.add('active');
+}
 function showView(name) {
   currentView = name;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
