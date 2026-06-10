@@ -4494,13 +4494,21 @@ async function generatePreconisationsIA() {
       if (cont) { cont.innerHTML = ''; _presSolGroupIdx = 0; }
       const catalogIds = new Set(PRES_CATALOG.map(x => x.id));
       p.solutions.forEach(sol => {
+        const chiffrages = (sol.chiffrages && typeof sol.chiffrages === 'object') ? sol.chiffrages : {};
         const normalizedCards = (sol.cards || []).map(c => {
-          if (typeof c === 'string') return catalogIds.has(c) ? c : null;
-          // Cherche un champ 'id' valide, sinon toute valeur string correspondant au catalogue
-          const id = (c.id && catalogIds.has(c.id)) ? c.id
-            : Object.values(c).find(v => typeof v === 'string' && catalogIds.has(v));
-          if (!id) { console.warn('[IA] card non reconnue:', c); return null; }
-          return { ...c, id };
+          // Normalise vers un id string
+          let id;
+          if (typeof c === 'string') {
+            id = catalogIds.has(c) ? c : null;
+          } else {
+            id = (c.id && catalogIds.has(c.id)) ? c.id
+              : Object.values(c).find(v => typeof v === 'string' && catalogIds.has(v));
+            if (!id) { console.warn('[IA] card non reconnue:', c); }
+          }
+          if (!id) return null;
+          // Merge chiffrage si disponible
+          const ch = chiffrages[id];
+          return ch ? { id, chiffrage: String(ch) } : id;
         }).filter(Boolean);
         console.log('[IA] groupe', sol.label, '→ cards normalisées:', normalizedCards);
         presAddSolutionGroup({ label: sol.label || '', titre: sol.titre || '', cards: normalizedCards });
