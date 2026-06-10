@@ -4066,7 +4066,7 @@ function showView(name) {
 function showTab(name) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-  const tabs = ['synthese','projet','interactions','echeances','patrimoine','documents','missions','emails','bilan','investissements','conformite'];
+  const tabs = ['synthese','projet','interactions','echeances','patrimoine','documents','missions','emails','budget','bilan','presentation','investissements','conformite'];
   document.querySelectorAll('.tab')[tabs.indexOf(name)]?.classList.add('active');
   document.getElementById('tab-'+name)?.classList.add('active');
   if (name==='projet')       loadProjet();
@@ -4205,6 +4205,7 @@ function generateClientReport() {
   const c = allClients.find(x => x.id === currentClientId);
   if (!c) { alert('Aucun client sélectionné.'); return; }
   const pres = collectPresConfig();
+  console.log('[generateClientReport] deck_extra:', JSON.stringify(pres.deck_extra));
   const today = new Date().toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' });
   const nomClient = [c.prenom_c1, c.nom_c1, c.prenom_c2 ? '& ' + c.prenom_c2 : '', c.nom_c2 || ''].filter(Boolean).join(' ');
 
@@ -4453,8 +4454,8 @@ async function generatePreconisationsIA() {
 
     // Diagnostic
     if (p.diagnostic) {
-      if (p.diagnostic.forces)    document.getElementById('pres-forces').value    = p.diagnostic.forces;
-      if (p.diagnostic.vigilance) document.getElementById('pres-vigilance').value = p.diagnostic.vigilance;
+      if (p.diagnostic.forces)    document.getElementById('pres-forces').value    = Array.isArray(p.diagnostic.forces)    ? p.diagnostic.forces.join('\n')    : p.diagnostic.forces;
+      if (p.diagnostic.vigilance) document.getElementById('pres-vigilance').value = Array.isArray(p.diagnostic.vigilance) ? p.diagnostic.vigilance.join('\n') : p.diagnostic.vigilance;
       if (p.diagnostic.band) {
         if (p.diagnostic.band.titre) document.getElementById('pres-band-titre').value = p.diagnostic.band.titre;
         if (p.diagnostic.band.texte) document.getElementById('pres-band-texte').value = p.diagnostic.band.texte;
@@ -5368,7 +5369,10 @@ function collectPresConfig() {
 
   // Deck extra — groupes dynamiques
   const deck_extra = [];
-  document.querySelectorAll('#pres-solutions-container .pres-sol-group').forEach(grp => {
+  const _solGroups = document.querySelectorAll('#pres-solutions-container .pres-sol-group');
+  const _allCbs    = document.querySelectorAll('#pres-solutions-container .pres-sol-cb:checked');
+  console.log('[collectPresConfig] groupes sol:', _solGroups.length, '| cases cochées total:', _allCbs.length);
+  _solGroups.forEach(grp => {
     const idx = grp.dataset.gidx;
     const cbClass = `pres-sol-cb-${idx}`;
     const selectedCards = [...grp.querySelectorAll(`.${cbClass}:checked`)].map(cb => {
@@ -5380,6 +5384,7 @@ function collectPresConfig() {
       if (customLabel) obj.custom_label = customLabel;
       return obj;
     });
+    console.log('[collectPresConfig] groupe gidx=' + idx + ' cbClass=' + cbClass + ' selected=' + selectedCards.length);
     if (!selectedCards.length) return; // groupe vide ignoré
     const label = (grp.querySelector('.pres-sol-label')?.value || '').trim() || '05 — Solutions';
     const titre = (grp.querySelector('.pres-sol-titre')?.value || '').trim() || 'Nos axes de travail';
@@ -5392,6 +5397,33 @@ function collectPresConfig() {
       cards: selectedCards
     });
   });
+  // Fallback : si deck_extra encore vide mais des cases sont cochées, scan direct sans gidx
+  if (deck_extra.length === 0 && _allCbs.length > 0) {
+    console.warn('[collectPresConfig] FALLBACK direct scan (gidx non trouvé?)');
+    const groupMap = new Map();
+    _allCbs.forEach(cb => {
+      const grp = cb.closest('.pres-sol-group');
+      if (!grp) return;
+      if (!groupMap.has(grp)) groupMap.set(grp, []);
+      const item = cb.closest('.pres-cat-item');
+      const chiffrage   = (item?.querySelector('.pres-cat-chiffrage')?.value   || '').trim();
+      const customLabel = (item?.querySelector('.pres-cat-custom-label')?.value || '').trim();
+      const obj = { id: cb.dataset.id };
+      if (chiffrage)   obj.chiffrage    = chiffrage;
+      if (customLabel) obj.custom_label = customLabel;
+      groupMap.get(grp).push(obj);
+    });
+    groupMap.forEach((cards, grp) => {
+      const label = (grp.querySelector('.pres-sol-label')?.value || '').trim() || '05 — Solutions';
+      const titre = (grp.querySelector('.pres-sol-titre')?.value || '').trim() || 'Nos axes de travail';
+      deck_extra.push({
+        layout: 'cards', label, titre, numbered: true,
+        intro: `${cards.length} levier${cards.length > 1 ? 's' : ''} prioritaire${cards.length > 1 ? 's' : ''} pour votre situation.`,
+        cards
+      });
+    });
+    console.log('[collectPresConfig] FALLBACK deck_extra:', deck_extra.length, 'groupes');
+  }
 
   // Slide split (layout conservé)
   const splitSol = document.getElementById('pres-split-solution')?.value || '';
@@ -5538,26 +5570,46 @@ function bilanRow(label, val, color, bold=false) {
 }
 
 async function saveBilan() {
-  const payload = {
-    client_id:          currentClientId,
-    profil_risque:      document.getElementById('bilan-risque').value      || null,
-    horizon:            document.getElementById('bilan-horizon').value     || null,
-    objectif:           document.getElementById('bilan-objectif').value    || null,
-    analyse_conseiller: document.getElementById('bilan-analyse').value     || null,
-    objectifs_client:   document.getElementById('bilan-objectifs').value   || null,
-    preconisations:     collectPresConfig(),
-    date_bilan:         document.getElementById('bilan-date').value        || null,
-  };
-  // Upsert : si bilan existant, on le met à jour
-  const existing = await apiGet(`bilans?client_id=eq.${currentClientId}&order=created_at.desc&limit=1`);
-  if (existing?.length) {
-    await apiPatch('bilans', existing[0].id, payload);
-  } else {
-    await apiPost('bilans', payload);
+  if (!currentClientId) { showToast('⚠️ Aucun client sélectionné', 'red'); return; }
+  const btn = event?.currentTarget;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Enregistrement…'; }
+  try {
+    const payload = {
+      client_id:          currentClientId,
+      profil_risque:      document.getElementById('bilan-risque')?.value      || null,
+      horizon:            document.getElementById('bilan-horizon')?.value     || null,
+      objectif:           document.getElementById('bilan-objectif')?.value    || null,
+      analyse_conseiller: document.getElementById('bilan-analyse')?.value     || null,
+      objectifs_client:   document.getElementById('bilan-objectifs')?.value   || null,
+      preconisations:     collectPresConfig(),
+      date_bilan:         document.getElementById('bilan-date')?.value        || null,
+    };
+    // Upsert : si bilan existant, on le met à jour
+    const existing = await apiGet(`bilans?client_id=eq.${currentClientId}&order=created_at.desc&limit=1`);
+    if (existing?.length) {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/bilans?id=eq.${existing[0].id}`, {
+        method: 'PATCH',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.message || `Erreur HTTP ${r.status}`); }
+    } else {
+      const r = await fetch(`${SUPABASE_URL}/rest/v1/bilans`, {
+        method: 'POST',
+        headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+        body: JSON.stringify(payload)
+      });
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.message || `Erreur HTTP ${r.status}`); }
+    }
+    const saved = document.getElementById('bilan-saved');
+    if (saved) { saved.style.display = 'block'; setTimeout(() => { saved.style.display = 'none'; }, 3000); }
+    showToast('✅ Bilan enregistré');
+  } catch(e) {
+    console.error('[saveBilan]', e);
+    showToast('❌ ' + e.message, 'red');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Enregistrer'; }
   }
-  const saved = document.getElementById('bilan-saved');
-  saved.style.display = 'block';
-  setTimeout(() => { saved.style.display = 'none'; }, 3000);
 }
 
 let currentBilanHtml = '';
