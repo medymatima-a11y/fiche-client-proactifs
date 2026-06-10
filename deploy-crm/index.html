@@ -962,7 +962,6 @@ table.crm-table{width:100%;border-collapse:collapse}
             <button class="btn btn-outline btn-sm" onclick="openEmailComposer()">✉️ Email</button>
             <button class="btn btn-primary btn-sm" onclick="openRdvModal()" title="Planifier un rendez-vous">📅 RDV</button>
             <button class="btn btn-outline btn-sm" onclick="openEditModal()">✏️ Modifier</button>
-            <button class="btn btn-gold btn-sm" onclick="openPresentation()" title="Générer la présentation patrimoniale">📊 Présentation</button>
             <button class="btn btn-outline btn-sm" id="btn-delete-client" style="color:var(--red);border-color:#f5c6cb" onclick="askDeleteFromDetail()">🗑️</button>
             <select class="statut-select" id="detail-type-dossier" onchange="updateTypeDossier()" title="Type de dossier" style="border-color:#c9a84c;color:#7d6608">
               <option value="">📁 Type…</option>
@@ -985,7 +984,7 @@ table.crm-table{width:100%;border-collapse:collapse}
           <div class="tab" onclick="showTab('emails')">📧 Emails</div>
           <div class="tab" onclick="showTab('budget')">💰 Budget</div>
           <div class="tab" onclick="showTab('bilan')">📋 Bilan patrimonial</div>
-          <div class="tab" onclick="showTab('presentation')">📊 Présentation / Préconisation</div>
+          <div class="tab" onclick="showTab('presentation')">📊 Préconisation</div>
           <div class="tab" onclick="showTab('investissements')">💼 Investissements</div>
           <div class="tab" onclick="showTab('conformite')">🛡️ Conformité</div>
         </div>
@@ -1455,7 +1454,7 @@ table.crm-table{width:100%;border-collapse:collapse}
             <div style="display:flex;gap:10px">
               <button class="btn btn-primary" style="flex:1;padding:10px" onclick="saveBilan()">💾 Enregistrer</button>
               <button class="btn btn-gold" style="flex:1;padding:10px" onclick="generateClientReport()">📄 Rapport client</button>
-              <button class="btn" style="padding:10px;background:var(--bg-light);color:var(--navy);font-size:12px" onclick="openPresentation()" title="Générer les slides">📊 Slides</button>
+              <button class="btn btn-gold" style="flex:1;padding:10px" onclick="openPresentation()" title="Générer la présentation patrimoniale">📊 Présentation</button>
             </div>
 
           </div>
@@ -5668,6 +5667,27 @@ function generateBilanHTML(c, bd) {
   const charges   = imp + mensAnn;
   const capacite  = Math.max(0, sal - charges);
 
+  // ── Ratios endettement ──
+  const tauxEndetBancaire = sal > 0 ? mensAnn / sal * 100 : null;
+  const levierPatrimonial = brut > 0 ? dettes / brut * 100 : null;
+  function ratioCardHTML(v, title, icon, seuil1, seuil2, msgs) {
+    if (v === null) return '';
+    const rc = v <= seuil1 ? '#27ae60' : v <= seuil2 ? '#e67e22' : '#e74c3c';
+    const rm = v <= seuil1 ? msgs[0] : v <= seuil2 ? msgs[1] : msgs[2];
+    return '<div style="border:1px solid #eceff4;border-radius:8px;padding:16px 18px;border-top:3px solid ' + rc + '">'
+      + '<div style="font-size:10px;color:#7a8a9a;text-transform:uppercase;letter-spacing:.8px;font-family:Arial,sans-serif;margin-bottom:6px">' + icon + ' ' + title + '</div>'
+      + '<div style="font-size:22px;font-weight:700;color:' + rc + '">' + v.toFixed(1) + ' %</div>'
+      + '<div style="font-size:10px;color:#7a8a9a;font-family:Arial,sans-serif;margin-top:4px">' + rm + '</div>'
+      + '</div>';
+  }
+  const tauxHTML   = ratioCardHTML(tauxEndetBancaire, "Taux d’endettement", '🏦', 33, 35,
+    ["✅ Seuil respecté (< 35 %)", "⚠️ Proche du seuil (35 %)", "❌ Dépasse le seuil (35 %)"]);
+  const levierHTML = ratioCardHTML(levierPatrimonial, 'Levier patrimonial', '⚖️', 30, 60,
+    ['✅ Endettement faible', '⚠️ Endettement modéré', '⛔ Endettement élevé']);
+  const ratiosSection = (tauxHTML || levierHTML)
+    ? '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px">' + tauxHTML + levierHTML + '</div>'
+    : '';
+
   const totalP    = epTotal + immoTotal;
   const epPct     = totalP > 0 ? Math.round(epTotal  / totalP * 100) : 0;
   const immoPct   = 100 - epPct;
@@ -5810,6 +5830,9 @@ function generateBilanHTML(c, bd) {
         <div style="font-size:22px;font-weight:700;color:${color}">${v}</div>
       </div>`).join('')}
     </div>
+
+    <!-- ══ RATIOS FINANCIERS ══ -->
+    ${ratiosSection}
 
     <!-- ══ GRAPHIQUES ══ -->
     <div style="display:grid;grid-template-columns:160px 1fr;gap:24px;margin-bottom:24px;align-items:center">
