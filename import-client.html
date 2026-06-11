@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import client — Proactifs Conseils</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+:root {
+  --navy:#132D1E; --gold:#C4973A; --light:#FAFAF7; --border:#E5E2DA;
+  --text:#111827; --muted:#6B7280; --green:#1d9e75; --red:#dc2626;
+  --gold-pale:#FBF4E3;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;font-size:13px;color:var(--text);background:var(--light);min-height:100vh}
+
+/* LOGIN */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy) 0%,#1C3D28 100%)}
+.login-card{background:#fff;border-radius:12px;padding:40px 36px;width:360px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.login-logo{font-size:15px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:4px;letter-spacing:-.3px}
+.login-sub{font-size:11px;color:var(--muted);text-align:center;margin-bottom:24px}
+.login-field{margin-bottom:14px}
+.login-field label{display:block;font-size:11px;font-weight:700;color:var(--navy);margin-bottom:5px;text-transform:uppercase;letter-spacing:.6px}
+.login-field input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none;color:var(--text)}
+.login-field input:focus{border-color:var(--navy)}
+.login-btn{width:100%;padding:12px;background:var(--navy);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px}
+.login-btn:hover{background:#1C3D28}
+.login-err{color:var(--red);font-size:12px;margin-top:8px;text-align:center}
+
+/* MAIN */
+.header{background:var(--navy);color:#fff;padding:14px 28px;display:flex;align-items:center;gap:12px}
+.header-title{font-weight:700;font-size:14px}
+.header-sub{font-size:11px;color:rgba(255,255,255,.6);margin-left:auto}
+.logout-btn{background:rgba(255,255,255,.1);border:none;color:#fff;padding:5px 12px;border-radius:5px;font-size:11px;cursor:pointer}
+.logout-btn:hover{background:rgba(255,255,255,.2)}
+.main{max-width:860px;margin:32px auto;padding:0 20px}
+
+/* STEP indicator */
+.steps{display:flex;gap:0;margin-bottom:28px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.step{flex:1;padding:10px 16px;font-size:11px;font-weight:600;text-align:center;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);background:#fff;border-right:1px solid var(--border)}
+.step:last-child{border-right:none}
+.step.active{background:var(--navy);color:#fff}
+.step.done{background:#f0fdf4;color:var(--green)}
+
+/* CARDS */
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:24px;margin-bottom:20px}
+.card-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-title .badge{background:var(--gold-pale);color:var(--gold);padding:2px 8px;border-radius:20px;font-size:10px}
+
+/* DROP ZONE */
+.dropzone{border:2px dashed var(--border);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:#fafaf7}
+.dropzone:hover,.dropzone.drag{border-color:var(--navy);background:#f0f5f1}
+.dropzone-icon{font-size:32px;margin-bottom:10px}
+.dropzone-label{font-weight:600;color:var(--navy);margin-bottom:4px}
+.dropzone-hint{font-size:11px;color:var(--muted)}
+#file-input{display:none}
+.filename-tag{display:inline-flex;align-items:center;gap:6px;background:var(--gold-pale);border:1px solid #e8c97a;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;color:#92690e;margin-top:10px}
+
+/* SEARCH CLIENT */
+.search-row{display:flex;gap:8px;align-items:center}
+.search-row input{flex:1;padding:9px 12px;border:1px solid var(--border);border-radius:6px;font-size:13px;outline:none}
+.search-row input:focus{border-color:var(--navy)}
+.btn{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:all .15s}
+.btn-primary{background:var(--navy);color:#fff}
+.btn-primary:hover{background:#1C3D28}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#158a5e}
+.btn-outline{background:#fff;color:var(--navy);border:1px solid var(--navy)}
+.btn-outline:hover{background:#f0f5f1}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* RESULTS LIST */
+.client-list{margin-top:12px;display:flex;flex-direction:column;gap:6px}
+.client-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1px solid var(--border);border-radius:7px;cursor:pointer;transition:all .15s}
+.client-item:hover{border-color:var(--navy);background:#f0f5f1}
+.client-item.selected{border-color:var(--navy);background:#f0f5f1;box-shadow:0 0 0 2px var(--navy)}
+.client-avatar{width:32px;height:32px;background:var(--navy);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;color:#fff;flex-shrink:0}
+.client-name{font-weight:600;font-size:13px}
+.client-meta{font-size:11px;color:var(--muted)}
+.new-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:700}
+.badge-prospect{background:#fef9ee;color:#b45309;border:1px solid #fcd34d}
+.badge-actif{background:#f0fdf4;color:var(--green);border:1px solid #86efac}
+
+/* PREVIEW TABLE */
+.preview-table{width:100%;border-collapse:collapse;font-size:12px}
+.preview-table th{text-align:left;padding:7px 10px;border-bottom:2px solid var(--border);font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.preview-table td{padding:7px 10px;border-bottom:1px solid #f0ede7;vertical-align:top}
+.preview-table tr:last-child td{border-bottom:none}
+.preview-table .label{font-weight:600;color:var(--navy);white-space:nowrap}
+.preview-table .value{color:var(--text)}
+.preview-table .empty{color:var(--muted);font-style:italic}
+.skip-toggle{display:inline-flex;align-items:center;gap:4px;cursor:pointer}
+.skip-toggle input{cursor:pointer}
+.tag-skip{background:#fef2f2;color:var(--red);font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600}
+.tag-ok{background:#f0fdf4;color:var(--green);font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600}
+
+/* ALERTS */
+.alert{padding:12px 16px;border-radius:7px;font-size:12px;margin-bottom:14px;display:flex;gap:8px;align-items:flex-start}
+.alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8}
+.alert-warn{background:#fffbeb;border:1px solid #fcd34d;color:#92400e}
+.alert-success{background:#f0fdf4;border:1px solid #86efac;color:#166534}
+.alert-err{background:#fef2f2;border:1px solid #fca5a5;color:#991b1b}
+
+/* SECTION SEPARATORS in preview */
+.section-row td{background:var(--gold-pale);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:700;color:#92690e;padding:5px 10px}
+
+/* LOADER */
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">🌿 Proactifs Conseils</div>
+    <div class="login-sub">Import tableau client Excel</div>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="votre@email.fr" />
+    </div>
+    <div class="login-field">
+      <label>Mot de passe</label>
+      <input type="password" id="login-pw" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <button class="login-btn" onclick="doLogin()">Connexion</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" style="display:none">
+  <div class="header">
+    <span>📥</span>
+    <span class="header-title">Import tableau client</span>
+    <span class="header-sub" id="user-email-label"></span>
+    <button class="logout-btn" onclick="doLogout()">Déconnexion</button>
+  </div>
+
+  <div class="main">
+    <div class="steps">
+      <div class="step active" id="step-1">1 · Fichier</div>
+      <div class="step" id="step-2">2 · Client</div>
+      <div class="step" id="step-3">3 · Aperçu</div>
+      <div class="step" id="step-4">4 · Import</div>
+    </div>
+
+    <div class="card" id="card-file">
+      <div class="card-title">📄 Tableau Excel client <span class="badge">Étape 1</span></div>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()"
+           ondragover="event.preventDefault();this.classList.add('drag')"
+           ondragleave="this.classList.remove('drag')"
+           ondrop="handleDrop(event)">
+        <div class="dropzone-icon">📊</div>
+        <div class="dropzone-label">Déposer le fichier Excel ici</div>
+        <div class="dropzone-hint">ou cliquer pour sélectionner — format .xlsx uniquement</div>
+        <div id="filename-display"></div>
+      </div>
+      <input type="file" id="file-input" accept=".xlsx,.xls" onchange="handleFileSelect(event)">
+    </div>
+
+    <div class="card" id="card-client" style="display:none">
+      <div class="card-title">👤 Associer à un client CRM <span class="badge">Étape 2</span></div>
+      <div id="auto-match-banner"></div>
+      <div class="search-row">
+        <input type="text" id="client-search-input" placeholder="Nom ou email du client…" onkeydown="if(event.key==='Enter')searchClients()">
+        <button class="btn btn-outline" onclick="searchClients()">Rechercher</button>
+        <button class="btn btn-outline" onclick="selectNewClient()">+ Nouveau client</button>
+      </div>
+      <div class="client-list" id="client-list"></div>
+      <div id="selected-client-info" style="margin-top:12px"></div>
+    </div>
+
+    <div class="card" id="card-preview" style="display:none">
+      <div class="card-title">🔍 Aperçu des données à importer <span class="badge">Étape 3</span></div>
+      <div class="alert alert-info">
+        ℹ️ Décochez les champs que vous ne souhaitez <strong>pas</strong> écraser.
+        Les champs déjà renseignés dans le CRM sont signalés.
+      </div>
+      <div id="preview-warn"></div>
+      <table class="preview-table" id="preview-table">
+        <thead><tr><th><input type="checkbox" id="check-all" checked onchange="toggleAll(this)"> Tout</th><th>Champ</th><th>Valeur extraite</th><th>Actuel CRM</th></tr></thead>
+        <tbody id="preview-body"></tbody>
+      </table>
+    </div>
+
+    <div id="card-import" style="display:none;text-align:right;margin-bottom:32px">
+      <button class="btn btn-green" id="import-btn" onclick="doImport()" style="font-size:13px;padding:11px 28px">
+        ✅ Importer dans le CRM
+      </button>
+      <div id="import-result" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://ullnkylrixdvormohryl.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVsbG5reWxyaXhkdm9ybW9ocnlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1NjUzNDgsImV4cCI6MjA5NDE0MTM0OH0.Fu5xc-VVA49qp1-WHgve8ZYpOB-QrciHzVeZx0GXmKk';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pw    = document.getElementById('login-pw').value;
+  document.getElementById('login-err').textContent = '';
+  const { error } = await db.auth.signInWithPassword({ email, password: pw });
+  if (error) { document.getElementById('login-err').textContent = error.message; return; }
+  showApp(email);
+}
+
+function showApp(email) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('user-email-label').textContent = email;
+}
+
+async function doLogout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+db.auth.onAuthStateChange((event, session) => {
+  if (session?.user) showApp(session.user.email);
+});
+
+let parsedData = {};
+let selectedId = null;
+let currentCRM = {};
+let fieldRows  = [];
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropzone').classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (file) processFile(file);
+}
+
+function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (file) processFile(file);
+}
+
+function processFile(file) {
+  if (!file.name.match(/\.xlsx?$/i)) { alert('Fichier non supporté. Utiliser un fichier .xlsx'); return; }
+  document.getElementById('filename-display').innerHTML = `<div class="filename-tag">📊 ${file.name}</div>`;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      parsedData = extractFromWorkbook(wb);
+      setStep(2);
+      document.getElementById('card-client').style.display = 'block';
+      tryAutoMatch();
+    } catch(err) { alert('Erreur lecture Excel : ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function extractFromWorkbook(wb) {
+  const wsName = wb.SheetNames.includes('Informations') ? 'Informations' : wb.SheetNames[0];
+  const ws  = wb.Sheets[wsName];
+  const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: false, dateNF: 'yyyy-mm-dd' });
+  const data = {};
+
+  function findRowByLabel(label) {
+    const lc = label.toLowerCase();
+    return rows.find(r => r.some(c => c && String(c).toLowerCase().includes(lc)));
+  }
+
+  function valAfterLabel(row, labelPartial) {
+    if (!row) return null;
+    const lc = labelPartial.toLowerCase();
+    const idx = row.findIndex(c => c && String(c).toLowerCase().includes(lc));
+    if (idx === -1) return null;
+    for (let i = idx + 1; i < row.length; i++) {
+      if (row[i] !== null && row[i] !== undefined && String(row[i]).trim() !== '') return row[i];
+    }
+    return null;
+  }
+
+  const rNom    = findRowByLabel('nom :');
+  const rPrenom = findRowByLabel('prénom :') || findRowByLabel('prenom :');
+  const rDob    = findRowByLabel('date de naissance :');
+  const rLieu   = findRowByLabel('lieu de naissance :');
+  const rAdresse= findRowByLabel('adresse :');
+  const rTel    = findRowByLabel('téléphone :') || findRowByLabel('telephone :');
+  const rMail   = findRowByLabel('mail :');
+  const rPro    = findRowByLabel('profession :');
+  const rEntrep = findRowByLabel('entreprise :');
+
+  data.nom_c1           = valAfterLabel(rNom,    'nom :');
+  data.prenom_c1        = valAfterLabel(rPrenom, 'prénom :') || valAfterLabel(rPrenom, 'prenom :');
+  data.date_naissance_c1= valAfterLabel(rDob,    'date de naissance :');
+  data.lieu_naissance_c1= valAfterLabel(rLieu,   'lieu de naissance :');
+  data.adresse          = valAfterLabel(rAdresse,'adresse :');
+  data.telephone_c1     = valAfterLabel(rTel,    'téléphone :') || valAfterLabel(rTel, 'telephone :');
+  data.email_c1         = valAfterLabel(rMail,   'mail :');
+  data.profession_c1    = valAfterLabel(rPro,    'profession :');
+  data.entreprise_c1    = valAfterLabel(rEntrep, 'entreprise :');
+
+  if (data.telephone_c1) {
+    let tel = String(data.telephone_c1).replace(/\s/g,'').replace(/\D/g,'');
+    if (tel.length === 9) tel = '0' + tel;
+    data.telephone_c1 = tel;
+  }
+
+  if (data.date_naissance_c1) {
+    const d = new Date(data.date_naissance_c1);
+    if (!isNaN(d)) data.date_naissance_c1 = d.toISOString().split('T')[0];
+  }
+
+  if (data.adresse) {
+    const m = data.adresse.match(/(\d{5})\s+(.+)$/);
+    if (m) { data.code_postal = m[1]; data.ville = m[2].trim(); }
+  }
+
+  const rStatut  = findRowByLabel('statut marital');
+  const rEnfants = findRowByLabel('enfant');
+  const rAges    = findRowByLabel('ages') || findRowByLabel('âges');
+  const rSalaire = findRowByLabel('salaire annuel');
+  const rImpot   = findRowByLabel('impôt') || findRowByLabel('impot');
+
+  data.statut_marital = valAfterLabel(rStatut, 'statut marital');
+  if (rEnfants) {
+    const nb = valAfterLabel(rEnfants, 'enfant');
+    if (nb !== null) data.nb_enfants = nb;
+  }
+  data.enfants_dob = rAges ? (valAfterLabel(rAges,'ages') || valAfterLabel(rAges,'âges')) : null;
+
+  if (rSalaire) {
+    const lbl = rSalaire.findIndex(c => c && String(c).toLowerCase().includes('salaire annuel'));
+    if (lbl !== -1) {
+      for (let i = lbl+1; i < rSalaire.length; i++) {
+        const v = parseFloat(rSalaire[i]);
+        if (!isNaN(v) && v > 0) { data.salaire_c1 = v; break; }
+      }
+    }
+  }
+
+  if (rImpot) {
+    const lbl = rImpot.findIndex(c => c && (String(c).toLowerCase().includes('impôt') || String(c).toLowerCase().includes('impot')));
+    if (lbl !== -1) {
+      for (let i = lbl+1; i < rImpot.length; i++) {
+        const v = parseFloat(rImpot[i]);
+        if (!isNaN(v) && v > 0) { data.impot_c1 = v; break; }
+      }
+    }
+  }
+
+  const rBanque = findRowByLabel('banque');
+  if (rBanque) {
+    const lbl = rBanque.findIndex(c => c && String(c).toLowerCase().includes('banque'));
+    if (lbl !== -1) {
+      for (let i = lbl+1; i < rBanque.length; i++) {
+        if (rBanque[i] && String(rBanque[i]).trim() !== '') { data.banques = String(rBanque[i]).trim(); break; }
+      }
+    }
+  }
+
+  const EPARGNE_LABELS = ['livret a','ldd','ldds','cel','livret bleu','csl','lep','pel','assurance vie','pea','pee','perco','scpi','assurance retraite'];
+  const epargne = {};
+  for (const row of rows) {
+    for (let ci = 0; ci < row.length; ci++) {
+      const cell = row[ci];
+      if (!cell) continue;
+      const lc = String(cell).toLowerCase().trim();
+      if (EPARGNE_LABELS.some(l => lc === l || lc.startsWith(l))) {
+        const nums = [];
+        for (let j = ci+1; j < row.length; j++) {
+          const v = parseFloat(row[j]);
+          if (!isNaN(v)) nums.push(v);
+        }
+        if (nums.length > 0 && nums[0] > 0) {
+          epargne[String(cell).trim()] = { montant_c1: nums[0], montant_c2: nums[1] || 0 };
+        }
+        break;
+      }
+    }
+  }
+  if (Object.keys(epargne).length > 0) data.epargne = epargne;
+
+  const IMM_LABELS = ['résidence principale','résidence secondaire','résidence locative'];
+  const immobilier = [];
+  const immHeaderIdx = rows.findIndex(r => r.some(c => c && String(c).toLowerCase().includes('patrimoine immobilier')));
+  const credHeaderIdx = rows.findIndex(r => r.some(c => c && (String(c).toLowerCase().includes('crédits bancaires') || String(c).toLowerCase().includes('credits bancaires'))));
+
+  if (immHeaderIdx !== -1) {
+    const endIdx = credHeaderIdx !== -1 ? credHeaderIdx : rows.length;
+    for (let ri = immHeaderIdx+1; ri < endIdx; ri++) {
+      const row = rows[ri];
+      if (!row) continue;
+      const typeCell = row.find(c => c && IMM_LABELS.some(l => String(c).toLowerCase().includes(l.split(' ')[1])));
+      if (typeCell) {
+        const item = { type: String(typeCell).trim() };
+        const ci_type = row.findIndex(c => c === typeCell);
+        for (let j = ci_type+1; j < row.length; j++) {
+          if (row[j] && typeof row[j] === 'string' && row[j].length > 5 && isNaN(parseFloat(row[j])) && !String(row[j]).match(/^\d{4}-\d{2}-\d{2}/)) {
+            if (!item.adresse) item.adresse = String(row[j]).trim();
+          }
+          const v = parseFloat(row[j]);
+          if (!isNaN(v)) {
+            if (!item.valeur && v > 10000) item.valeur = v;
+            else if (item.valeur && !item.valeur_achat && v > 1000) item.valeur_achat = v;
+            else if (item.valeur && item.valeur_achat && item.loyers_an === undefined) item.loyers_an = v;
+          }
+          if (row[j] && String(row[j]).match(/^\d{4}-\d{2}-\d{2}/)) item.date_achat = String(row[j]).split('T')[0];
+        }
+        if (item.valeur > 0) immobilier.push(item);
+      }
+    }
+  }
+  if (immobilier.length > 0) data.immobilier = immobilier;
+
+  const credits = [];
+  if (credHeaderIdx !== -1) {
+    for (let ri = credHeaderIdx+2; ri < rows.length; ri++) {
+      const row = rows[ri];
+      if (!row) continue;
+      const typeCell = row.find(c => c && IMM_LABELS.some(l => String(c).toLowerCase().includes(l.split(' ')[1])));
+      if (typeCell) {
+        const allNums = row.map(c => parseFloat(c)).filter(v => !isNaN(v));
+        if (allNums.length >= 2 && allNums[0] > 0) {
+          const dateCell = row.find(c => c && String(c).match(/^\d{4}-\d{2}-\d{2}/));
+          credits.push({
+            type: String(typeCell).trim(),
+            capital_emprunte:   allNums[0] || 0,
+            capital_restant_du: allNums[1] || 0,
+            mensualite:         allNums[2] || 0,
+            date_fin:           dateCell ? String(dateCell).split('T')[0] : null,
+            taux:               allNums[allNums.length-1] || null
+          });
+        }
+      }
+    }
+  }
+  if (credits.length > 0) data.credits = credits;
+
+  return data;
+}
+
+async function tryAutoMatch() {
+  const banner = document.getElementById('auto-match-banner');
+  const nom = parsedData.nom_c1;
+  const email = parsedData.email_c1;
+  if (!nom && !email) return;
+  let query = db.from('clients').select('id,nom_c1,prenom_c1,email_c1,statut,telephone_c1');
+  if (email) query = query.ilike('email_c1', email);
+  else if (nom) query = query.ilike('nom_c1', `%${nom}%`);
+  const { data: results } = await query.limit(5);
+  if (results && results.length > 0) {
+    banner.innerHTML = `<div class="alert alert-info">🔍 ${results.length} correspondance(s) trouvée(s) automatiquement — sélectionnez la bonne fiche.</div>`;
+    renderClientList(results);
+  } else {
+    banner.innerHTML = `<div class="alert alert-warn">⚠️ Aucun client trouvé avec ce nom/email. Vous pouvez en créer un nouveau.</div>`;
+    if (nom) document.getElementById('client-search-input').value = nom;
+  }
+}
+
+async function searchClients() {
+  const q = document.getElementById('client-search-input').value.trim();
+  if (!q) return;
+  const { data: results } = await db.from('clients')
+    .select('id,nom_c1,prenom_c1,email_c1,statut,telephone_c1')
+    .or(`nom_c1.ilike.%${q}%,prenom_c1.ilike.%${q}%,email_c1.ilike.%${q}%`)
+    .limit(8);
+  renderClientList(results || []);
+}
+
+function renderClientList(results) {
+  const list = document.getElementById('client-list');
+  if (results.length === 0) { list.innerHTML = '<div class="alert alert-warn">Aucun client trouvé.</div>'; return; }
+  list.innerHTML = results.map(c => {
+    const initials = ((c.nom_c1||'?')[0] + (c.prenom_c1||'?')[0]).toUpperCase();
+    const badgeCls = c.statut === 'actif' ? 'badge-actif' : 'badge-prospect';
+    return `<div class="client-item" id="ci-${c.id}" onclick="selectClient('${c.id}','${c.nom_c1||''}','${c.prenom_c1||''}')">
+      <div class="client-avatar">${initials}</div>
+      <div>
+        <div class="client-name">${c.prenom_c1||''} ${c.nom_c1||''} <span class="new-badge ${badgeCls}">${c.statut||'?'}</span></div>
+        <div class="client-meta">${c.email_c1||'—'} ${c.telephone_c1 ? '· '+c.telephone_c1 : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function selectClient(id, nom, prenom) {
+  document.querySelectorAll('.client-item').forEach(el => el.classList.remove('selected'));
+  const el = document.getElementById('ci-' + id);
+  if (el) el.classList.add('selected');
+  selectedId = id;
+  const { data } = await db.from('clients').select('*').eq('id', id).single();
+  currentCRM = data || {};
+  document.getElementById('selected-client-info').innerHTML =
+    `<div class="alert alert-success">✅ Client sélectionné : <strong>${prenom} ${nom}</strong> — les données seront mises à jour sur cette fiche.</div>`;
+  buildPreview();
+}
+
+function selectNewClient() {
+  selectedId = 'new';
+  currentCRM = {};
+  document.getElementById('client-list').innerHTML = '';
+  document.getElementById('selected-client-info').innerHTML =
+    `<div class="alert alert-info">➕ Un <strong>nouveau client</strong> sera créé avec les données extraites.</div>`;
+  buildPreview();
+}
+
+const FIELD_LABELS = {
+  nom_c1:'Nom (C1)', prenom_c1:'Prénom (C1)', date_naissance_c1:'Date de naissance',
+  lieu_naissance_c1:'Lieu de naissance', adresse:'Adresse', code_postal:'Code postal',
+  ville:'Ville', telephone_c1:'Téléphone', email_c1:'Email', profession_c1:'Profession',
+  entreprise_c1:'Entreprise', statut_marital:'Statut marital', nb_enfants:'Nb enfants',
+  enfants_dob:'Âges enfants', salaire_c1:'Salaire annuel net (C1)',
+  impot_c1:'Impôt sur le revenu', banques:'Banque(s)', epargne:'Épargne (JSON)',
+  immobilier:'Immobilier (JSON)', credits:'Crédits (JSON)',
+};
+
+const SECTIONS = {
+  nom_c1:'— État civil', statut_marital:'— Situation familiale',
+  salaire_c1:'— Revenus', banques:'— Patrimoine',
+  epargne:'— Épargne', immobilier:'— Immobilier', credits:'— Crédits',
+};
+
+function buildPreview() {
+  setStep(3);
+  document.getElementById('card-preview').style.display = 'block';
+  document.getElementById('card-import').style.display = 'block';
+  const tbody = document.getElementById('preview-body');
+  tbody.innerHTML = '';
+  fieldRows = [];
+  let warnHtml = '';
+
+  for (const [key, label] of Object.entries(FIELD_LABELS)) {
+    const newVal = parsedData[key];
+    if (newVal === undefined || newVal === null) continue;
+    const curVal = currentCRM[key];
+    const newStr = typeof newVal === 'object' ? JSON.stringify(newVal, null, 1) : String(newVal);
+    const curStr = curVal !== undefined && curVal !== null
+      ? (typeof curVal === 'object' ? JSON.stringify(curVal, null, 1) : String(curVal)) : '';
+
+    if (key === 'statut_marital' && curStr && newStr.toLowerCase() !== curStr.toLowerCase()) {
+      warnHtml += `<div class="alert alert-warn">⚠️ <strong>Statut marital</strong> : CRM = <em>${curStr}</em>, Excel = <em>${newStr}</em>. Vérifiez avant d'importer.</div>`;
+    }
+
+    if (SECTIONS[key]) {
+      const secRow = document.createElement('tr');
+      secRow.className = 'section-row';
+      secRow.innerHTML = `<td colspan="4">${SECTIONS[key]}</td>`;
+      tbody.appendChild(secRow);
+    }
+
+    const row = document.createElement('tr');
+    const alreadyFilled = curStr && curStr !== newStr ? '⚠️' : (curStr ? '✅' : '');
+    row.innerHTML = `
+      <td><input type="checkbox" class="field-chk" data-key="${key}" checked></td>
+      <td class="label">${label}</td>
+      <td class="value">${escHtml(newStr)}</td>
+      <td class="value">${curStr ? escHtml(curStr.substring(0,80))+(curStr.length>80?'…':'') : '<span class="empty">vide</span>'} ${alreadyFilled}</td>
+    `;
+    tbody.appendChild(row);
+    fieldRows.push({ key, newVal });
+  }
+  document.getElementById('preview-warn').innerHTML = warnHtml;
+}
+
+function toggleAll(masterCb) {
+  document.querySelectorAll('.field-chk').forEach(cb => cb.checked = masterCb.checked);
+}
+
+async function doImport() {
+  const btn = document.getElementById('import-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Import en cours…';
+  const payload = {};
+  document.querySelectorAll('.field-chk').forEach(cb => {
+    if (cb.checked) {
+      const key = cb.dataset.key;
+      const row = fieldRows.find(r => r.key === key);
+      if (row) payload[key] = row.newVal;
+    }
+  });
+  if (Object.keys(payload).length === 0) {
+    showResult('error','Aucun champ sélectionné.');
+    btn.disabled = false; btn.innerHTML = '✅ Importer dans le CRM'; return;
+  }
+  payload.updated_at = new Date().toISOString();
+  try {
+    let error;
+    if (selectedId === 'new') {
+      payload.statut = 'prospect';
+      payload.date_entree = new Date().toISOString().split('T')[0];
+      ({ error } = await db.from('clients').insert(payload));
+    } else {
+      ({ error } = await db.from('clients').update(payload).eq('id', selectedId));
+    }
+    if (error) throw error;
+    const count = Object.keys(payload).length - 1;
+    showResult('success', `✅ ${count} champ(s) importé(s) avec succès.`);
+    btn.innerHTML = '✅ Importé !';
+    setStep(4);
+  } catch(err) {
+    showResult('error','Erreur : ' + err.message);
+    btn.disabled = false;
+    btn.innerHTML = '✅ Importer dans le CRM';
+  }
+}
+
+function setStep(n) {
+  for (let i=1; i<=4; i++) {
+    document.getElementById('step-'+i).className = 'step '+(i<n?'done':i===n?'active':'');
+  }
+}
+
+function showResult(type, msg) {
+  const cls = type==='success' ? 'alert-success' : 'alert-err';
+  document.getElementById('import-result').innerHTML = `<div class="alert ${cls}">${msg}</div>`;
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
